@@ -1,7 +1,6 @@
-
-
 import { initializeUiHandlers } from '../ui/ui-handlers.js';
 import { showSplashScreen } from '../ui/splash-screen.js';
+import { setupPvpRooms } from '../game-controller.js';
 import { checkForSavedGame } from './save-load.js';
 import { loadAchievements } from './achievements.js';
 import { initializeGoogleSignIn } from './auth.js';
@@ -10,38 +9,28 @@ import { initI18n } from './i18n.js';
 import { updateState } from './state.js';
 
 // This is the main entry point of the application.
-// The script is loaded as a module at the end of the body, so the DOM is ready.
+document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize internationalization first
+    await initI18n();
 
-// Guard to ensure the init logic runs only once.
-if (window.gameHasInitialized) {
-    // Already initialized, do nothing.
-} else {
-    window.gameHasInitialized = true;
+    // Establish connection with the server for PvP functionalities.
+    connectToServer();
 
-    // Async function to run initialization logic.
-    const initializeApp = async () => {
-        // Initialize internationalization first
-        await initI18n();
+    // Sets up all the button clicks and other user interactions.
+    initializeUiHandlers();
 
-        // Establish connection with the server for PvP functionalities.
-        connectToServer();
+    // Initializes the PvP rooms data structure.
+    setupPvpRooms();
 
-        // Sets up all the button clicks and other user interactions.
-        initializeUiHandlers();
+    // Load any existing achievements from local storage.
+    loadAchievements();
 
-        // Load any existing achievements from local storage.
-        loadAchievements();
+    // Checks if a saved game exists to enable the 'Continue' button.
+    checkForSavedGame();
+    
+    // Displays the initial splash screen.
+    showSplashScreen();
 
-        // Checks if a saved game exists to enable the 'Continue' button.
-        checkForSavedGame();
-        
-        // Displays the initial splash screen.
-        showSplashScreen();
-
-        // Initializes Google Sign-In functionality
-        initializeGoogleSignIn();
-    };
-
-    // Run the app initialization.
-    initializeApp();
-}
+    // Initializes Google Sign-In functionality
+    initializeGoogleSignIn();
+});
