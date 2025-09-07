@@ -252,8 +252,8 @@ export function renderAdminPanel({ online, banned, pendingReports, totalConnecti
             <table>
                 <thead>
                     <tr>
-                        <th>${t('admin.date_header')}</th>
-                        <th>${t('admin.unique_users_header')}</th>
+                        <th>Data</th>
+                        <th>Jogadores Únicos</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -266,7 +266,7 @@ export function renderAdminPanel({ online, banned, pendingReports, totalConnecti
                 </tbody>
             </table>
         </div>
-    ` : `<p>${t('admin.no_daily_stats')}</p>`;
+    ` : `<p>Nenhum dado de acesso diário registrado.</p>`;
 
 
     const reportsHTML = pendingReports && pendingReports.length > 0 ? pendingReports.map(report => `
@@ -321,10 +321,20 @@ export function renderAdminPanel({ online, banned, pendingReports, totalConnecti
     adminTabContent.innerHTML = `
         <div class="admin-section">
             <h3>${t('admin.server_status')}</h3>
-            <p><strong>${t('admin.active_connections')}:</strong> ${totalConnections || 0}</p>
+            <p><strong>Conexões Ativas no Servidor:</strong> ${totalConnections || 0}</p>
             <br>
-            <h4>${t('admin.daily_access_log')}</h4>
+            <h4>Acessos Diários (Últimos 30 Dias)</h4>
             ${dailyStatsHTML}
+        </div>
+        <div class="admin-section">
+            <h3 style="color: var(--accent-yellow); border-bottom-color: var(--accent-yellow);">${t('admin.self_actions')}</h3>
+             <div class="admin-self-actions">
+                <label for="admin-add-coins-input">${t('admin.add_coins_label')}</label>
+                <div class="friends-search-container" style="margin-top: 0.5rem;">
+                    <input type="number" id="admin-add-coins-input" class="friends-search-input" placeholder="1000">
+                    <button id="admin-add-coins-btn" class="control-button">${t('admin.add_coins_button')}</button>
+                </div>
+            </div>
         </div>
         <div class="admin-section">
             <h3 style="color: var(--accent-yellow); border-bottom-color: var(--accent-yellow);">${t('admin.player_reports')}</h3>

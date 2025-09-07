@@ -492,6 +492,11 @@ export function emitAdminRollbackUser(userId) {
     if (socket) socket.emit('admin:rollbackUser', { userId });
 }
 
+export function emitAdminAddCoins(amount) {
+    const { socket } = getState();
+    if (socket) socket.emit('admin:addCoins', { amount });
+}
+
 export function emitAdminResolveReport(reportId) {
     const { socket } = getState();
     if (socket) socket.emit('admin:resolveReport', { reportId });
