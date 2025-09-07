@@ -1717,9 +1717,26 @@ io.on('connection', (socket) => {
                 id: userSockets.get(u.socketId), // Get DB ID
                 ...u
             }));
+            // Get total player count (including PvP rooms without login)
+            const totalPlayersOnline = onlineUsers.size + Object.values(rooms).reduce((total, room) => {
+                return total + (room.players ? room.players.length : 0);
+            }, 0);
+            
+            // Get monthly report data
+            const monthlyStats = await db.getMonthlyStats();
+            
             const banned = await db.getBannedUsers();
             const pendingReports = await db.getPendingReports();
-            socket.emit('adminData', { online, banned, pendingReports });
+            const adminNews = await db.getAdminNews();
+            
+            socket.emit('adminData', { 
+                online, 
+                banned, 
+                pendingReports, 
+                totalPlayersOnline,
+                monthlyStats,
+                adminNews
+            });
         } catch (error) {
             console.error("Admin GetData Error:", error);
         }
@@ -1762,6 +1779,19 @@ io.on('connection', (socket) => {
             socket.emit('adminData', { online, banned, pendingReports });
         } catch (error) {
             console.error("Admin Resolve Report Error:", error);
+        }
+    });
+    
+    // Admin News handlers
+    socket.on('admin:createNews', async ({ title, content }) => {
+        if (!socket.data.userProfile?.isAdmin) return;
+        try {
+            await db.createAdminNews(title, content);
+            const adminNews = await db.getAdminNews();
+            socket.emit('adminNewsUpdated', { adminNews });
+        } catch (error) {
+            console.error("Admin Create News Error:", error);
+            socket.emit('error', 'Erro ao criar notícia.');
         }
     });
 
