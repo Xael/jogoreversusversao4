@@ -241,7 +241,7 @@ export function renderProfile(profileData) {
     }
 }
 
-export function renderAdminPanel({ online, banned, pendingReports, totalPlayersOnline, monthlyStats, adminNews }) {
+export function renderAdminPanel({ online, banned, pendingReports }) {
     const adminTabContent = document.getElementById('profile-admin-tab-content');
     if (!adminTabContent) return;
 
@@ -327,13 +327,9 @@ export function renderSearchResults(results) {
         container.innerHTML = `<p>${t('friends.no_results')}</p>`;
         return;
     }
-container.innerHTML = results.map(user => {
-        const avatarSrc = user.avatar_url && user.avatar_url.startsWith('http') 
-            ? user.avatar_url 
-            : `./${user.avatar_url || 'assets/default-avatar.svg'}`;
-        return `
+    container.innerHTML = results.map(user => `
         <div class="friend-item">
-            <img src="${avatarSrc}" alt="Avatar" class="friend-avatar">
+            <img src="${user.avatar_url}" alt="Avatar" class="friend-avatar">
             <div class="friend-info">
                 <span class="friend-name">${user.username}</span>
             </div>
@@ -341,7 +337,7 @@ container.innerHTML = results.map(user => {
                 <button class="control-button add-friend-btn" data-user-id="${user.id}">${t('friends.add')}</button>
             </div>
         </div>
-    `}).join('');
+    `).join('');
 }
 
 export function renderFriendsList(friends) {
@@ -358,15 +354,10 @@ export function renderFriendsList(friends) {
         if (titleText.startsWith('titles.')) {
             titleText = friend.selected_title_code;
         }
-        
-        // Fix avatar URL path issue
-        const avatarSrc = friend.avatar_url && friend.avatar_url.startsWith('http') 
-            ? friend.avatar_url 
-            : `./${friend.avatar_url || 'assets/default-avatar.svg'}`;
-                
+
         return `
             <div class="friend-item">
-               <img src="${avatarSrc}" alt="Avatar" class="friend-avatar">
+                <img src="${friend.avatar_url}" alt="Avatar" class="friend-avatar">
                 <div class="friend-info">
                     <span class="friend-name">
                         <div class="friend-status ${statusClass}" title="${statusText}"></div>
@@ -392,13 +383,9 @@ export function renderOnlineFriendsForInvite(friends) {
         return;
     }
     
-        dom.inviteFriendsList.innerHTML = friends.map(friend => {
-        const avatarSrc = friend.avatar_url && friend.avatar_url.startsWith('http') 
-            ? friend.avatar_url 
-            : `./${friend.avatar_url || 'assets/default-avatar.svg'}`;
-        return `
+    dom.inviteFriendsList.innerHTML = friends.map(friend => `
         <div class="friend-item">
-            <img src="${avatarSrc}" alt="Avatar" class="friend-avatar">
+            <img src="${friend.avatar_url}" alt="Avatar" class="friend-avatar">
             <div class="friend-info">
                 <span class="friend-name">${friend.username}</span>
             </div>
@@ -406,30 +393,27 @@ export function renderOnlineFriendsForInvite(friends) {
                 <button class="control-button invite-friend-btn" data-user-id="${friend.id}">${t('pvp.invite')}</button>
             </div>
         </div>
-    `}).join('');
+    `).join('');
 }
+
 export function renderFriendRequests(requests) {
     if (!dom.friendRequestsListContainer) return;
     if (requests.length === 0) {
         dom.friendRequestsListContainer.innerHTML = `<p>${t('friends.no_requests')}</p>`;
         return;
     }
-    dom.friendRequestsListContainer.innerHTML = requests.map(req => {
-        const avatarSrc = req.avatar_url && req.avatar_url.startsWith('http') 
-            ? req.avatar_url 
-            : `./${req.avatar_url || 'assets/default-avatar.svg'}`;
-        return `
+    dom.friendRequestsListContainer.innerHTML = requests.map(req => `
         <div class="friend-item friend-request-item">
-              <img src="${avatarSrc}" alt="Avatar" class="friend-avatar">
+             <img src="${req.avatar_url}" alt="Avatar" class="friend-avatar">
             <div class="friend-info">
                 <span class="friend-name">${req.username}</span>
             </div>
             <div class="friend-actions">
-                <button class="control-button accept-friend-btn" data-request-id="${req.id}" data-user-id="${req.requester_id}">${t('friends.accept')}</button>
-                <button class="control-button cancel reject-friend-btn" data-request-id="${req.id}">${t('friends.reject')}</button>
+                <button class="control-button btn-p3-color accept-request-btn" data-request-id="${req.id}">${t('friends.accept')}</button>
+                <button class="control-button cancel decline-request-btn" data-request-id="${req.id}">${t('friends.decline')}</button>
             </div>
         </div>
-    `}).join('');
+    `).join('');
 }
 
 export function addPrivateChatMessage({ senderId, senderUsername, content, recipientId }) {
