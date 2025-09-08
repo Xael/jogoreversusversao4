@@ -245,7 +245,6 @@ function cleanupInfiniteChallengeIntro() {
     }
     dom.infiniteChallengeIntroModal.classList.add('hidden');
     dom.infiniteChallengeIntroModal.classList.remove('fullscreen-modal');
-    document.getElementById('scalable-container').classList.remove('blurred-for-modal');
     if (infiniteChallengeIntroHandler) {
         dom.infiniteChallengeIntroOptions.removeEventListener('click', infiniteChallengeIntroHandler);
         infiniteChallengeIntroHandler = null;
@@ -266,7 +265,6 @@ async function startInfiniteChallengeIntro() {
     sound.initializeMusic();
     
     dom.infiniteChallengeIntroModal.classList.add('fullscreen-modal');
-    document.getElementById('scalable-container').classList.add('blurred-for-modal');
     dom.infiniteChallengeIntroModal.classList.remove('hidden');
 
     const inversusImages = ['inversum1.png', 'inversum2.png', 'inversum3.png'];
@@ -309,8 +307,10 @@ async function startInfiniteChallengeIntro() {
         if (!button) return;
 
         if (button.id === 'start-infinite-challenge-yes') {
+            // Provide immediate feedback while waiting for the server
+            dom.infiniteChallengeIntroText.textContent = t('infinite_challenge.validating_entry');
+            dom.infiniteChallengeIntroOptions.innerHTML = `<div class="spinner"></div>`;
             network.emitStartInfiniteChallenge();
-            // Don't cleanup here, wait for server response
         } else if (button.id === 'start-infinite-challenge-no') {
             cleanupInfiniteChallengeIntro();
         } else {
@@ -1439,7 +1439,7 @@ export function initializeUiHandlers() {
             if (!button) return;
     
             if (button.matches('.add-friend-btn')) {
-                const userId = button.dataset.userId;
+                const userId = parseInt(button.dataset.userId, 10);
                 button.disabled = true;
                 network.emitSendFriendRequest(userId, (response) => {
                     if (response.success) {
@@ -1453,10 +1453,10 @@ export function initializeUiHandlers() {
             }
     
             if (button.matches('.remove-friend-btn')) {
-                const userId = button.dataset.userId;
+                const userId = parseInt(button.dataset.userId, 10);
                 const username = button.closest('.friend-item')?.querySelector('.friend-name')?.textContent.trim() || 'este amigo';
                 if (confirm(t('confirm.remove_friend', { username }))) {
-                     network.emitRemoveFriend({ targetUserId: userId });
+                     network.emitRemoveFriend(userId);
                 }
                 return;
             }
@@ -1464,7 +1464,7 @@ export function initializeUiHandlers() {
             if (button.matches('.view-profile-btn')) {
                 const googleId = button.dataset.googleId;
                 if (googleId) {
-                    network.emitViewProfile({ googleId });
+                    network.emitViewProfile(googleId);
                 }
                 return;
             }
@@ -1479,7 +1479,7 @@ export function initializeUiHandlers() {
             }
     
             if (button.matches('.accept-request-btn') || button.matches('.decline-request-btn')) {
-                const requestId = button.dataset.requestId;
+                const requestId = parseInt(button.dataset.requestId, 10);
                 if (requestId) {
                     const action = button.matches('.accept-request-btn') ? 'accept' : 'decline';
                     network.emitRespondToRequest(requestId, action);
@@ -1502,7 +1502,7 @@ export function initializeUiHandlers() {
              if (!actionButton) return;
 
              if (actionButton.matches('.add-friend-btn')) {
-                const userId = actionButton.dataset.userId;
+                const userId = parseInt(actionButton.dataset.userId, 10);
                 actionButton.disabled = true;
                 network.emitSendFriendRequest(userId, (response) => {
                     if (response.success) {
@@ -1513,8 +1513,8 @@ export function initializeUiHandlers() {
                     }
                 });
             } else if (actionButton.matches('.remove-friend-btn')) {
-                const userId = actionButton.dataset.userId;
-                network.emitRemoveFriend({ targetUserId: userId });
+                const userId = parseInt(actionButton.dataset.userId, 10);
+                network.emitRemoveFriend(userId);
             } else if (actionButton.matches('#toggle-chat-mute-button')) {
                 const state = getState();
                 const newMuteState = !state.isChatMuted;
@@ -1535,27 +1535,24 @@ export function initializeUiHandlers() {
             const button = e.target.closest('button');
             if (!button) return;
     
+            const userId = parseInt(button.dataset.userId, 10);
+            const username = button.dataset.username;
+
             if (button.matches('.admin-ban-btn')) {
-                const userId = button.dataset.userId;
-                const username = button.dataset.username;
                 if (confirm(t('confirm.ban_player', { username }))) {
-                    network.emitAdminBanUser({ userId });
+                    network.emitAdminBanUser(userId);
                 }
             } else if (button.matches('.admin-unban-btn')) {
-                const userId = button.dataset.userId;
-                const username = button.dataset.username;
                 if (confirm(t('confirm.unban_player', { username }))) {
-                    network.emitAdminUnbanUser({ userId });
+                    network.emitAdminUnbanUser(userId);
                 }
             } else if (button.matches('.admin-rollback-btn')) {
-                const userId = button.dataset.userId;
-                const username = button.dataset.username;
                 if (confirm(t('confirm.rollback_player', { username }))) {
-                    network.emitAdminRollbackUser({ userId });
+                    network.emitAdminRollbackUser(userId);
                 }
             } else if (button.matches('.admin-dismiss-report-btn')) {
-                const reportId = button.dataset.reportId;
-                network.emitAdminResolveReport({ reportId });
+                const reportId = parseInt(button.dataset.reportId, 10);
+                network.emitAdminResolveReport(reportId);
             }
         });
     }

@@ -50,7 +50,8 @@
         "intro_final": "GOOD LUCK!",
         "pot_display": "🪙 {pot} 🪙",
         "insufficient_funds": "Your CoinVersus balance is insufficient to enter the challenge.",
-        "round_announcement": "Round {level}"
+        "round_announcement": "Round {level}",
+        "validating_entry": "Validating entry and preparing the challenge..."
     },
     "shop": {
         "buy_avatars_tab": "Buy Avatars",

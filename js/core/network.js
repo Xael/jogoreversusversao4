@@ -384,13 +384,20 @@ export function connectToServer() {
         }
     });
 
-    socket.on('infiniteChallengeStartSuccess', ({ opponentQueue }) => {
+    socket.on('infiniteChallengeStartSuccess', ({ opponentQueue, updatedProfile }) => {
         if (!opponentQueue || opponentQueue.length === 0) {
             console.error("Received empty opponent queue from server for Infinite Challenge.");
             alert("Erro ao iniciar o desafio: não foi possível carregar os oponentes.");
             document.dispatchEvent(new Event('cleanupInfiniteChallengeUI'));
             return;
         }
+        
+        // Update profile to reflect new coin balance immediately
+        if (updatedProfile) {
+            updateState('userProfile', updatedProfile);
+            renderProfile(updatedProfile); // This will update the header display
+        }
+
         updateState('infiniteChallengeOpponentQueue', opponentQueue);
         document.dispatchEvent(new Event('initiateInfiniteChallengeGame'));
     });

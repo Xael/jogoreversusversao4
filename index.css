@@ -32,6 +32,11 @@
 }
 
 /* --- KEYFRAMES --- */
+@keyframes clockwise-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 @keyframes green-glow-pulse {
     0%, 100% { box-shadow: 0 0 15px 3px var(--accent-green), 0 0 5px 1px var(--accent-green) inset; }
     50% { box-shadow: 0 0 25px 5px var(--accent-green), 0 0 8px 2px var(--accent-green) inset; }
@@ -3625,8 +3630,23 @@ body.screen-shaking {
 }
 
 .modal-overlay.fullscreen-modal {
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.85);
     backdrop-filter: none;
+    overflow: hidden;
+}
+
+#infinite-challenge-bg {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: url('./fundo.png');
+    background-size: cover;
+    background-position: center;
+    animation: clockwise-rotate 120s linear infinite;
+    opacity: 0.25;
+    z-index: 0;
 }
 
 .modal-overlay.fullscreen-modal .modal-content {
@@ -3644,6 +3664,8 @@ body.screen-shaking {
     justify-content: center;
     align-items: center;
     text-align: center;
+    position: relative;
+    z-index: 1;
 }
 
 #infinite-challenge-intro-image {
