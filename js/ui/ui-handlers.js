@@ -233,6 +233,78 @@ function handleFieldEffectIndicatorClick(e) {
     }
 }
 
+/**
+ * Manages the multi-step introduction for the Infinite Challenge.
+ */
+async function startInfiniteChallengeIntro() {
+    const { isLoggedIn } = getState();
+    if (!isLoggedIn) {
+        alert(t('common.login_required', { feature: t('splash.infinite_challenge') }));
+        return;
+    }
+    
+    sound.initializeMusic();
+    dom.infiniteChallengeIntroModal.classList.remove('hidden');
+
+    let introStep = 1;
+    let potValue = '...';
+
+    const updateIntro = () => {
+        switch (introStep) {
+            case 1:
+                dom.infiniteChallengeIntroImage.src = 'inversum1.png';
+                dom.infiniteChallengeIntroText.textContent = t('infinite_challenge.intro_1');
+                dom.infiniteChallengeIntroOptions.innerHTML = `<button class="control-button">${t('common.continue')}</button>`;
+                break;
+            case 2:
+                dom.infiniteChallengeIntroImage.src = 'inversum2.png';
+                dom.infiniteChallengeIntroText.textContent = t('infinite_challenge.intro_2');
+                dom.infiniteChallengeIntroOptions.innerHTML = `<button class="control-button">${t('common.continue')}</button>`;
+                break;
+            case 3:
+                dom.infiniteChallengeIntroImage.src = 'inversum3.png';
+                dom.infiniteChallengeIntroText.textContent = t('infinite_challenge.intro_3', { pot: potValue });
+                dom.infiniteChallengeIntroOptions.innerHTML = `
+                    <button id="start-infinite-challenge-yes" class="control-button">${t('common.yes')}</button>
+                    <button id="start-infinite-challenge-no" class="control-button cancel">${t('common.no')}</button>`;
+                break;
+            case 4:
+                dom.infiniteChallengeIntroText.textContent = t('infinite_challenge.intro_final');
+                dom.infiniteChallengeIntroOptions.innerHTML = '';
+                setTimeout(() => {
+                    dom.infiniteChallengeIntroModal.classList.add('hidden');
+                    initializeGame('infinite_challenge', {});
+                }, 1500);
+                break;
+        }
+    };
+
+    dom.infiniteChallengeIntroOptions.addEventListener('click', (e) => {
+        const button = e.target.closest('button');
+        if (!button) return;
+
+        if (button.id === 'start-infinite-challenge-yes') {
+            network.emitStartInfiniteChallenge();
+        } else if (button.id === 'start-infinite-challenge-no') {
+            dom.infiniteChallengeIntroModal.classList.add('hidden');
+        } else {
+            introStep++;
+            updateIntro();
+        }
+    });
+
+    // Start the sequence
+    updateIntro();
+    
+    // Request pot value from server
+    network.emitGetInfiniteChallengePot((pot) => {
+        potValue = pot;
+        if (introStep === 3) {
+            updateIntro(); // Update text if we are already on step 3
+        }
+    });
+}
+
 
 export function initializeUiHandlers() {
     document.addEventListener('aiTurnEnded', advanceToNextPlayer);
@@ -434,7 +506,7 @@ export function initializeUiHandlers() {
         const pvpPrevBtn = e.target.closest('#rank-prev-btn');
         const pvpNextBtn = e.target.closest('#rank-next-btn');
         if (pvpPrevBtn || pvpNextBtn) {
-            const currentPage = parseInt(document.getElementById('ranking-container').querySelector('span')?.textContent.match(/(\d+)/)?.[0] || '1', 10);
+            const currentPage = parseInt(document.getElementById('ranking-pagination').querySelector('span')?.textContent.match(/(\d+)/)?.[0] || '1', 10);
             const newPage = pvpNextBtn ? currentPage + 1 : currentPage - 1;
             network.emitGetRanking(newPage);
         }
@@ -443,7 +515,7 @@ export function initializeUiHandlers() {
         const infinitePrevBtn = e.target.closest('#infinite-rank-prev-btn');
         const infiniteNextBtn = e.target.closest('#infinite-rank-next-btn');
         if (infinitePrevBtn || infiniteNextBtn) {
-            const currentPage = parseInt(dom.infiniteRankingContainer.querySelector('span')?.textContent.match(/(\d+)/)?.[0] || '1', 10);
+            const currentPage = parseInt(document.getElementById('infinite-ranking-pagination').querySelector('span')?.textContent.match(/(\d+)/)?.[0] || '1', 10);
             const newPage = infiniteNextBtn ? currentPage + 1 : currentPage - 1;
             network.emitGetInfiniteRanking(newPage);
         }
@@ -504,15 +576,7 @@ export function initializeUiHandlers() {
         initializeGame('inversus', {});
     });
 
-    dom.infiniteChallengeButton.addEventListener('click', () => {
-        const { isLoggedIn } = getState();
-        if (!isLoggedIn) {
-            alert(t('common.login_required', { feature: t('splash.infinite_challenge') }));
-            return;
-        }
-        sound.initializeMusic();
-        initializeGame('infinite_challenge', {});
-    });
+    dom.infiniteChallengeButton.addEventListener('click', startInfiniteChallengeIntro);
 
     dom.userProfileDisplay.addEventListener('click', () => {
         network.emitGetProfile();
