@@ -6,7 +6,7 @@ import { showSplashScreen } from './ui/splash-screen.js';
 import { playStoryMusic, stopStoryMusic } from './core/sound.js';
 import { updateLog, shuffle } from './core/utils.js';
 import { createDeck } from './game-logic/deck.js';
-import { initiateGameStartSequence } from './game-logic/turn-manager.js';
+import { initiateGameStartSequence, startNewRound } from './game-logic/turn-manager.js';
 import { generateBoardPaths } from './game-logic/board.js';
 import { executeAiTurn } from './ai/ai-controller.js';
 import { createSpiralStarryBackground, clearInversusScreenEffects } from './ui/animations.js';
@@ -17,37 +17,56 @@ import { t } from './core/i18n.js';
  * Updates the in-game timer display, handling normal and countdown modes.
  */
 export const updateGameTimer = () => {
-    const { gameStartTime, gameState, gameTimerInterval } = getState();
+    const { gameStartTime, gameState, gameTimerInterval, infiniteChallengeTimerInterval } = getState();
     if (!gameStartTime || !gameState) return;
     
     const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
-    gameState.elapsedSeconds = elapsed; // Persist elapsed time for snapshots
+    gameState.elapsedSeconds = elapsed;
 
-    if (gameState.currentStoryBattle === 'necroverso_final') {
-        const totalSeconds = 15 * 60; // 15 minutes countdown
-        const remaining = totalSeconds - elapsed;
-        
-        if (remaining <= 0) {
-            dom.gameTimerContainerEl.textContent = '00:00';
-            if(gameTimerInterval) clearInterval(gameTimerInterval);
-            updateState('gameTimerInterval', null);
-            // Dispatch event only once
-            if (gameState.gamePhase !== 'game_over') {
-                document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: 'necroverso_final', won: false, reason: 'time' } }));
-            }
-            return;
-        }
+    let totalSeconds, remaining, container, warningClass;
 
-        // Warning class is now set at the start of the game
-        const minutes = Math.floor(remaining / 60).toString().padStart(2, '0');
-        const seconds = (remaining % 60).toString().padStart(2, '0');
-        dom.gameTimerContainerEl.textContent = `${minutes}:${seconds}`;
+    if (gameState.isInfiniteChallenge) {
+        totalSeconds = 30 * 60; // 30 minutes
+        remaining = totalSeconds - elapsed;
+        container = dom.gameTimerContainerEl;
+        warningClass = 'countdown-warning';
+    } else if (gameState.currentStoryBattle === 'necroverso_final') {
+        totalSeconds = 15 * 60; // 15 minutes
+        remaining = totalSeconds - elapsed;
+        container = dom.gameTimerContainerEl;
+        warningClass = 'countdown-warning';
     } else {
+        // Normal elapsed time mode
         const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
         const seconds = (elapsed % 60).toString().padStart(2, '0');
         dom.gameTimerContainerEl.textContent = `${minutes}:${seconds}`;
+        return;
     }
+
+    if (remaining <= 0) {
+        container.textContent = '00:00';
+        if (gameState.isInfiniteChallenge) {
+            if (infiniteChallengeTimerInterval) clearInterval(infiniteChallengeTimerInterval);
+            updateState('infiniteChallengeTimerInterval', null);
+            if (gameState.gamePhase !== 'game_over') {
+                 document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'time' } }));
+            }
+        } else { // Necroverso final
+            if(gameTimerInterval) clearInterval(gameTimerInterval);
+            updateState('gameTimerInterval', null);
+            if (gameState.gamePhase !== 'game_over') {
+                document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: 'necroverso_final', won: false, reason: 'time' } }));
+            }
+        }
+        return;
+    }
+
+    if (warningClass) container.classList.add(warningClass);
+    const minutes = Math.floor(remaining / 60).toString().padStart(2, '0');
+    const seconds = (remaining % 60).toString().padStart(2, '0');
+    container.textContent = `${minutes}:${seconds}`;
 };
+
 
 /**
  * Displays a fullscreen announcement for final bosses.
@@ -74,7 +93,7 @@ const showFullscreenAnnounce = async (text, imageSrc) => {
  * The core game state creation is now handled by the server for PvP.
  */
 export const initializeGame = async (mode, options) => {
-    const { isChatMuted } = getState();
+    const { isChatMuted, infiniteChallengeOpponentQueue } = getState();
     dom.chatInput.disabled = isChatMuted;
     dom.chatInput.placeholder = t(isChatMuted ? 'chat.chat_muted_message' : 'game.chat_placeholder');
 
@@ -83,7 +102,7 @@ export const initializeGame = async (mode, options) => {
     Object.assign(config.PLAYER_CONFIG, structuredClone(config.originalPlayerConfig));
     updateState('reversusTotalIndividualFlow', false); // Reset flow state
     
-    let playerIdsInGame, numPlayers, modeText, isStoryMode = false, isFinalBoss = false, storyBattle = null, storyBattleType = null, isInversusMode = false, isXaelChallenge = false;
+    let playerIdsInGame, numPlayers, modeText, isStoryMode = false, isFinalBoss = false, storyBattle = null, storyBattleType = null, isInversusMode = false, isXaelChallenge = false, isInfiniteChallenge = false;
     let isKingNecroBattle = false;
     let eventData = null;
 
@@ -102,7 +121,17 @@ export const initializeGame = async (mode, options) => {
         await playStoryMusic('inversus.ogg');
         // Ensure the correct AI type is set for the Inversus opponent
         options.overrides = { 'player-2': { name: 'Inversus', aiType: 'inversus' } };
-    } else if (options.story) { // Covers both Story Mode and Events
+    } else if (mode === 'infinite_challenge') {
+        isInfiniteChallenge = true;
+        isInversusMode = true; // Use Inversus mechanics
+        numPlayers = 2;
+        playerIdsInGame = ['player-1', 'player-2'];
+        modeText = 'Desafio Infinito';
+        await playStoryMusic('oprofetasombrio.ogg');
+        const nextOpponent = infiniteChallengeOpponentQueue[0];
+        options.overrides = { 'player-2': { name: t(nextOpponent.nameKey), aiType: nextOpponent.aiType } };
+    }
+    else if (options.story) { // Covers both Story Mode and Events
         isStoryMode = true; // We use the story mode flag to handle shared logic like win/loss events.
         storyBattle = options.story.battle;
 
@@ -192,7 +221,7 @@ export const initializeGame = async (mode, options) => {
     
     dom.boardEl.classList.toggle('final-battle-board', isFinalBoss);
     dom.boardEl.classList.toggle('board-rotating', isFinalBoss); // Slow rotation for final bosses
-    dom.boardEl.classList.toggle('board-rotating-super-fast', isInversusMode); // Fast rotation for Inversus
+    dom.boardEl.classList.toggle('board-rotating-super-fast', isInversusMode || isInfiniteChallenge); // Fast rotation for Inversus
     
     // Apply narrator monitor effect
     dom.appContainerEl.classList.toggle('effect-monitor', storyBattle === 'narrador');
@@ -205,13 +234,19 @@ export const initializeGame = async (mode, options) => {
     }
     
     dom.gameTimerContainerEl.classList.remove('countdown-warning');
-    if (storyBattle === 'necroverso_final') {
+    if (storyBattle === 'necroverso_final' || isInfiniteChallenge) {
         dom.gameTimerContainerEl.classList.add('countdown-warning');
     }
     if (state.gameTimerInterval) clearInterval(state.gameTimerInterval);
     updateState('gameStartTime', Date.now());
     updateGameTimer();
-    updateState('gameTimerInterval', setInterval(updateGameTimer, 1000));
+    const timerInterval = setInterval(updateGameTimer, 1000);
+    if (isInfiniteChallenge) {
+        updateState('infiniteChallengeTimerInterval', timerInterval);
+    } else {
+        updateState('gameTimerInterval', timerInterval);
+    }
+
     
     const valueDeck = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
     const effectDeck = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
@@ -243,9 +278,9 @@ export const initializeGame = async (mode, options) => {
                 playerObject.isEventBoss = true;
                 playerObject.eventAbilityUsedThisMatch = false;
             }
-            if (isInversusMode) {
-                playerObject.hearts = 10;
-                playerObject.maxHearts = 10;
+            if (isInversusMode || isInfiniteChallenge) {
+                playerObject.hearts = 1;
+                playerObject.maxHearts = 1;
             }
             if (isKingNecroBattle) {
                 playerObject.hearts = 6;
@@ -288,6 +323,8 @@ export const initializeGame = async (mode, options) => {
         gameOptions: options,
         isStoryMode,
         isInversusMode,
+        isInfiniteChallenge,
+        infiniteChallengeLevel: 1,
         isFinalBoss,
         isKingNecroBattle,
         isXaelChallenge,
@@ -357,7 +394,7 @@ export const initializeGame = async (mode, options) => {
     }
 
     if (dom.leftScoreBox && dom.rightScoreBox) {
-        if (isInversusMode || isKingNecroBattle) {
+        if (isInversusMode || isKingNecroBattle || isInfiniteChallenge) {
             dom.leftScoreBox.classList.add('hidden');
             dom.rightScoreBox.classList.add('hidden');
         } else {
@@ -379,6 +416,48 @@ export const initializeGame = async (mode, options) => {
     
     await initiateGameStartSequence();
 };
+
+export function startNextInfiniteChallengeDuel() {
+    const { gameState, infiniteChallengeOpponentQueue } = getState();
+    if (!gameState || !gameState.isInfiniteChallenge || infiniteChallengeOpponentQueue.length === 0) {
+        return; // Should not happen if logic is correct
+    }
+
+    // Increment level
+    gameState.infiniteChallengeLevel++;
+
+    // Get next opponent
+    const nextOpponentData = infiniteChallengeOpponentQueue[0];
+    const opponent = gameState.players['player-2'];
+
+    // Update opponent's data
+    opponent.name = t(nextOpponentData.nameKey);
+    opponent.aiType = nextOpponentData.aiType;
+    
+    // Reset players for the new duel (except for things that persist like timer)
+    Object.values(gameState.players).forEach(p => {
+        p.position = 1;
+        p.hand = [];
+        p.resto = null;
+        p.nextResto = null;
+        p.effects = { score: null, movement: null };
+        p.playedCards = { value: [], effect: [] };
+        p.playedValueCardThisTurn = false;
+        p.liveScore = 0;
+        p.status = 'neutral';
+        p.hearts = 1; // Reset hearts for sudden death
+    });
+
+    // Reset decks
+    gameState.decks.value = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
+    gameState.decks.effect = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
+    gameState.discardPiles = { value: [], effect: [] };
+    
+    updateLog(`--- ${t('infinite_challenge.round_announcement', { level: gameState.infiniteChallengeLevel })} ---`);
+    
+    startNewRound(true); // Start the new round logic without incrementing the main turn counter
+}
+
 
 export function restartLastDuel() {
     const { lastStoryGameOptions } = getState();
