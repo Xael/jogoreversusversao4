@@ -43,6 +43,15 @@
         "version": "Versão 4.0",
         "login": "LOGIN"
     },
+    "infinite_challenge": {
+        "intro_1": "ESTE SERÁ MEU PRIMEIRO E ÚLTIMO AVISO PARA QUEM OUSAR DESAFIAR O INFINITO.",
+        "intro_2": "ESTE DESAFIO TEM UM CUSTO DE 10 COINVERSUS E A CADA DESAFIANTE VENCIDO A RECOMPENSA AUMENTARÁ PROPORCIONALMENTE.",
+        "intro_3": "ATUALMENTE O MONTANTE É DE {pot}. DESEJA SE ARRISCAR NESTE DESAFIO?",
+        "intro_final": "BOA SORTE!",
+        "pot_display": "🪙 {pot} 🪙",
+        "insufficient_funds": "Seu saldo de CoinVersus é insuficiente para entrar no desafio.",
+        "round_announcement": "Rodada {level}"
+    },
     "shop": {
         "buy_avatars_tab": "Comprar Avatares",
         "select_avatar_desc": "Selecione um avatar para comprar. Ele aparecerá ao lado do seu nome nas salas e no ranking.",
@@ -242,8 +251,9 @@
         "inversus_victory_message": "Você derrotou o Inversus! 100% do jogo completo. Um segredo foi revelado...",
         "inversus_defeat_message": "O reflexo sombrio do Reversus te derrotou. Tentar novamente?",
         "infinite_challenge_title": "Fim do Desafio Infinito",
-        "infinite_challenge_message": "Você alcançou o nível {level} em {time}!",
-        "infinite_challenge_all_defeated": "VITÓRIA ABSOLUTA! Você derrotou todos os oponentes em {time}!"
+        "infinite_challenge_lose": "Você foi derrotado na rodada {level} após {time}.",
+        "infinite_challenge_timeout": "O tempo acabou! Você alcançou a rodada {level} em 30:00.",
+        "infinite_challenge_win": "VITÓRIA ABSOLUTA! Você derrotou todos os oponentes em {time} e ganhou {pot} 🪙!"
     },
     "target": {
         "title_prefix": "Alvo para",

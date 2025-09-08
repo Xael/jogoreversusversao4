@@ -1,3 +1,4 @@
+
 // This object holds the single source of truth for the application's state.
 const appState = {
     // Core game state object, holds all data about the current match.
@@ -11,6 +12,8 @@ const appState = {
     currentTrackIndex: 0,
     // Interval timer for the in-game clock.
     gameTimerInterval: null,
+    // Interval timer for the infinite challenge countdown.
+    infiniteChallengeTimerInterval: null,
     // Timestamp for when the game started, used by the timer.
     gameStartTime: null,
     // A promise resolver for when the game is waiting for a player to target a field effect.
@@ -45,6 +48,9 @@ const appState = {
     chatFilter: 'all',
     // Controls if the chat input is visible and usable.
     isChatMuted: false,
+    // Holds the shuffled queue of opponents for the current infinite challenge run.
+    infiniteChallengeOpponentQueue: [],
+
 
     // --- PVP/Network State ---
     isConnectionAttempted: false, // Flag to ensure we only try to connect once.

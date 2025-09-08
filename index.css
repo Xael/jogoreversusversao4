@@ -1721,6 +1721,22 @@ body.screen-shaking {
     max-width: 350px;
 }
 
+#infinite-challenge-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+}
+
+#infinite-challenge-pot-display {
+    font-size: 0.8rem;
+    font-weight: normal;
+    color: var(--accent-yellow);
+    text-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+
 .splash-button-container .control-button {
     width: 100%;
 }
@@ -3081,38 +3097,44 @@ body.screen-shaking {
     text-align: center;
 }
 
-#ranking-container table {
+#ranking-container table,
+#infinite-ranking-container table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 1rem;
 }
 
-#ranking-container th, #ranking-container td {
+#ranking-container th, #ranking-container td,
+#infinite-ranking-container th, #infinite-ranking-container td {
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid rgba(168, 218, 220, 0.2);
 }
 
-#ranking-container th {
+#ranking-container th,
+#infinite-ranking-container th {
     color: var(--accent-yellow);
     font-size: 1.1rem;
 }
 
-#ranking-container .rank-position {
+#ranking-container .rank-position,
+#infinite-ranking-container .rank-position {
     font-weight: 700;
     font-size: 1.2rem;
     text-align: center;
     width: 50px;
 }
 
-#ranking-container .rank-avatar {
+#ranking-container .rank-avatar,
+#infinite-ranking-container .rank-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
     vertical-align: middle;
 }
 
-#ranking-container .rank-name {
+#ranking-container .rank-name,
+#infinite-ranking-container .rank-name {
     font-weight: 600;
 }
 .rank-name.clickable {
@@ -3123,15 +3145,19 @@ body.screen-shaking {
     color: var(--accent-yellow);
 }
 
-#ranking-container .rank-player-title {
+#ranking-container .rank-player-title,
+#infinite-ranking-container .rank-player-title {
     display: block;
     font-size: 0.8rem;
     color: var(--text-secondary);
 }
 
-#ranking-container tr.rank-1 .rank-position { color: #FFD700; }
-#ranking-container tr.rank-2 .rank-position { color: #C0C0C0; }
-#ranking-container tr.rank-3 .rank-position { color: #CD7F32; }
+#ranking-container tr.rank-1 .rank-position,
+#infinite-ranking-container tr.rank-1 .rank-position { color: #FFD700; }
+#ranking-container tr.rank-2 .rank-position,
+#infinite-ranking-container tr.rank-2 .rank-position { color: #C0C0C0; }
+#ranking-container tr.rank-3 .rank-position,
+#infinite-ranking-container tr.rank-3 .rank-position { color: #CD7F32; }
 
 .ranking-pagination {
     display: flex;

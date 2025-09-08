@@ -1,3 +1,4 @@
+
 // js/core/config.js
 
 // --- CONSTANTS ---
@@ -47,7 +48,7 @@ export const BOSS_CARD_IMAGES = [
 export const CHARACTER_PORTRAIT_IMAGES = [
     'contravox.png', 'versatrix.png', 'reversum.png',
     'necroverso.png', 'necroverso2.png', 'necroverso3.png', 'necroversorevelado.png',
-    'xael.png', 'xaeldesafio.png', 'narrador.png', 'inversum1.png'
+    'xael.png', 'xaeldesafio.png', 'narrador.png', 'inversum1.png', 'inversum2.png', 'inversum3.png'
 ];
 
 export const POSITIVE_EFFECTS = {

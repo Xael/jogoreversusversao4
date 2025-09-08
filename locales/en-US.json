@@ -43,6 +43,15 @@
         "version": "Version 4.0",
         "login": "LOGIN"
     },
+    "infinite_challenge": {
+        "intro_1": "THIS WILL BE MY FIRST AND LAST WARNING TO THOSE WHO DARE TO CHALLENGE THE INFINITE.",
+        "intro_2": "THIS CHALLENGE COSTS 10 COINVERSUS, AND FOR EACH CHALLENGER DEFEATED, THE REWARD WILL INCREASE PROPORTIONALLY.",
+        "intro_3": "THE CURRENT POT IS {pot}. DO YOU WISH TO RISK THIS CHALLENGE?",
+        "intro_final": "GOOD LUCK!",
+        "pot_display": "🪙 {pot} 🪙",
+        "insufficient_funds": "Your CoinVersus balance is insufficient to enter the challenge.",
+        "round_announcement": "Round {level}"
+    },
     "shop": {
         "buy_avatars_tab": "Buy Avatars",
         "select_avatar_desc": "Select an avatar to purchase. It will appear next to your name in rooms and on the leaderboard.",
@@ -242,8 +251,9 @@
         "inversus_victory_message": "You defeated Inversus! 100% of the game completed. A secret has been revealed...",
         "inversus_defeat_message": "The dark reflection of Reversus has defeated you. Try again?",
         "infinite_challenge_title": "Infinite Challenge Over",
-        "infinite_challenge_message": "You reached level {level} in {time}!",
-        "infinite_challenge_all_defeated": "ABSOLUTE VICTORY! You defeated all opponents in {time}!"
+        "infinite_challenge_lose": "You were defeated on round {level} after {time}.",
+        "infinite_challenge_timeout": "Time's up! You reached round {level} in 30:00.",
+        "infinite_challenge_win": "ABSOLUTE VICTORY! You defeated all opponents in {time} and won {pot} 🪙!"
     },
     "target": {
         "title_prefix": "Target for",
