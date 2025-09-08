@@ -23,6 +23,8 @@ import { openChatWindow, initializeChatHandlers } from './chat-handler.js';
 import { renderShopAvatars } from './shop-renderer.js';
 
 let currentEventData = null;
+let infiniteChallengeIntroHandler = null;
+let introImageInterval = null;
 
 /**
  * Hides the game UI, shows the story modal, and renders the next story node.
@@ -234,6 +236,24 @@ function handleFieldEffectIndicatorClick(e) {
 }
 
 /**
+ * Cleans up all UI elements and state related to the Infinite Challenge intro.
+ */
+function cleanupInfiniteChallengeIntro() {
+    if (introImageInterval) {
+        clearInterval(introImageInterval);
+        introImageInterval = null;
+    }
+    dom.infiniteChallengeIntroModal.classList.add('hidden');
+    dom.infiniteChallengeIntroModal.classList.remove('fullscreen-modal');
+    document.getElementById('scalable-container').classList.remove('blurred-for-modal');
+    if (infiniteChallengeIntroHandler) {
+        dom.infiniteChallengeIntroOptions.removeEventListener('click', infiniteChallengeIntroHandler);
+        infiniteChallengeIntroHandler = null;
+    }
+}
+
+
+/**
  * Manages the multi-step introduction for the Infinite Challenge.
  */
 async function startInfiniteChallengeIntro() {
@@ -244,7 +264,19 @@ async function startInfiniteChallengeIntro() {
     }
     
     sound.initializeMusic();
+    
+    dom.infiniteChallengeIntroModal.classList.add('fullscreen-modal');
+    document.getElementById('scalable-container').classList.add('blurred-for-modal');
     dom.infiniteChallengeIntroModal.classList.remove('hidden');
+
+    const inversusImages = ['inversum1.png', 'inversum2.png', 'inversum3.png'];
+    let imageIndex = 0;
+    dom.infiniteChallengeIntroImage.src = `./${inversusImages[0]}`;
+    if (introImageInterval) clearInterval(introImageInterval);
+    introImageInterval = setInterval(() => {
+        imageIndex = (imageIndex + 1) % inversusImages.length;
+        dom.infiniteChallengeIntroImage.src = `./${inversusImages[imageIndex]}`;
+    }, 2000);
 
     let introStep = 1;
     let potValue = '...';
@@ -252,55 +284,49 @@ async function startInfiniteChallengeIntro() {
     const updateIntro = () => {
         switch (introStep) {
             case 1:
-                dom.infiniteChallengeIntroImage.src = 'inversum1.png';
                 dom.infiniteChallengeIntroText.textContent = t('infinite_challenge.intro_1');
                 dom.infiniteChallengeIntroOptions.innerHTML = `<button class="control-button">${t('common.continue')}</button>`;
                 break;
             case 2:
-                dom.infiniteChallengeIntroImage.src = 'inversum2.png';
                 dom.infiniteChallengeIntroText.textContent = t('infinite_challenge.intro_2');
                 dom.infiniteChallengeIntroOptions.innerHTML = `<button class="control-button">${t('common.continue')}</button>`;
                 break;
             case 3:
-                dom.infiniteChallengeIntroImage.src = 'inversum3.png';
                 dom.infiniteChallengeIntroText.textContent = t('infinite_challenge.intro_3', { pot: potValue });
                 dom.infiniteChallengeIntroOptions.innerHTML = `
                     <button id="start-infinite-challenge-yes" class="control-button">${t('common.yes')}</button>
                     <button id="start-infinite-challenge-no" class="control-button cancel">${t('common.no')}</button>`;
                 break;
-            case 4:
-                dom.infiniteChallengeIntroText.textContent = t('infinite_challenge.intro_final');
-                dom.infiniteChallengeIntroOptions.innerHTML = '';
-                setTimeout(() => {
-                    dom.infiniteChallengeIntroModal.classList.add('hidden');
-                    initializeGame('infinite_challenge', {});
-                }, 1500);
-                break;
         }
     };
 
-    dom.infiniteChallengeIntroOptions.addEventListener('click', (e) => {
+    if (infiniteChallengeIntroHandler) {
+        dom.infiniteChallengeIntroOptions.removeEventListener('click', infiniteChallengeIntroHandler);
+    }
+
+    infiniteChallengeIntroHandler = (e) => {
         const button = e.target.closest('button');
         if (!button) return;
 
         if (button.id === 'start-infinite-challenge-yes') {
             network.emitStartInfiniteChallenge();
+            // Don't cleanup here, wait for server response
         } else if (button.id === 'start-infinite-challenge-no') {
-            dom.infiniteChallengeIntroModal.classList.add('hidden');
+            cleanupInfiniteChallengeIntro();
         } else {
             introStep++;
             updateIntro();
         }
-    });
+    };
 
-    // Start the sequence
+    dom.infiniteChallengeIntroOptions.addEventListener('click', infiniteChallengeIntroHandler);
+
     updateIntro();
     
-    // Request pot value from server
     network.emitGetInfiniteChallengePot((pot) => {
         potValue = pot;
         if (introStep === 3) {
-            updateIntro(); // Update text if we are already on step 3
+            updateIntro();
         }
     });
 }
@@ -310,6 +336,26 @@ export function initializeUiHandlers() {
     document.addEventListener('aiTurnEnded', advanceToNextPlayer);
     
     initializeChatHandlers();
+
+    // Listener for server success response to start the challenge
+    document.addEventListener('initiateInfiniteChallengeGame', () => {
+        cleanupInfiniteChallengeIntro();
+        const { infiniteChallengeOpponentQueue } = getState();
+        initializeGame('infinite_challenge', {
+            numPlayers: 2,
+            overrides: {
+                'player-2': {
+                    name: t(infiniteChallengeOpponentQueue[0].nameKey),
+                    aiType: infiniteChallengeOpponentQueue[0].aiType
+                }
+            }
+        });
+    });
+
+    // Listener for server error response or user cancellation
+    document.addEventListener('cleanupInfiniteChallengeUI', () => {
+        cleanupInfiniteChallengeIntro();
+    });
 
     document.body.addEventListener('click', (e) => {
         if (e.target.closest('.player-hand')) handleCardClick(e);
@@ -466,12 +512,22 @@ export function initializeUiHandlers() {
                 battle: `event_${currentEventData.ai}`,
                 eventData: { name: t(currentEventData.nameKey), ai: currentEventData.ai },
                 playerIds: ['player-1', 'player-2'],
-                overrides: { 'player-2': { name: t(currentEventData.characterNameKey), aiType: currentEventData.ai } }
+                overrides: {
+                    'player-2': {
+                        name: t(currentEventData.characterNameKey),
+                        aiType: currentEventData.ai,
+                    }
+                }
             }
         };
-        initializeGame('solo', gameOptions);
+        document.dispatchEvent(new CustomEvent('startStoryGame', { detail: { mode: 'solo', options: gameOptions } }));
     });
     
+    dom.closeEventButton.addEventListener('click', () => {
+        dom.eventModal.classList.add('hidden');
+        sound.stopStoryMusic();
+    });
+
     dom.rankingButton.addEventListener('click', () => {
         // Automatically request the first page of the default (PVP) ranking
         network.emitGetRanking(1);
@@ -1258,7 +1314,7 @@ export function initializeUiHandlers() {
         dom.lobbyInviteAcceptButton.addEventListener('click', (e) => {
             const roomId = e.target.dataset.roomId;
             if (roomId) {
-                network.emitAcceptInvite(roomId);
+                network.emitAcceptInvite({ roomId });
             }
             dom.lobbyInviteNotificationModal.classList.add('hidden');
         });
@@ -1268,7 +1324,7 @@ export function initializeUiHandlers() {
         dom.lobbyInviteDeclineButton.addEventListener('click', (e) => {
             const roomId = dom.lobbyInviteAcceptButton.dataset.roomId; // Get room from accept button
             if (roomId) {
-                 network.emitDeclineInvite(roomId);
+                 network.emitDeclineInvite({ roomId });
             }
             dom.lobbyInviteNotificationModal.classList.add('hidden');
         });

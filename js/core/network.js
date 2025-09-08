@@ -374,11 +374,53 @@ export function connectToServer() {
         alert(t('shop.purchase_error', { error: message }));
         renderShopAvatars(); // Re-render to re-enable button
     });
+
+    // --- Infinite Challenge Listeners ---
+    socket.on('infiniteChallengePotUpdate', ({ pot }) => {
+        const potDisplay = dom.infiniteChallengePotDisplay;
+        if (potDisplay) {
+            potDisplay.textContent = t('infinite_challenge.pot_display', { pot: pot || 0 });
+            potDisplay.dataset.potValue = pot || 0;
+        }
+    });
+
+    socket.on('infiniteChallengeStartSuccess', ({ opponentQueue }) => {
+        if (!opponentQueue || opponentQueue.length === 0) {
+            console.error("Received empty opponent queue from server for Infinite Challenge.");
+            alert("Erro ao iniciar o desafio: não foi possível carregar os oponentes.");
+            document.dispatchEvent(new Event('cleanupInfiniteChallengeUI'));
+            return;
+        }
+        updateState('infiniteChallengeOpponentQueue', opponentQueue);
+        document.dispatchEvent(new Event('initiateInfiniteChallengeGame'));
+    });
+
+    socket.on('infiniteChallengeStartError', ({ message }) => {
+        alert(message);
+        document.dispatchEvent(new Event('cleanupInfiniteChallengeUI'));
+    });
+
+    socket.on('infiniteChallengeWin', ({ potWon }) => {
+        const { gameState } = getState();
+        const level = gameState ? gameState.infiniteChallengeLevel : 'Final';
+        const timeSeconds = gameState ? gameState.elapsedSeconds : 0;
+        const minutes = Math.floor(timeSeconds / 60).toString().padStart(2, '0');
+        const seconds = (timeSeconds % 60).toString().padStart(2, '0');
+        const timeFormatted = `${minutes}:${seconds}`;
+
+        showGameOver(
+            t('game_over.infinite_challenge_win', { time: timeFormatted, pot: potWon }),
+            t('game_over.infinite_challenge_title'),
+            { action: 'menu' }
+        );
+    });
 }
 
 // --- EMITTERS ---
 export function emitGetRanking(page = 1) { const { socket } = getState(); if (socket) socket.emit('getRanking', { page }); }
 export function emitGetInfiniteRanking(page = 1) { const { socket } = getState(); if (socket) socket.emit('getInfiniteRanking', { page }); }
+export function emitGetInfiniteChallengePot(callback) { const { socket } = getState(); if (socket) socket.emit('getInfiniteChallengePot', callback); }
+export function emitStartInfiniteChallenge() { const { socket } = getState(); if (socket) socket.emit('startInfiniteChallenge'); }
 export function emitSubmitInfiniteResult(result) { const { socket } = getState(); if (socket) socket.emit('submitInfiniteResult', result); }
 export function emitClaimInfiniteChallengeReward() { const { socket } = getState(); if (socket) socket.emit('claimInfiniteChallengeReward'); }
 export function emitGetProfile() { const { socket } = getState(); if (socket) socket.emit('getProfile'); }
