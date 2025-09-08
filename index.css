@@ -172,10 +172,10 @@
 
 @keyframes secret-fall {
     from {
-        transform: translateY(-20vh); /* Start from above the screen */
+        transform: translateY(0);
     }
     to {
-        transform: translateY(120vh); /* End below the screen */
+        transform: translateY(calc(100vh + 300px)); /* Fall completely off screen, 300px buffer for large cards */
     }
 }
 
@@ -1772,17 +1772,16 @@ body.screen-shaking {
 }
 #secret-versatrix-card {
     position: absolute;
-    top: -150px; /* Start off-screen top */
+    top: -300px; /* Start further off-screen top, buffer for large cards */
     pointer-events: all !important;
     cursor: pointer;
     z-index: 10;
-    width: 110px;
-    height: 154px;
+    /* width and height are now set by JS for variability */
     background-image: url('./cartaversatrix.png');
     background-size: cover;
     border: 2px solid var(--accent-yellow);
     border-radius: 8px;
-    animation: secret-fall 15s linear, versatrix-pulse-glow 2s infinite ease-in-out;
+    animation: secret-fall 20s linear, versatrix-pulse-glow 2s infinite ease-in-out;
 }
 
 

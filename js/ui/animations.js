@@ -167,9 +167,9 @@ const startVersatrixCardAnimation = () => {
     // Clear any previously running interval to prevent duplicates
     if (versatrixCardInterval) clearInterval(versatrixCardInterval);
 
-    const fallDuration = 15000;
-    const pauseDuration = 10000;
-    const totalCycle = fallDuration + pauseDuration;
+    const fallDuration = 20000; // 20 second fall time, matches new CSS
+    const pauseDuration = 10000; // 10 second pause
+    const totalCycle = fallDuration + pauseDuration; // Total 30 seconds as requested
 
     const createCard = () => {
         // Prevent creating a new card if one is already falling
@@ -178,12 +178,17 @@ const startVersatrixCardAnimation = () => {
         const card = document.createElement('div');
         card.id = 'secret-versatrix-card';
         card.style.left = `${Math.random() * 80 + 10}vw`; // Avoid edges
+
+        // Add variable size logic, similar to other floating cards
+        const size = Math.random() * 60 + 70; // size from 70px to 130px
+        card.style.width = `${size}px`;
+        card.style.height = `${size * 1.4}px`; // Maintain aspect ratio
         
         dom.splashAnimationContainerEl.appendChild(card);
         
         // Remove the card after its animation finishes
         setTimeout(() => {
-            if (card.parentElement) {
+            if (card && card.parentElement) {
                  card.remove();
             }
         }, fallDuration);
