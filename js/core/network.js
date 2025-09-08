@@ -1,10 +1,9 @@
-// js/core/network.js
 import { getState, updateState } from './state.js';
 import * as dom from './dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
 import { renderRanking, updateLobbyUi, renderRoomList, addLobbyChatMessage } from '../ui/lobby-renderer.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
-import { showSplashScreen } from './splash-screen.js';
+import { showSplashScreen } from '../ui/splash-screen.js';
 import { updateLog } from './utils.js';
 import { updateGameTimer } from '../game-controller.js';
 import { showPvpDrawSequence } from '../game-logic/turn-manager.js';
@@ -486,16 +485,6 @@ export function emitAdminBanUser(userId) {
 export function emitAdminUnbanUser(userId) {
     const { socket } = getState();
     if (socket) socket.emit('admin:unbanUser', { userId });
-}
-
-export function emitAdminRollbackUser(userId) {
-    const { socket } = getState();
-    if (socket) socket.emit('admin:rollbackUser', { userId });
-}
-
-export function emitAdminAddCoins(amount) {
-    const { socket } = getState();
-    if (socket) socket.emit('admin:addCoins', { amount });
 }
 
 export function emitAdminResolveReport(reportId) {

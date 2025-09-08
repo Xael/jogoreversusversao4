@@ -187,6 +187,7 @@ export const AVATAR_CATALOG = {
     'luan': { nameKey: 'avatars.luan', image_url: 'luan.png', cost: 2000, unlock_achievement_code: null },
     'lorenzo': { nameKey: 'avatars.lorenzo', image_url: 'lorenzo.png', cost: 2000, unlock_achievement_code: null },
     'rodrigo': { nameKey: 'avatars.rodrigo', image_url: 'rodrigo.png', cost: 2000, unlock_achievement_code: null },
+    'karol': { nameKey: 'avatars.karol', image_url: 'karol.png', cost: 2000, unlock_achievement_code: null },
     'necroverso': { nameKey: 'avatars.necroverso', image_url: 'necroverso.png', cost: 15000, unlock_achievement_code: 'tutorial_win' },
     'contravox': { nameKey: 'avatars.contravox', image_url: 'contravox.png', cost: 20000, unlock_achievement_code: 'contravox_win' },
     'versatrix': { nameKey: 'avatars.versatrix', image_url: 'versatrix.png', cost: 25000, unlock_achievement_code: 'versatrix_win' },

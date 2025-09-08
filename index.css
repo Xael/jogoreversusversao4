@@ -3579,3 +3579,8 @@ body.screen-shaking {
     border-color: var(--accent-green);
     box-shadow: 0 0 15px var(--accent-green);
 }
+
+/* --- Z-Index Fixes --- */
+#profile-modal {
+    z-index: 1050;
+}
