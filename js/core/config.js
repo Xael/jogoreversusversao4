@@ -86,7 +86,8 @@ export const ACHIEVEMENTS = {
     'true_end_beta': { nameKey: 'achievement_names.true_end_beta', descriptionKey: 'achievement_descriptions.true_end_beta' },
     'true_end_final': { nameKey: 'achievement_names.true_end_final', descriptionKey: 'achievement_descriptions.true_end_final' },
     'inversus_win': { nameKey: 'achievement_names.inversus_win', descriptionKey: 'achievement_descriptions.inversus_win' },
-    '120%_unlocked': { nameKey: 'achievement_names.120%_unlocked', descriptionKey: 'achievement_descriptions.120%_unlocked' }
+    '120%_unlocked': { nameKey: 'achievement_names.120%_unlocked', descriptionKey: 'achievement_descriptions.120%_unlocked' },
+    'infinite_challenge_win': { nameKey: 'achievement_names.infinite_challenge_win', descriptionKey: 'achievement_descriptions.infinite_challenge_win' }
 };
 
 export const ACHIEVEMENT_HINTS = {
@@ -104,10 +105,12 @@ export const ACHIEVEMENT_HINTS = {
     'true_end_beta': 'achievement_hints.true_end_beta',
     'true_end_final': 'achievement_hints.true_end_final',
     'inversus_win': 'achievement_hints.inversus_win',
-    '120%_unlocked': 'achievement_hints.120%_unlocked'
+    '120%_unlocked': 'achievement_hints.120%_unlocked',
+    'infinite_challenge_win': 'achievement_hints.infinite_challenge_win'
 };
 
 export const TITLE_CONFIG = {
+    'eternal_reversus': { name: 'ETERNAMENTE REVERSUS', line: 'Desafio' },
     'pvp_rank_1': { rank: 1 },
     'pvp_rank_2': { rank: 2 },
     'pvp_rank_3': { rank: 3 },
@@ -193,3 +196,18 @@ export const AVATAR_CATALOG = {
     'versatrix': { nameKey: 'avatars.versatrix', image_url: 'versatrix.png', cost: 25000, unlock_achievement_code: 'versatrix_win' },
     'reversum': { nameKey: 'avatars.reversum', image_url: 'reversum.png', cost: 30000, unlock_achievement_code: 'reversum_win' }
 };
+
+export const INFINITE_CHALLENGE_OPPONENTS = [
+    { nameKey: 'player_names.player-2', aiType: 'default' },
+    { nameKey: 'story_dialogue.start_contravox_text', aiType: 'contravox' },
+    { nameKey: 'story_dialogue.start_versatrix_dialogue_text_1', aiType: 'versatrix' },
+    { nameKey: 'story_dialogue.start_reversum_text', aiType: 'reversum' },
+    { nameKey: 'story_dialogue.final_confrontation_1_text', aiType: 'necroverso_final' },
+    { nameKey: 'ai_dialogue.narrador_winning_1', aiType: 'narrador' },
+    { nameKey: 'story_dialogue.xael_challenge_intro_text', aiType: 'xael' },
+    { nameKey: 'splash.inversus', aiType: 'inversus' },
+    ...MONTHLY_EVENTS.map(event => ({ nameKey: event.characterNameKey, aiType: event.ai })),
+    ...Object.entries(AVATAR_CATALOG)
+        .filter(([key]) => !['default_1', 'default_2', 'default_3', 'default_4', 'necroverso', 'contravox', 'versatrix', 'reversum'].includes(key))
+        .map(([key, avatar]) => ({ nameKey: avatar.nameKey, aiType: 'default' }))
+];

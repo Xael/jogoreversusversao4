@@ -30,6 +30,7 @@
     "splash": {
         "quick_start": "Início Rápido",
         "story_mode": "Modo História",
+        "infinite_challenge": "DESAFIO INFINITO",
         "continue": "CONTINUAR",
         "pvp_online": "PVP Online",
         "shop": "Loja",
@@ -39,7 +40,7 @@
         "achievements": "Conquistas",
         "friends": "Amigos",
         "inversus": "INVERSUS",
-        "version": "Versão 3.1",
+        "version": "Versão 4.0",
         "login": "LOGIN"
     },
     "shop": {
@@ -115,10 +116,11 @@
         "field_effects_title": "Efeitos de Campo:",
         "field_effects_text": "Parar em casas coloridas no tabuleiro ativa efeitos especiais que duram a rodada inteira!",
         "credits_title": "Créditos",
-        "credits_line_1": "O jogo \"Reversus\" foi criado por Xael em 2023 com o tema \"Corrida para o Altar\" em forma de Card Game + Tabuleiro, para recolher fundos para o seu casamento - e agora estamos na versão 3.1 (25/09/2025) com muitas novidades!",
+        "credits_line_1": "O jogo \"Reversus\" foi criado por Xael em 2023 com o tema \"Corrida para o Altar\" em forma de Card Game + Tabuleiro, para recolher fundos para o seu casamento - e agora estamos na versão 4.0 (25/09/2025) com muitas novidades!",
         "credits_line_2": "Aproveite todos os modos e funcionalidades:",
         "feature_quick_start": "Início Rápido",
         "feature_story_mode": "Modo História",
+        "feature_infinite_challenge": "Desafio Infinito",
         "feature_pvp": "PVP Online",
         "feature_login": "Login & Perfil de Jogador",
         "feature_ranking": "Ranking Online",
@@ -238,7 +240,10 @@
         "xael_victory_message": "Você venceu o criador! Habilidade 'Revelação Estelar' desbloqueada no Modo História.",
         "xael_defeat_message": "O criador conhece todos os truques. Tentar novamente?",
         "inversus_victory_message": "Você derrotou o Inversus! 100% do jogo completo. Um segredo foi revelado...",
-        "inversus_defeat_message": "O reflexo sombrio do Reversus te derrotou. Tentar novamente?"
+        "inversus_defeat_message": "O reflexo sombrio do Reversus te derrotou. Tentar novamente?",
+        "infinite_challenge_title": "Fim do Desafio Infinito",
+        "infinite_challenge_message": "Você alcançou o nível {level} em {time}!",
+        "infinite_challenge_all_defeated": "VITÓRIA ABSOLUTA! Você derrotou todos os oponentes em {time}!"
     },
     "target": {
         "title_prefix": "Alvo para",
@@ -369,14 +374,18 @@
         "unlocked_toast": "{name}: {description}"
     },
     "ranking": {
-        "title": "🏆 Ranking PVP 🏆",
+        "title": "🏆 Ranking 🏆",
+        "pvp_tab": "PVP",
+        "infinite_tab": "Desafio Infinito",
         "loading": "Carregando ranking...",
         "error": "Não foi possível carregar o ranking.",
         "empty": "O ranking ainda está vazio. Seja o primeiro a vencer!",
         "header_rank": "#",
         "header_player": "Jogador",
         "header_victories": "Vitórias",
-        "header_coinversus": "CoinVersus"
+        "header_coinversus": "CoinVersus",
+        "header_level": "Nível",
+        "header_time": "Tempo"
     },
     "profile": {
         "title": "Perfil do Jogador",
@@ -449,7 +458,8 @@
     },
     "rewards": {
         "daily_login_toast": "Recompensa Diária! Você ganhou +{amount} CoinVersus.",
-        "challenge_complete_toast": "Desafio Completo! Você ganhou +{amount} CoinVersus!"
+        "challenge_complete_toast": "Desafio Completo! Você ganhou +{amount} CoinVersus!",
+        "infinite_challenge_toast": "Recompensa Infinita! Você ganhou +{amount} CoinVersus e o título '{titleName}'!"
     },
     "log": {
         "welcome": "Bem-vindo ao Reversus! Modo: {modeText}.",
@@ -484,6 +494,7 @@
     },
     "titles": {
         "creator": "Criador",
+        "eternal_reversus": "ETERNAMENTE REVERSUS",
         "event_jan": "O Visionário",
         "event_feb": "Unidor de Restos",
         "event_mar": "Abençoado pelo Resto",
@@ -559,7 +570,8 @@
         "true_end_beta": "Não é o Fim Verdadeiro",
         "true_end_final": "Final Verdadeiro",
         "inversus_win": "100% do Jogo Completo",
-        "120%_unlocked": "120% Desbloqueado!"
+        "120%_unlocked": "120% Desbloqueado!",
+        "infinite_challenge_win": "Eternamente Reversus"
     },
     "achievement_descriptions": {
         "first_win": "Parabéns, você venceu sua primeira partida.",
@@ -576,7 +588,8 @@
         "true_end_beta": "Você derrotou um rei... mas não o mestre por trás das sombras.",
         "true_end_final": "Parabéns, depois me conta como conseguiu ganhar.",
         "inversus_win": "Você derrotou o reflexo sombrio do Reversus. O segredo está na logo do jogo.",
-        "120%_unlocked": "O segredo do segredo, a senha é \"Final\""
+        "120%_unlocked": "O segredo do segredo, a senha é \"Final\"",
+        "infinite_challenge_win": "Derrote todos os oponentes no modo Desafio Infinito."
     },
     "achievement_hints": {
         "first_win": "O primeiro passo para a glória é simplesmente... vencer.",
@@ -593,7 +606,8 @@
         "true_end_beta": "Você derrotou um rei... mas não o mestre por trás das sombras.",
         "true_end_final": "Para enfrentar a escuridão final, você precisará de uma aliança inesperada.",
         "inversus_win": "O reflexo sombrio do Reversus aguarda. A vitória final revela este caminho.",
-        "120%_unlocked": "Quando o narrador se cansa de contar a história, ele entra nela. Uma vitória sobre o reflexo abre esta porta."
+        "120%_unlocked": "Quando o narrador se cansa de contar a história, ele entra nela. Uma vitória sobre o reflexo abre esta porta.",
+        "infinite_challenge_win": "A jornada é longa, mas a glória é eterna. Vença todos no Desafio Infinito."
     },
     "ai_dialogue": {
         "necroverso_tutorial_winning_1": "Você ainda tem muito o que aprender...",

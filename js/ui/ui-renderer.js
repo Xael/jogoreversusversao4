@@ -216,7 +216,7 @@ export async function showRoundSummaryModal(summaryData) {
  * @param {string} [buttonOptions.text='Jogar Novamente'] - The text for the button.
  * @param {string} [buttonOptions.action='restart'] - The action for the button ('restart' or 'menu').
  */
-export const showGameOver = (message, title = "Fim de Jogo!", buttonOptions = {}) => {
+export const showGameOver = (message, title = t('game_over.title'), buttonOptions = {}) => {
     const { text = t('game_over.play_again'), action = 'restart' } = buttonOptions;
     
     dom.gameOverTitle.textContent = title;
@@ -228,7 +228,7 @@ export const showGameOver = (message, title = "Fim de Jogo!", buttonOptions = {}
     const { gameState } = getState();
     if (gameState && gameState.isStoryMode && !message.toLowerCase().includes('derrotado')) {
         // Only grant achievement on non-story defeats
-    } else if (gameState && !gameState.isStoryMode && !message.toLowerCase().includes('derrotado')) {
+    } else if (gameState && !gameState.isStoryMode && !gameState.isInfiniteChallenge && !message.toLowerCase().includes('derrotado')) {
         grantAchievement('first_win');
     } else {
         grantAchievement('first_defeat');

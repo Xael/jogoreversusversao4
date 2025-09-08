@@ -3,55 +3,17 @@ import { getState } from '../core/state.js';
 import { t } from '../core/i18n.js';
 import * as network from '../core/network.js';
 
-export const renderRoomList = (rooms) => {
-    if (!dom.pvpRoomGridEl) return;
-    if (rooms.length === 0) {
-        dom.pvpRoomGridEl.innerHTML = `<p style="text-align: center; width: 100%;">${t('pvp.no_rooms')}</p>`;
-        return;
-    }
-
-    const modeKeyMap = {
-        'solo-2p': 'pvp.mode_2p',
-        'solo-3p': 'pvp.mode_3p',
-        'solo-4p': 'pvp.mode_4p',
-        'duo': 'pvp.mode_duo'
-    };
-
-    dom.pvpRoomGridEl.innerHTML = rooms.map((room, index) => {
-        const colorClass = `color-${(index % 4) + 1}`;
-        const modeText = t(modeKeyMap[room.mode] || room.mode);
-        const passwordIcon = room.hasPassword ? '<span class="password-icon" title="Sala com senha">🔒</span>' : '';
-        const betIcon = room.betAmount > 0 ? `<span class="bet-icon" title="${t('pvp.bet_title', { betAmount: room.betAmount })}">🪙 x${room.betAmount}</span>` : '';
-        const playersHTML = room.players.map(p => `<span class="room-player-name clickable" data-google-id="${p.googleId}">${p.username}</span>`).join('') || `<span class="room-player-name">${t('pvp.empty_room')}</span>`;
-
-        return `
-            <div class="room-card ${colorClass}">
-                <h3>${room.name} ${passwordIcon} ${betIcon}</h3>
-                <div class="room-card-players-list">
-                    ${playersHTML}
-                </div>
-                <div class="room-card-footer">
-                    <span>${t('pvp.room_card_mode', { mode: modeText })}</span>
-                    <span>${t('pvp.room_card_players', { count: room.playerCount, max: 4 })}</span>
-                </div>
-                <button class="control-button join-room-button" data-room-id="${room.id}" data-has-password="${room.hasPassword}">${t('pvp.enter')}</button>
-            </div>
-        `;
-    }).join('');
-};
-
-
-export const renderRanking = (rankingData) => {
+export function renderPvpRanking(rankingData) {
     const { players, currentPage, totalPages } = rankingData;
 
-    if (!players) {
-        dom.rankingContainer.innerHTML = `<p>${t('ranking.error')}</p>`;
-        dom.rankingPagination.innerHTML = '';
-        return;
-    }
+    const container = document.getElementById('ranking-container');
+    const pagination = document.getElementById('ranking-pagination');
+
+    if (!players || !container || !pagination) return;
+    
     if (players.length === 0 && currentPage === 1) {
-        dom.rankingContainer.innerHTML = `<p>${t('ranking.empty')}</p>`;
-        dom.rankingPagination.innerHTML = '';
+        container.innerHTML = `<p>${t('ranking.empty')}</p>`;
+        pagination.innerHTML = '';
         return;
     }
 
@@ -86,7 +48,7 @@ export const renderRanking = (rankingData) => {
             </tbody>
         </table>
     `;
-    dom.rankingContainer.innerHTML = tableHTML;
+    container.innerHTML = tableHTML;
 
     // Render pagination
     const paginationHTML = `
@@ -94,9 +56,66 @@ export const renderRanking = (rankingData) => {
         <span>Página ${currentPage} de ${totalPages}</span>
         <button id="rank-next-btn" ${currentPage >= totalPages ? 'disabled' : ''}>&gt;</button>
     `;
-    dom.rankingPagination.innerHTML = paginationHTML;
+    pagination.innerHTML = paginationHTML;
 };
 
+export function renderInfiniteRanking(rankingData) {
+    const { players, currentPage, totalPages } = rankingData;
+    const container = dom.infiniteRankingContainer;
+    const pagination = document.getElementById('infinite-ranking-pagination');
+
+    if (!players || !container || !pagination) return;
+
+    if (players.length === 0 && currentPage === 1) {
+        container.innerHTML = `<p>${t('ranking.empty')}</p>`;
+        pagination.innerHTML = '';
+        return;
+    }
+
+    const tableHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th>${t('ranking.header_rank')}</th>
+                    <th colspan="2">${t('ranking.header_player')}</th>
+                    <th>${t('ranking.header_level')}</th>
+                    <th>${t('ranking.header_time')}</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${players.map((player, index) => {
+                    const rank = (currentPage - 1) * 10 + index + 1;
+                    const minutes = Math.floor(player.time_seconds / 60).toString().padStart(2, '0');
+                    const seconds = (player.time_seconds % 60).toString().padStart(2, '0');
+                    const timeFormatted = `${minutes}:${seconds}`;
+                    let titleText = player.selected_title_code ? t(`titles.${player.selected_title_code}`) : '';
+                    if (titleText.startsWith('titles.')) {
+                        titleText = player.selected_title_code;
+                    }
+                    return `
+                    <tr class="rank-${rank}">
+                        <td class="rank-position">${rank}</td>
+                        <td><img src="${player.avatar_url}" alt="Avatar" class="rank-avatar"></td>
+                        <td>
+                            <span class="rank-name clickable" data-google-id="${player.google_id}">${player.username}</span>
+                            <span class="rank-player-title">${titleText}</span>
+                        </td>
+                        <td>${player.highest_level}</td>
+                        <td>${timeFormatted}</td>
+                    </tr>
+                `}).join('')}
+            </tbody>
+        </table>
+    `;
+    container.innerHTML = tableHTML;
+
+    const paginationHTML = `
+        <button id="infinite-rank-prev-btn" ${currentPage === 1 ? 'disabled' : ''}>&lt;</button>
+        <span>Página ${currentPage} de ${totalPages}</span>
+        <button id="infinite-rank-next-btn" ${currentPage >= totalPages ? 'disabled' : ''}>&gt;</button>
+    `;
+    pagination.innerHTML = paginationHTML;
+}
 
 export const updateLobbyUi = (roomData) => {
     const { clientId } = getState();

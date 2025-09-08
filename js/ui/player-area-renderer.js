@@ -158,6 +158,8 @@ function renderPlayerHeader(player) {
         <span class="stat-item" title="${t('game.coinversus_header_title')}">🪙 <strong>${player.coinversus !== undefined ? player.coinversus : '...'}</strong></span>
     ` : '';
 
+    const positionDisplay = gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : player.position;
+
     return `
         <div class="player-header">
             <div class="opponent-header-top">
@@ -174,7 +176,7 @@ function renderPlayerHeader(player) {
                  ${coinversusHTML}
                  <span class="stat-item" title="${t('game.resto_header_title')}">${t('game.resto_header')}: <strong>${restoValue}</strong></span>
                  <span class="stat-item" title="${t('game.path_header_title')}">${t('game.path_header')}: <strong>${pathDisplay}</strong></span>
-                 <span class="stat-item" title="${t('game.house_header_title')}">${t('game.house_header')}: <strong>${player.position}</strong></span>
+                 <span class="stat-item" title="${t('game.house_header_title')}">${gameState.isInfiniteChallenge ? t('ranking.header_level') : t('game.house_header')}: <strong>${positionDisplay}</strong></span>
                  <span class="stat-item" title="${t('game.effect_header_title')}">${t('game.effect_header')}: <strong>${effectText}</strong></span>
                  ${fieldEffectHTML}
             </div>

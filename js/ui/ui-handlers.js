@@ -401,12 +401,68 @@ export function initializeUiHandlers() {
     });
     
     dom.rankingButton.addEventListener('click', () => {
-        network.emitGetRanking();
+        // Automatically request the first page of the default (PVP) ranking
+        network.emitGetRanking(1);
         dom.rankingModal.classList.remove('hidden');
+    
+        // Reset tabs to default state
+        dom.rankingModal.querySelectorAll('.info-tab-button').forEach(btn => btn.classList.remove('active'));
+        dom.rankingModal.querySelectorAll('.info-tab-content').forEach(content => content.classList.remove('active'));
+        dom.rankingModal.querySelector('[data-tab="ranking-pvp"]').classList.add('active');
+        document.getElementById('ranking-pvp-tab-content').classList.add('active');
+    });
+    
+    dom.rankingModal.addEventListener('click', (e) => {
+        // Tab switching
+        const tabButton = e.target.closest('.info-tab-button');
+        if (tabButton && !tabButton.classList.contains('active')) {
+            const tabId = tabButton.dataset.tab;
+            dom.rankingModal.querySelectorAll('.info-tab-button').forEach(btn => btn.classList.remove('active'));
+            dom.rankingModal.querySelectorAll('.info-tab-content').forEach(content => content.classList.remove('active'));
+            tabButton.classList.add('active');
+            document.getElementById(`${tabId}-tab-content`).classList.add('active');
+    
+            // Fetch data for the newly activated tab
+            if (tabId === 'ranking-pvp') {
+                network.emitGetRanking(1);
+            } else if (tabId === 'ranking-infinite') {
+                network.emitGetInfiniteRanking(1);
+            }
+        }
+    
+        // PVP Pagination
+        const pvpPrevBtn = e.target.closest('#rank-prev-btn');
+        const pvpNextBtn = e.target.closest('#rank-next-btn');
+        if (pvpPrevBtn || pvpNextBtn) {
+            const currentPage = parseInt(document.getElementById('ranking-container').querySelector('span')?.textContent.match(/(\d+)/)?.[0] || '1', 10);
+            const newPage = pvpNextBtn ? currentPage + 1 : currentPage - 1;
+            network.emitGetRanking(newPage);
+        }
+    
+        // Infinite Challenge Pagination
+        const infinitePrevBtn = e.target.closest('#infinite-rank-prev-btn');
+        const infiniteNextBtn = e.target.closest('#infinite-rank-next-btn');
+        if (infinitePrevBtn || infiniteNextBtn) {
+            const currentPage = parseInt(dom.infiniteRankingContainer.querySelector('span')?.textContent.match(/(\d+)/)?.[0] || '1', 10);
+            const newPage = infiniteNextBtn ? currentPage + 1 : currentPage - 1;
+            network.emitGetInfiniteRanking(newPage);
+        }
     });
 
     if (dom.rankingContainer) {
         dom.rankingContainer.addEventListener('click', (e) => {
+            const target = e.target.closest('.rank-name.clickable');
+            if (target) {
+                const googleId = target.dataset.googleId;
+                if (googleId) {
+                    network.emitViewProfile({ googleId });
+                }
+            }
+        });
+    }
+
+    if (dom.infiniteRankingContainer) {
+        dom.infiniteRankingContainer.addEventListener('click', (e) => {
             const target = e.target.closest('.rank-name.clickable');
             if (target) {
                 const googleId = target.dataset.googleId;
@@ -446,6 +502,16 @@ export function initializeUiHandlers() {
     dom.inversusModeButton.addEventListener('click', () => {
         sound.initializeMusic();
         initializeGame('inversus', {});
+    });
+
+    dom.infiniteChallengeButton.addEventListener('click', () => {
+        const { isLoggedIn } = getState();
+        if (!isLoggedIn) {
+            alert(t('common.login_required', { feature: t('splash.infinite_challenge') }));
+            return;
+        }
+        sound.initializeMusic();
+        initializeGame('infinite_challenge', {});
     });
 
     dom.userProfileDisplay.addEventListener('click', () => {
@@ -1001,8 +1067,8 @@ export function initializeUiHandlers() {
 
     dom.splashAnimationContainerEl.addEventListener('click', (e) => {
         if (e.target.id === 'secret-versatrix-card') {
-            const { achievements } = getState();
-            if (achievements.has('versatrix_win') && !achievements.has('versatrix_card_collected')) {
+            const { achievements: unlockedAchievements } = getState();
+            if (unlockedAchievements.has('versatrix_win') && !unlockedAchievements.has('versatrix_card_collected')) {
                 sound.playSoundEffect('conquista');
                 achievements.grantAchievement('versatrix_card_collected');
                 const { versatrixCardInterval } = getState();

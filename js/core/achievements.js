@@ -83,8 +83,8 @@ function saveAchievements() {
  */
 function checkAllAchievementsUnlocked() {
     const { achievements } = getState();
-    const achievementKeys = Object.keys(config.ACHIEVEMENTS);
-    // Check if the player has every single achievement defined in the config
+    // Exclude '120%_unlocked' from the check to prevent a recursive loop
+    const achievementKeys = Object.keys(config.ACHIEVEMENTS).filter(id => id !== '120%_unlocked');
     return achievementKeys.every(id => achievements.has(id));
 }
 
@@ -124,5 +124,10 @@ export function grantAchievement(id) {
 
         saveAchievements();
         checkAndShowSpecialFeatures(); // Check features after every new achievement
+
+        // After granting an achievement, check if all others are now complete
+        if (checkAllAchievementsUnlocked()) {
+            grantAchievement('120%_unlocked');
+        }
     }
 }

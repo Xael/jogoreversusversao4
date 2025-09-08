@@ -1,7 +1,7 @@
 import { getState, updateState } from './state.js';
 import * as dom from './dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
-import { renderRanking, updateLobbyUi, renderRoomList, addLobbyChatMessage } from '../ui/lobby-renderer.js';
+import { renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
 import { showSplashScreen } from '../ui/splash-screen.js';
 import { updateLog } from './utils.js';
@@ -75,8 +75,9 @@ export function connectToServer() {
         showCoinRewardNotification(t('rewards.daily_login_toast', { amount }));
     });
     
-    socket.on('challengeRewardSuccess', ({ amount }) => {
-        showCoinRewardNotification(t('rewards.challenge_complete_toast', { amount }));
+    socket.on('challengeRewardSuccess', ({ amount, titleCode }) => {
+        const titleName = t(`titles.${titleCode}`);
+        showCoinRewardNotification(t('rewards.infinite_challenge_toast', { amount, titleName }));
     });
 
     socket.on('loginError', (message) => {
@@ -90,7 +91,11 @@ export function connectToServer() {
     });
     
     socket.on('rankingData', (rankingData) => {
-        renderRanking(rankingData);
+        renderPvpRanking(rankingData);
+    });
+
+    socket.on('infiniteRankingData', (rankingData) => {
+        renderInfiniteRanking(rankingData);
     });
 
     socket.on('profileData', (profile) => {
@@ -178,7 +183,7 @@ export function connectToServer() {
 
     // --- Room & Game Listeners ---
     socket.on('roomList', (rooms) => {
-        renderRoomList(rooms);
+        // renderRoomList(rooms);
     });
     
     socket.on('lobbyUpdate', async (roomData) => {
@@ -373,10 +378,13 @@ export function connectToServer() {
 
 // --- EMITTERS ---
 export function emitGetRanking(page = 1) { const { socket } = getState(); if (socket) socket.emit('getRanking', { page }); }
+export function emitGetInfiniteRanking(page = 1) { const { socket } = getState(); if (socket) socket.emit('getInfiniteRanking', { page }); }
+export function emitSubmitInfiniteResult(result) { const { socket } = getState(); if (socket) socket.emit('submitInfiniteResult', result); }
+export function emitClaimInfiniteChallengeReward() { const { socket } = getState(); if (socket) socket.emit('claimInfiniteChallengeReward'); }
 export function emitGetProfile() { const { socket } = getState(); if (socket) socket.emit('getProfile'); }
 export function emitViewProfile(googleId) { const { socket } = getState(); if (socket) socket.emit('viewProfile', { googleId }); }
 export function emitSetSelectedTitle(titleCode) { const { socket } = getState(); if (socket) socket.emit('setSelectedTitle', { titleCode }); }
-export function emitSetSelectedAvatar(avatarCode) { const { socket } = getState(); if (socket) socket.emit('setSelectedAvatar', { avatarCode }); }
+export function emitSetSelectedAvatar({ avatarCode }) { const { socket } = getState(); if (socket) socket.emit('setSelectedAvatar', { avatarCode }); }
 export function emitClaimEventReward(titleCode) { const { socket } = getState(); if (socket) socket.emit('claimEventReward', { titleCode });}
 export function emitListRooms() { const { socket } = getState(); if (socket) socket.emit('listRooms'); }
 export function emitCreateRoom({ name, password, betAmount }) { const { socket } = getState(); if (socket) socket.emit('createRoom', { name, password, betAmount }); }
