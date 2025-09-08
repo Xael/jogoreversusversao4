@@ -1,4 +1,5 @@
 
+
 import { getState, updateState } from '../core/state.js';
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
@@ -273,7 +274,7 @@ async function endRound() {
 }
 
 
-async function startNewRound(isFirstRound = false) {
+export async function startNewRound(isFirstRound = false) {
     const { gameState } = getState();
     if (!isFirstRound) {
         gameState.turn++;
