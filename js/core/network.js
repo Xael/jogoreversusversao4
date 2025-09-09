@@ -1,4 +1,5 @@
 
+
 import { getState, updateState } from './state.js';
 import * as dom from './dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
@@ -103,7 +104,7 @@ export function connectToServer() {
         const { userProfile: myProfile } = getState();
         // This check ensures we only update the main user's profile if it matches,
         // but it still allows viewing other profiles.
-        if (userProfile && profile.google_id === userProfile.google_id) {
+        if (myProfile && profile.google_id === myProfile.google_id) {
             updateState('userProfile', profile);
         }
         renderProfile(profile);
@@ -388,8 +389,8 @@ export function connectToServer() {
     socket.on('infiniteChallengeStartSuccess', (payload) => {
         // BUG FIX: The server might not send a payload if there's an issue.
         // This defensive check prevents the client from crashing.
-        if (!payload) {
-            console.error("Received empty payload for infiniteChallengeStartSuccess.");
+        if (!payload || !payload.opponentQueue) {
+            console.error("Received empty or invalid payload for infiniteChallengeStartSuccess.", payload);
             alert("Ocorreu um erro ao iniciar o desafio. Por favor, tente novamente.");
             document.dispatchEvent(new Event('cleanupInfiniteChallengeUI'));
             return;
@@ -397,7 +398,7 @@ export function connectToServer() {
         
         const { opponentQueue, updatedProfile } = payload;
 
-        if (!opponentQueue || opponentQueue.length === 0) {
+        if (opponentQueue.length === 0) {
             console.error("Received empty opponent queue from server for Infinite Challenge.");
             alert("Erro ao iniciar o desafio: não foi possível carregar os oponentes.");
             document.dispatchEvent(new Event('cleanupInfiniteChallengeUI'));
