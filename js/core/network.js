@@ -1,9 +1,10 @@
+
 import { getState, updateState } from './state.js';
 import * as dom from './dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
 import { renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
-import { showSplashScreen } from '../ui/splash-screen.js';
+import { showSplashScreen } from './splash-screen.js';
 import { updateLog } from './utils.js';
 import { updateGameTimer } from '../game-controller.js';
 import { showPvpDrawSequence } from '../game-logic/turn-manager.js';
@@ -99,7 +100,7 @@ export function connectToServer() {
     });
 
     socket.on('profileData', (profile) => {
-        const { userProfile } = getState();
+        const { userProfile: myProfile } = getState();
         // This check ensures we only update the main user's profile if it matches,
         // but it still allows viewing other profiles.
         if (userProfile && profile.google_id === userProfile.google_id) {
@@ -384,7 +385,18 @@ export function connectToServer() {
         }
     });
 
-    socket.on('infiniteChallengeStartSuccess', ({ opponentQueue, updatedProfile }) => {
+    socket.on('infiniteChallengeStartSuccess', (payload) => {
+        // BUG FIX: The server might not send a payload if there's an issue.
+        // This defensive check prevents the client from crashing.
+        if (!payload) {
+            console.error("Received empty payload for infiniteChallengeStartSuccess.");
+            alert("Ocorreu um erro ao iniciar o desafio. Por favor, tente novamente.");
+            document.dispatchEvent(new Event('cleanupInfiniteChallengeUI'));
+            return;
+        }
+        
+        const { opponentQueue, updatedProfile } = payload;
+
         if (!opponentQueue || opponentQueue.length === 0) {
             console.error("Received empty opponent queue from server for Infinite Challenge.");
             alert("Erro ao iniciar o desafio: não foi possível carregar os oponentes.");
