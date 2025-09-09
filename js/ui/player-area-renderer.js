@@ -74,9 +74,19 @@ export const renderPlayerArea = (player) => {
         ${handHTML}
     `;
 
-    const hasStoryPortrait = player.aiType && !player.isHuman && config.AI_CHAT_PERSONALITIES.hasOwnProperty(player.aiType);
+    const hasStoryPortrait = (player.aiType && !player.isHuman && config.AI_CHAT_PERSONALITIES.hasOwnProperty(player.aiType)) || player.story_image_url;
 
-    if (hasStoryPortrait) {
+    if (player.story_image_url) {
+        const portraitImg = document.createElement('img');
+        portraitImg.src = `./${player.story_image_url}`;
+        if (player.aiType === 'inversus') {
+            portraitImg.className = 'inversus-character-portrait';
+            portraitImg.id = 'inversus-character-portrait';
+        } else {
+            portraitImg.className = 'player-area-character-portrait';
+        }
+        playerEl.appendChild(portraitImg);
+    } else if (hasStoryPortrait) {
         const portraitMap = {
             'necroverso_tutorial': { src: './necroverso.png', class: 'player-area-character-portrait necro-tutorial-portrait' },
             'contravox': { src: './contravox.png', class: 'player-area-character-portrait contravox-portrait' },

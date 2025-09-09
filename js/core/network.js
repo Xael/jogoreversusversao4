@@ -1,12 +1,13 @@
 
 
+
 import { getState, updateState } from './state.js';
 import * as dom from './dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
-import { renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
+import { renderRoomList, renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
 import { showSplashScreen } from './splash-screen.js';
-import { updateLog } from './utils.js';
+import { updateLog, formatTime } from './utils.js';
 import { updateGameTimer } from '../game-controller.js';
 import { showPvpDrawSequence } from '../game-logic/turn-manager.js';
 import { t } from './i18n.js';
@@ -185,7 +186,7 @@ export function connectToServer() {
 
     // --- Room & Game Listeners ---
     socket.on('roomList', (rooms) => {
-        // renderRoomList(rooms);
+        renderRoomList(rooms);
     });
     
     socket.on('lobbyUpdate', async (roomData) => {
@@ -422,12 +423,7 @@ export function connectToServer() {
 
     socket.on('infiniteChallengeWin', ({ potWon }) => {
         const { gameState } = getState();
-        const level = gameState ? gameState.infiniteChallengeLevel : 'Final';
-        const timeSeconds = gameState ? gameState.elapsedSeconds : 0;
-        const minutes = Math.floor(timeSeconds / 60).toString().padStart(2, '0');
-        const seconds = (timeSeconds % 60).toString().padStart(2, '0');
-        const timeFormatted = `${minutes}:${seconds}`;
-
+        const timeFormatted = formatTime(gameState.elapsedSeconds);
         showGameOver(
             t('game_over.infinite_challenge_win', { time: timeFormatted, pot: potWon }),
             t('game_over.infinite_challenge_title'),

@@ -199,16 +199,16 @@ export const AVATAR_CATALOG = {
 };
 
 export const INFINITE_CHALLENGE_OPPONENTS = [
-    { nameKey: 'player_names.player-2', aiType: 'default' },
-    { nameKey: 'story_dialogue.start_contravox_text', aiType: 'contravox' },
-    { nameKey: 'story_dialogue.start_versatrix_dialogue_text_1', aiType: 'versatrix' },
-    { nameKey: 'story_dialogue.start_reversum_text', aiType: 'reversum' },
-    { nameKey: 'story_dialogue.final_confrontation_1_text', aiType: 'necroverso_final' },
-    { nameKey: 'ai_dialogue.narrador_winning_1', aiType: 'narrador' },
-    { nameKey: 'story_dialogue.xael_challenge_intro_text', aiType: 'xael' },
-    { nameKey: 'splash.inversus', aiType: 'inversus' },
-    ...MONTHLY_EVENTS.map(event => ({ nameKey: event.characterNameKey, aiType: event.ai })),
+    { nameKey: 'player_names.player-2', aiType: 'default', image: null },
+    { nameKey: 'story_dialogue.start_contravox_text', aiType: 'contravox', image: 'contravox.png' },
+    { nameKey: 'story_dialogue.start_versatrix_dialogue_text_1', aiType: 'versatrix', image: 'versatrix.png' },
+    { nameKey: 'story_dialogue.start_reversum_text', aiType: 'reversum', image: 'reversum.png' },
+    { nameKey: 'story_dialogue.final_confrontation_1_text', aiType: 'necroverso_final', image: 'necroverso2.png' },
+    { nameKey: 'ai_dialogue.narrador_winning_1', aiType: 'narrador', image: 'narrador.png' },
+    { nameKey: 'story_dialogue.xael_challenge_intro_text', aiType: 'xael', image: 'xaeldesafio.png' },
+    { nameKey: 'splash.inversus', aiType: 'inversus', image: 'inversum1.png' },
+    ...MONTHLY_EVENTS.map(event => ({ nameKey: event.characterNameKey, aiType: event.ai, image: event.image })),
     ...Object.entries(AVATAR_CATALOG)
         .filter(([key]) => !['default_1', 'default_2', 'default_3', 'default_4', 'necroverso', 'contravox', 'versatrix', 'reversum'].includes(key))
-        .map(([key, avatar]) => ({ nameKey: avatar.nameKey, aiType: 'default' }))
+        .map(([key, avatar]) => ({ nameKey: avatar.nameKey, aiType: 'default', image: avatar.image_url }))
 ];

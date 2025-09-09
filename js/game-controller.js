@@ -129,7 +129,11 @@ export const initializeGame = async (mode, options) => {
         modeText = 'Desafio Infinito';
         await playStoryMusic('oprofetasombrio.ogg');
         const nextOpponent = infiniteChallengeOpponentQueue[0];
-        options.overrides = { 'player-2': { name: t(nextOpponent.nameKey), aiType: nextOpponent.aiType } };
+        options.overrides = { 'player-2': { 
+            name: t(nextOpponent.nameKey), 
+            aiType: nextOpponent.aiType,
+            story_image_url: nextOpponent.image
+        } };
     }
     else if (options.story) { // Covers both Story Mode and Events
         isStoryMode = true; // We use the story mode flag to handle shared logic like win/loss events.
@@ -273,6 +277,7 @@ export const initializeGame = async (mode, options) => {
                 liveScore: 0,
                 status: 'neutral', // neutral, winning, losing
                 isEliminated: false,
+                story_image_url: playerConfig.story_image_url || null
             };
             if (eventData && id === 'player-2') {
                 playerObject.isEventBoss = true;
@@ -433,6 +438,7 @@ export function startNextInfiniteChallengeDuel() {
     // Update opponent's data
     opponent.name = t(nextOpponentData.nameKey);
     opponent.aiType = nextOpponentData.aiType;
+    opponent.story_image_url = nextOpponentData.image;
     
     // Reset players for the new duel (except for things that persist like timer)
     Object.values(gameState.players).forEach(p => {

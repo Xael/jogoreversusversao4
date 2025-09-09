@@ -1,14 +1,14 @@
 // js/ui/ui-handlers.js
 import * as dom from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
-import { initializeGame, restartLastDuel } from '../game-controller.js';
+import { initializeGame, restartLastDuel, startNextInfiniteChallengeDuel } from '../game-controller.js';
 import { renderAchievementsModal } from './achievements-renderer.js';
 import { renderAll, showGameOver, updateChatControls } from './ui-renderer.js';
 import * as sound from '../core/sound.js';
 import { startStoryMode, renderStoryNode, playEndgameSequence } from '../story/story-controller.js';
 import * as saveLoad from '../core/save-load.js';
 import * as achievements from '../core/achievements.js';
-import { updateLog } from '../core/utils.js';
+import { updateLog, formatTime } from '../core/utils.js';
 import * as config from '../core/config.js';
 import { AVATAR_CATALOG } from '../core/config.js';
 import * as network from '../core/network.js';
@@ -337,6 +337,31 @@ export function initializeUiHandlers() {
     
     initializeChatHandlers();
 
+    document.addEventListener('startNextInfiniteDuel', () => {
+        startNextInfiniteChallengeDuel();
+    });
+
+    document.addEventListener('infiniteChallengeEnd', (e) => {
+        const { reason } = e.detail;
+        const { gameState } = getState();
+        const level = gameState.infiniteChallengeLevel;
+        const time = gameState.elapsedSeconds;
+        const didWin = reason === 'victory';
+    
+        network.emitSubmitInfiniteResult({ level, time, didWin });
+    
+        // The win message is handled by the `infiniteChallengeWin` network event
+        if (!didWin) {
+            let message;
+            if (reason === 'loss') {
+                message = t('game_over.infinite_challenge_lose', { level, time: formatTime(time) });
+            } else { // 'time'
+                message = t('game_over.infinite_challenge_timeout', { level });
+            }
+            showGameOver(message, t('game_over.infinite_challenge_title'), { action: 'menu' });
+        }
+    });
+
     // Listener for server success response to start the challenge
     document.addEventListener('initiateInfiniteChallengeGame', () => {
         cleanupInfiniteChallengeIntro();
@@ -346,7 +371,8 @@ export function initializeUiHandlers() {
             overrides: {
                 'player-2': {
                     name: t(infiniteChallengeOpponentQueue[0].nameKey),
-                    aiType: infiniteChallengeOpponentQueue[0].aiType
+                    aiType: infiniteChallengeOpponentQueue[0].aiType,
+                    story_image_url: infiniteChallengeOpponentQueue[0].image
                 }
             }
         });
@@ -653,7 +679,7 @@ export function initializeUiHandlers() {
 
     dom.closeEventButton.addEventListener('click', () => {
         dom.eventModal.classList.add('hidden');
-        sound.playStoryMusic('tela.ogg');
+        sound.stopStoryMusic();
     });
 
     dom.profileModal.addEventListener('click', (e) => {
@@ -1314,7 +1340,7 @@ export function initializeUiHandlers() {
         dom.lobbyInviteAcceptButton.addEventListener('click', (e) => {
             const roomId = e.target.dataset.roomId;
             if (roomId) {
-                network.emitAcceptInvite({ roomId });
+                network.emitAcceptInvite(roomId);
             }
             dom.lobbyInviteNotificationModal.classList.add('hidden');
         });
@@ -1324,7 +1350,7 @@ export function initializeUiHandlers() {
         dom.lobbyInviteDeclineButton.addEventListener('click', (e) => {
             const roomId = dom.lobbyInviteAcceptButton.dataset.roomId; // Get room from accept button
             if (roomId) {
-                 network.emitDeclineInvite({ roomId });
+                 network.emitDeclineInvite(roomId);
             }
             dom.lobbyInviteNotificationModal.classList.add('hidden');
         });

@@ -1,5 +1,6 @@
 
 
+
 import { getState, updateState } from '../core/state.js';
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
@@ -444,7 +445,7 @@ function checkGameEnd() {
         }
     }
     
-    if (gameState.isKingNecroBattle || gameState.isInversusMode) {
+    if (gameState.isKingNecroBattle || (gameState.isInversusMode && !gameState.isInfiniteChallenge)) {
         const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
         if (activePlayers.length <= 1) {
             gameState.gamePhase = 'game_over';
@@ -587,8 +588,33 @@ async function calculateScoresAndEndRound() {
     }
     await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
 
+    // Handle INFINITE CHALLENGE progression / game over
+    if (gameState.isInfiniteChallenge) {
+        const player1Won = winners.includes('player-1');
+        if (player1Won) {
+            const { infiniteChallengeOpponentQueue } = getState();
+            infiniteChallengeOpponentQueue.shift(); // Remove defeated opponent
+            if (infiniteChallengeOpponentQueue.length === 0) {
+                // Player defeated everyone! VICTORY!
+                gameState.gamePhase = 'game_over';
+                document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'victory' } }));
+                return;
+            } else {
+                // More opponents, start next duel
+                document.dispatchEvent(new Event('startNextInfiniteDuel'));
+                return;
+            }
+        } else {
+            // Player lost, game over
+            gameState.players['player-1'].isEliminated = true;
+            gameState.gamePhase = 'game_over';
+            document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'loss' } }));
+            return;
+        }
+    }
+    
     // Handle INVERSUS heart loss
-    if (gameState.isInversusMode && !checkGameEnd()) {
+    if (gameState.isInversusMode && !gameState.isInfiniteChallenge && !checkGameEnd()) {
         const player1Won = winners.includes('player-1');
         const inversusWon = winners.includes('player-2');
         const player1 = gameState.players['player-1'];
