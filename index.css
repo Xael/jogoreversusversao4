@@ -1556,6 +1556,45 @@ body.screen-shaking {
     width: 450px;
 }
 
+/* Infinite Challenge Buff Modal */
+#infinite-buff-selection-modal .modal-content {
+    width: 900px;
+}
+.buff-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+.buff-option-card {
+    background-color: rgba(0,0,0,0.3);
+    border: 2px solid var(--card-border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.buff-option-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent-yellow);
+    box-shadow: 0 5px 15px rgba(252, 163, 17, 0.4);
+}
+.buff-option-card h3 {
+    font-size: 1.2rem;
+    color: var(--accent-yellow);
+    margin-bottom: 0.75rem;
+}
+.buff-option-card p {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    flex-grow: 1;
+}
+
+
 .spinner-content {
     background: none !important;
     border: none !important;

@@ -127,6 +127,16 @@
         </div>
     </div>
 
+    <!-- Infinite Challenge Buff Selection Modal -->
+    <div id="infinite-buff-selection-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 data-i18n="infinite_challenge.buff_selection_title">Vitória! Escolha um bônus para a próxima rodada:</h2>
+            <div id="infinite-buff-options" class="buff-options-grid">
+                <!-- Buff options will be injected here by JS -->
+            </div>
+        </div>
+    </div>
+
     <!-- Event Modal -->
     <div id="event-modal" class="modal-overlay hidden">
         <div class="modal-content event-modal-content">
@@ -774,6 +784,10 @@
 
     <div id="turn-announce-modal" class="turn-announce-overlay hidden">
         <div class="turn-announce-content" data-i18n="game.your_turn">Sua Vez</div>
+    </div>
+
+    <div id="round-announce-modal" class="turn-announce-overlay hidden">
+        <div class="turn-announce-content"></div>
     </div>
     
     <div id="effect-announcer" class="effect-announcer-overlay hidden"></div>

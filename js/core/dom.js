@@ -1,3 +1,4 @@
+
 export const appContainerEl = document.getElementById('app-container');
 export const boardEl = document.getElementById('game-board');
 export const playButton = document.getElementById('play-button');
@@ -113,9 +114,9 @@ export const musicPlayer = document.getElementById('music-player');
 export const sfxPlayer = document.getElementById('sfx-player');
 export const popupSfxPlayer = document.getElementById('popup-sfx-player');
 export const muteButton = document.getElementById('mute-button');
-export const volumeSlider = document.getElementById('volume-slider');
-export const fullscreenButton = document.getElementById('fullscreen-button');
 export const nextTrackButton = document.getElementById('next-track-button');
+export const volumeSlider = document.getElementById('volume-slider');
+export const scalableContainer = document.getElementById('scalable-container');
 export const debugButton = document.getElementById('debug-button');
 export const gameMenuModal = document.getElementById('game-menu-modal');
 export const gameMenuCloseButton = document.getElementById('game-menu-close-button');
@@ -127,23 +128,101 @@ export const saveGameNoButton = document.getElementById('save-game-no-button');
 export const exitGameConfirmModal = document.getElementById('exit-game-confirm-modal');
 export const exitGameYesButton = document.getElementById('exit-game-yes-button');
 export const exitGameNoButton = document.getElementById('exit-game-no-button');
-export const inversusModeButton = document.getElementById('inversus-mode-button');
-export const infiniteChallengeButton = document.getElementById('infinite-challenge-button');
-export const infiniteChallengePotDisplay = document.getElementById('infinite-challenge-pot-display');
-export const infiniteChallengeIntroModal = document.getElementById('infinite-challenge-intro-modal');
-export const infiniteChallengeIntroImage = document.getElementById('infinite-challenge-intro-image');
-export const infiniteChallengeIntroText = document.getElementById('infinite-challenge-intro-text');
-export const infiniteChallengeIntroOptions = document.getElementById('infinite-challenge-intro-options');
-export const scalableContainer = document.getElementById('scalable-container');
+export const leftScoreBox = document.getElementById('left-score-box');
+export const rightScoreBox = document.getElementById('right-score-box');
+export const leftScoreValue = document.getElementById('left-score-value');
+export const rightScoreValue = document.getElementById('right-score-value');
+export const leftScoreStatus = document.getElementById('left-score-status');
+export const rightScoreStatus = document.getElementById('right-score-status');
+export const cosmicGlowOverlay = document.getElementById('cosmic-glow-overlay');
+export const xaelPopup = document.getElementById('xael-popup');
+export const xaelStarPowerButton = document.getElementById('xael-star-power');
+export const xaelPowerConfirmModal = document.getElementById('xael-power-confirm-modal');
+export const xaelPowerConfirmYes = document.getElementById('xael-power-confirm-yes');
+export const xaelPowerConfirmNo = document.getElementById('xael-power-confirm-no');
+export const endgameSequenceModal = document.getElementById('endgame-sequence-modal');
+export const endgameCharacterContainer = document.getElementById('endgame-character-container');
+export const endgameDialogueText = document.getElementById('endgame-dialogue-text');
+export const endgameDialogueOptions = document.getElementById('endgame-dialogue-options');
+export const creditsRollModal = document.getElementById('credits-roll-modal');
+export const creditsContent = document.getElementById('credits-content');
 export const achievementUnlockedToast = document.getElementById('achievement-unlocked-toast');
 export const toastText = document.getElementById('toast-text');
 export const dailyRewardToast = document.getElementById('daily-reward-toast');
 export const rewardToastText = document.getElementById('reward-toast-text');
-
-// Quick Start & Matchmaking Modals
+export const achievementsModal = document.getElementById('achievements-modal');
+export const achievementsGrid = document.getElementById('achievements-grid');
+export const closeAchievementsButton = document.getElementById('close-achievements-button');
+export const fullscreenAnnounceModal = document.getElementById('fullscreen-announce-modal');
+export const fullscreenAnnounceImage = document.getElementById('fullscreen-announce-image');
+export const fullscreenAnnounceText = document.getElementById('fullscreen-announce-text');
+export const storyStartOptionsModal = document.getElementById('story-start-options-modal');
+export const storyNewGameButton = document.getElementById('story-new-game-button');
+export const storyContinueGameButton = document.getElementById('story-continue-game-button');
+export const storyOptionsCloseButton = document.getElementById('story-options-close-button');
+export const eventModal = document.getElementById('event-modal');
+export const eventCharacterImage = document.getElementById('event-character-image');
+export const eventCharacterName = document.getElementById('event-character-name');
+export const eventAbilityDescription = document.getElementById('event-ability-description');
+export const eventProgressMarkers = document.getElementById('event-progress-markers');
+export const eventRewardText = document.getElementById('event-reward-text');
+export const eventStatusText = document.getElementById('event-status-text');
+export const challengeEventButton = document.getElementById('challenge-event-button');
+export const closeEventButton = document.getElementById('close-event-button');
+export const rankingModal = document.getElementById('ranking-modal');
+export const closeRankingButton = document.getElementById('close-ranking-button');
+export const rankingContainer = document.getElementById('ranking-container');
+export const infiniteRankingContainer = document.getElementById('infinite-ranking-container');
+export const profileModal = document.getElementById('profile-modal');
+export const profileDataContainer = document.getElementById('profile-data-container');
+export const closeProfileButton = document.getElementById('close-profile-button');
+export const userProfileDisplay = document.getElementById('user-profile-display');
+export const userAvatar = document.getElementById('user-avatar');
+export const userName = document.getElementById('user-name');
+export const userLevel = document.getElementById('user-level');
+export const xpBarFill = document.getElementById('xp-bar-fill');
+export const xpBarText = document.getElementById('xp-bar-text');
+export const userCoinBalanceHeader = document.getElementById('user-coin-balance-header');
+export const loginButton = document.getElementById('login-button');
+export const shopButton = document.getElementById('shop-button');
+export const shopModal = document.getElementById('shop-modal');
+export const shopAvatarsGrid = document.getElementById('shop-avatars-grid');
+export const closeShopButton = document.getElementById('close-shop-button');
+export const pvpShowCreateRoomButton = document.getElementById('pvp-show-create-room-button');
+export const pvpCreateRoomModal = document.getElementById('pvp-create-room-modal');
+export const roomNameInput = document.getElementById('room-name-input');
+export const roomPasswordInput = document.getElementById('room-password-input');
+export const pvpCreateRoomConfirmButton = document.getElementById('pvp-create-room-confirm-button');
+export const pvpCreateRoomCancelButton = document.getElementById('pvp-create-room-cancel-button');
+export const friendRequestBadge = document.getElementById('friend-request-badge');
+export const profileFriendsTabContent = document.getElementById('profile-friends-tab-content');
+export const friendsSearchInput = document.getElementById('friends-search-input');
+export const friendsSearchButton = document.getElementById('friends-search-button');
+export const friendRequestsListContainer = document.getElementById('friend-requests-list-container');
+export const profileAdminTabContent = document.getElementById('profile-admin-tab-content');
+export const inviteFriendsModal = document.getElementById('invite-friends-modal');
+export const inviteFriendsList = document.getElementById('invite-friends-list');
+export const inviteFriendsCloseButton = document.getElementById('invite-friends-close-button');
+export const lobbyInviteNotificationModal = document.getElementById('lobby-invite-notification-modal');
+export const lobbyInviteNotificationText = document.getElementById('lobby-invite-notification-text');
+export const lobbyInviteAcceptButton = document.getElementById('lobby-invite-accept-button');
+export const lobbyInviteDeclineButton = document.getElementById('lobby-invite-decline-button');
+export const chatInput = document.getElementById('chat-input');
+export const chatSendButton = document.getElementById('chat-send-button');
+export const chatToggleBtn = document.getElementById('chat-toggle-btn');
+export const chatFilterBtn = document.getElementById('chat-filter-btn');
+export const chatContainerEl = document.querySelector('.chat-container');
+export const privateChatPanel = document.getElementById('private-chat-panel');
+export const splashLogo = document.getElementById('splash-logo');
+export const fieldEffectTargetModal = document.getElementById('field-effect-target-modal');
+export const fieldEffectTargetTitle = document.getElementById('field-effect-target-title');
+export const fieldEffectTargetText = document.getElementById('field-effect-target-text');
+export const fieldEffectTargetButtons = document.getElementById('field-effect-target-buttons');
+export const pvpPotContainer = document.getElementById('pvp-pot-container');
+export const turnCountdownTimer = document.getElementById('turn-countdown-timer');
 export const quickStartModal = document.getElementById('quick-start-modal');
-export const quickStartPvpButton = document.getElementById('quick-start-pvp-button');
 export const quickStartAiButton = document.getElementById('quick-start-ai-button');
+export const quickStartPvpButton = document.getElementById('quick-start-pvp-button');
 export const quickStartCloseButton = document.getElementById('quick-start-close-button');
 export const pvpMatchmakingModal = document.getElementById('pvp-matchmaking-modal');
 export const pvpMatchmakingButtons = document.getElementById('pvp-matchmaking-buttons');
@@ -151,131 +230,17 @@ export const pvpMatchmakingCloseButton = document.getElementById('pvp-matchmakin
 export const matchmakingStatusModal = document.getElementById('matchmaking-status-modal');
 export const matchmakingStatusText = document.getElementById('matchmaking-status-text');
 export const matchmakingCancelButton = document.getElementById('matchmaking-cancel-button');
-
-// Story Start Options Modal
-export const storyStartOptionsModal = document.getElementById('story-start-options-modal');
-export const storyNewGameButton = document.getElementById('story-new-game-button');
-export const storyContinueGameButton = document.getElementById('story-continue-game-button');
-export const storyOptionsCloseButton = document.getElementById('story-options-close-button');
-
-
-// Field Effect Target Modal
-export const fieldEffectTargetModal = document.getElementById('field-effect-target-modal');
-export const fieldEffectTargetTitle = document.getElementById('field-effect-target-title');
-export const fieldEffectTargetText = document.getElementById('field-effect-target-text');
-export const fieldEffectTargetButtons = document.getElementById('field-effect-target-buttons');
-
-// Fullscreen Announce Modal
-export const fullscreenAnnounceModal = document.getElementById('fullscreen-announce-modal');
-export const fullscreenAnnounceImage = document.getElementById('fullscreen-announce-image');
-export const fullscreenAnnounceText = document.getElementById('fullscreen-announce-text');
-
-// Endgame Sequence
-export const endgameSequenceModal = document.getElementById('endgame-sequence-modal');
-export const endgameCharacterContainer = document.getElementById('endgame-character-container');
-export const endgameDialogueBox = document.getElementById('endgame-dialogue-box');
-export const endgameDialogueText = document.getElementById('endgame-dialogue-text');
-export const endgameDialogueOptions = document.getElementById('endgame-dialogue-options');
-
-// Credits Roll
-export const creditsRollModal = document.getElementById('credits-roll-modal');
-export const creditsContent = document.getElementById('credits-content');
-
-// Side Score Boxes
-export const leftScoreBox = document.getElementById('left-score-box');
-export const rightScoreBox = document.getElementById('right-score-box');
-export const leftScoreValue = document.getElementById('left-score-value');
-export const rightScoreValue = document.getElementById('right-score-value');
-export const leftScoreStatus = document.getElementById('left-score-status');
-export const rightScoreStatus = document.getElementById('right-score-status');
-
-// Secret Battle
-export const splashLogo = document.getElementById('splash-logo');
-
-// Xael Challenge
-export const cosmicGlowOverlay = document.getElementById('cosmic-glow-overlay');
-export const xaelPopup = document.getElementById('xael-popup');
-export const xaelStarPowerButton = document.getElementById('xael-star-power');
-export const xaelPowerConfirmModal = document.getElementById('xael-power-confirm-modal');
-export const xaelPowerConfirmYes = document.getElementById('xael-power-confirm-yes');
-export const xaelPowerConfirmNo = document.getElementById('xael-power-confirm-no');
-
-
-// Chat
-export const chatContainerEl = document.querySelector('.chat-container');
-export const chatInputArea = document.getElementById('chat-input-area');
-export const chatInput = document.getElementById('chat-input');
-export const chatSendButton = document.getElementById('chat-send-button');
-export const chatFilterBtn = document.getElementById('chat-filter-btn');
-export const chatToggleBtn = document.getElementById('chat-toggle-btn');
-
-
-// PVP / Auth
-export const rankingButton = document.getElementById('ranking-button');
-export const loginButton = document.getElementById('login-button');
-export const profileModal = document.getElementById('profile-modal');
-export const closeProfileButton = document.getElementById('close-profile-button');
-export const profileDataContainer = document.getElementById('profile-data-container');
-export const achievementsGrid = document.getElementById('achievements-grid');
-export const rankingModal = document.getElementById('ranking-modal');
-export const closeRankingButton = document.getElementById('close-ranking-button');
-export const rankingContainer = document.getElementById('ranking-container');
-export const infiniteRankingContainer = document.getElementById('infinite-ranking-container');
-export const userProfileDisplay = document.getElementById('user-profile-display');
-export const userAvatar = document.getElementById('user-avatar');
-export const userName = document.getElementById('user-name');
-export const userLevel = document.getElementById('user-level');
-export const xpBarFill = document.getElementById('xp-bar-fill');
-export const xpBarText = document.getElementById('xp-bar-text');
-export const pvpUsernameModal = document.getElementById('pvp-username-modal'); // Kept for potential future use
-export const pvpShowCreateRoomButton = document.getElementById('pvp-show-create-room-button');
-export const pvpCreateRoomModal = document.getElementById('pvp-create-room-modal');
-export const roomNameInput = document.getElementById('room-name-input');
-export const roomPasswordInput = document.getElementById('room-password-input');
-export const pvpCreateRoomConfirmButton = document.getElementById('pvp-create-room-confirm-button');
-export const pvpCreateRoomCancelButton = document.getElementById('pvp-create-room-cancel-button');
-export const pvpPotContainer = document.getElementById('pvp-pot-container');
-export const turnCountdownTimer = document.getElementById('turn-countdown-timer');
-export const userCoinBalanceHeader = document.getElementById('user-coin-balance-header');
-
-// Event Modal
 export const eventButton = document.getElementById('event-button');
-export const eventModal = document.getElementById('event-modal');
-export const eventTitle = document.getElementById('event-title');
-export const eventCharacterImage = document.getElementById('event-character-image');
-export const eventCharacterName = document.getElementById('event-character-name');
-export const eventDescription = document.getElementById('event-description');
-export const eventAbilityDescription = document.getElementById('event-ability-description');
-export const eventProgressMarkers = document.getElementById('event-progress-markers');
-export const eventRewardText = document.getElementById('event-reward-text');
-export const eventStatusText = document.getElementById('event-status-text');
-export const challengeEventButton = document.getElementById('challenge-event-button');
-export const closeEventButton = document.getElementById('close-event-button');
-
-// Friends Tab
-export const friendsSearchButton = document.getElementById('friends-search-button');
-export const friendsSearchInput = document.getElementById('friends-search-input');
-export const profileFriendsTabContent = document.getElementById('profile-friends-tab-content');
-export const friendsListContainer = document.getElementById('friends-list-container');
-export const friendRequestsListContainer = document.getElementById('friend-requests-list-container');
-export const friendRequestBadge = document.getElementById('friend-request-badge');
-
-// Invite Friends Modal
-export const inviteFriendsModal = document.getElementById('invite-friends-modal');
-export const inviteFriendsList = document.getElementById('invite-friends-list');
-export const inviteFriendsCloseButton = document.getElementById('invite-friends-close-button');
-
-// Lobby Invite Notification Modal
-export const lobbyInviteNotificationModal = document.getElementById('lobby-invite-notification-modal');
-export const lobbyInviteNotificationText = document.getElementById('lobby-invite-notification-text');
-export const lobbyInviteAcceptButton = document.getElementById('lobby-invite-accept-button');
-export const lobbyInviteDeclineButton = document.getElementById('lobby-invite-decline-button');
-
-// Chat
-export const privateChatPanel = document.getElementById('private-chat-panel');
-
-// Shop
-export const shopButton = document.getElementById('shop-button');
-export const shopModal = document.getElementById('shop-modal');
-export const shopAvatarsGrid = document.getElementById('shop-avatars-grid');
-export const closeShopButton = document.getElementById('close-shop-button');
+export const fullscreenButton = document.getElementById('fullscreen-button');
+export const inversusModeButton = document.getElementById('inversus-mode-button');
+export const infiniteChallengeButton = document.getElementById('infinite-challenge-button');
+export const infiniteChallengeIntroModal = document.getElementById('infinite-challenge-intro-modal');
+export const infiniteChallengeIntroImage = document.getElementById('infinite-challenge-intro-image');
+export const infiniteChallengeIntroText = document.getElementById('infinite-challenge-intro-text');
+export const infiniteChallengeIntroOptions = document.getElementById('infinite-challenge-intro-options');
+export const infiniteChallengePotDisplay = document.getElementById('infinite-challenge-pot-display');
+export const roundAnnounceModal = document.getElementById('round-announce-modal');
+export const infiniteBuffSelectionModal = document.getElementById('infinite-buff-selection-modal');
+export const infiniteBuffOptions = document.getElementById('infinite-buff-options');
+export const roundSummaryPotTextEl = document.getElementById('round-summary-pot-text');
+export const fieldEffectTargetCancelButton = document.getElementById('field-effect-target-cancel-button');

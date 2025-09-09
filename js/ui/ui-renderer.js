@@ -1,3 +1,4 @@
+
 // js/ui/ui-renderer.js
 import * as dom from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
@@ -8,6 +9,7 @@ import { grantAchievement } from '../core/achievements.js';
 import { showSplashScreen } from './splash-screen.js';
 import { updateLog } from '../core/utils.js';
 import { t } from '../core/i18n.js';
+import { clearInversusScreenEffects } from './animations.js';
 
 /**
  * Updates the UI for the chat filter and mute/unmute buttons.
@@ -144,9 +146,10 @@ export const updateActionButtons = () => {
 
     const isMyTurn = currentPlayer.id === myPlayer.id && gameState.gamePhase === 'playing';
     const hasSelectedCard = !!gameState.selectedCard;
+    const isDiscarding = gameState.isDiscardingForBuff;
 
-    dom.playButton.disabled = !isMyTurn || !hasSelectedCard;
-    dom.endTurnButton.disabled = !isMyTurn;
+    dom.playButton.disabled = !isMyTurn || !hasSelectedCard || isDiscarding;
+    dom.endTurnButton.disabled = !isMyTurn || isDiscarding;
 };
 
 /**
@@ -159,6 +162,21 @@ export async function showTurnIndicator() {
             dom.turnAnnounceModal.classList.add('hidden');
             resolve();
         }, 3000); // Increased duration to 3 seconds
+    });
+}
+
+/**
+ * Displays and then hides a "ROUND X" indicator.
+ */
+export async function showRoundAnnounce(level) {
+    return new Promise(resolve => {
+        const contentEl = dom.roundAnnounceModal.querySelector('.turn-announce-content');
+        contentEl.textContent = t('infinite_challenge.round_announcement', { level });
+        dom.roundAnnounceModal.classList.remove('hidden');
+        setTimeout(() => {
+            dom.roundAnnounceModal.classList.add('hidden');
+            resolve();
+        }, 3000);
     });
 }
 
@@ -217,6 +235,12 @@ export async function showRoundSummaryModal(summaryData) {
  * @param {string} [buttonOptions.action='restart'] - The action for the button ('restart' or 'menu').
  */
 export const showGameOver = (message, title = t('game_over.title'), buttonOptions = {}) => {
+    const { gameState } = getState();
+    if (gameState && gameState.isInfiniteChallenge) {
+        buttonOptions.action = 'menu';
+        buttonOptions.text = t('game_over.back_to_menu');
+    }
+    
     const { text = t('game_over.play_again'), action = 'restart' } = buttonOptions;
     
     dom.gameOverTitle.textContent = title;
@@ -225,7 +249,6 @@ export const showGameOver = (message, title = t('game_over.title'), buttonOption
     dom.restartButton.dataset.action = action;
     dom.gameOverModal.classList.remove('hidden');
 
-    const { gameState } = getState();
     if (gameState && gameState.isStoryMode && !message.toLowerCase().includes('derrotado')) {
         // Only grant achievement on non-story defeats
     } else if (gameState && !gameState.isStoryMode && !gameState.isInfiniteChallenge && !message.toLowerCase().includes('derrotado')) {
@@ -233,4 +256,7 @@ export const showGameOver = (message, title = t('game_over.title'), buttonOption
     } else {
         grantAchievement('first_defeat');
     }
+
+    // Always clear effects when game over is shown
+    clearInversusScreenEffects();
 };
