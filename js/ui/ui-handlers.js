@@ -1,6 +1,7 @@
 
+
 // js/ui/ui-handlers.js
-import * as dom from './dom.js';
+import * as dom from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
 import { initializeGame, restartLastDuel, startNextInfiniteChallengeDuel } from '../game-controller.js';
 import { renderAchievementsModal } from './achievements-renderer.js';
@@ -844,7 +845,7 @@ export function initializeUiHandlers() {
 
     dom.closeEventButton.addEventListener('click', () => {
         dom.eventModal.classList.add('hidden');
-        sound.playStoryMusic('tela.ogg');
+        sound.stopStoryMusic();
     });
 
     dom.profileModal.addEventListener('click', (e) => {
@@ -1521,24 +1522,28 @@ export function initializeUiHandlers() {
         });
     }
 
-    dom.lobbyChatSendButton.addEventListener('click', () => {
-        const message = dom.lobbyChatInput.value.trim();
-        if(message) {
-            network.emitLobbyChat(message);
-            dom.lobbyChatInput.value = '';
-        }
-    });
-    
-    dom.lobbyChatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
+    if (dom.lobbyChatSendButton) {
+        dom.lobbyChatSendButton.addEventListener('click', () => {
             const message = dom.lobbyChatInput.value.trim();
             if(message) {
                 network.emitLobbyChat(message);
                 dom.lobbyChatInput.value = '';
             }
-        }
-    });
+        });
+    }
+    
+    if (dom.lobbyChatInput) {
+        dom.lobbyChatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const message = dom.lobbyChatInput.value.trim();
+                if(message) {
+                    network.emitLobbyChat(message);
+                    dom.lobbyChatInput.value = '';
+                }
+            }
+        });
+    }
 
     dom.pvpShowCreateRoomButton.addEventListener('click', () => {
         dom.pvpCreateRoomModal.classList.remove('hidden');
