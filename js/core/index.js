@@ -6,11 +6,14 @@ import { loadAchievements } from './achievements.js';
 import { initializeGoogleSignIn } from './auth.js';
 import { connectToServer } from './network.js';
 import { initI18n } from './i18n.js';
-import { updateState } from './state.js';
+import { initDom } from './dom.js';
 
 // This is the main entry point of the application.
 document.addEventListener('DOMContentLoaded', async () => {
-    // Initialize internationalization first
+    // Initialize DOM elements first to prevent race conditions.
+    initDom();
+
+    // Initialize internationalization.
     await initI18n();
 
     // Establish connection with the server for PvP functionalities.

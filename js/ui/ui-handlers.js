@@ -8,11 +8,11 @@ import * as sound from '../core/sound.js';
 import { startStoryMode, renderStoryNode, playEndgameSequence } from '../story/story-controller.js';
 import * as saveLoad from '../core/save-load.js';
 import * as achievements from '../core/achievements.js';
-import { updateLog, formatTime } from '../core/utils.js';
+import { updateLog, formatTime, dealCard, shuffle } from '../core/utils.js';
 import * as config from '../core/config.js';
 import { AVATAR_CATALOG } from '../core/config.js';
 import * as network from '../core/network.js';
-import { shatterImage } from './animations.js';
+import { shatterImage, clearInversusScreenEffects } from './animations.js';
 import { announceEffect } from '../core/sound.js';
 import { playCard } from '../game-logic/player-actions.js';
 import { advanceToNextPlayer } from '../game-logic/turn-manager.js';
@@ -79,7 +79,7 @@ function handleCardClick(e) {
     if (!cardEl) return;
     
     const cardId = cardEl.dataset.cardId;
-    const { gameState } = getState();
+    const { gameState, isDiscardingForBuff, buffToResolve } = getState();
     if (!gameState) return;
     
     const myPlayerId = getLocalPlayerId();
@@ -98,6 +98,46 @@ function handleCardClick(e) {
         dom.cardViewerModalEl.classList.remove('hidden');
         return;
     }
+
+    // --- Handle Discarding for Buff ---
+    if (isDiscardingForBuff) {
+        const isValidDiscard = 
+            (buffToResolve.id === 'discard_low_draw_value' && card.type === 'value') ||
+            (buffToResolve.id === 'discard_effect_draw_effect' && card.type === 'effect') ||
+            (buffToResolve.id === 'draw_10_discard_one') || // any card
+            (buffToResolve.id === 'draw_reversus_total' && card.type === 'effect');
+
+        if (!isValidDiscard) {
+            updateLog("Tipo de carta inválido para o descarte do bônus.");
+            return;
+        }
+
+        // Remove card from hand and add to discard
+        const cardIndex = player.hand.findIndex(c => c.id === card.id);
+        if (cardIndex > -1) {
+            const [discardedCard] = player.hand.splice(cardIndex, 1);
+            gameState.discardPiles[discardedCard.type].push(discardedCard);
+            updateLog(`Você descartou ${discardedCard.name} para o efeito do bônus.`);
+        }
+
+        // Fulfill the rest of the buff effect
+        switch (buffToResolve.id) {
+            case 'discard_low_draw_value':
+                player.hand.push(dealCard('value'));
+                break;
+            case 'discard_effect_draw_effect':
+                player.hand.push(dealCard('effect'));
+                break;
+        }
+
+        // Reset discard state and proceed
+        updateState('isDiscardingForBuff', false);
+        updateState('buffToResolve', null);
+        renderAll();
+        document.dispatchEvent(new Event('buffAppliedAndContinue'));
+        return;
+    }
+
 
     if (gameState.currentPlayer !== myPlayerId || cardEl.classList.contains('disabled')) {
         return;
@@ -243,6 +283,7 @@ function cleanupInfiniteChallengeIntro() {
         clearInterval(introImageInterval);
         introImageInterval = null;
     }
+    sound.stopStoryMusic();
     dom.infiniteChallengeIntroModal.classList.add('hidden');
     dom.infiniteChallengeIntroModal.classList.remove('fullscreen-modal');
     if (infiniteChallengeIntroHandler) {
@@ -263,6 +304,7 @@ async function startInfiniteChallengeIntro() {
     }
     
     sound.initializeMusic();
+    sound.playStoryMusic('salamandra.ogg');
     
     dom.infiniteChallengeIntroModal.classList.add('fullscreen-modal');
     dom.infiniteChallengeIntroModal.classList.remove('hidden');
@@ -331,11 +373,158 @@ async function startInfiniteChallengeIntro() {
     });
 }
 
+/**
+ * Selects 3 unique buffs from the configuration based on their weights.
+ * @returns {Array<object>} An array of 3 unique buff objects.
+ */
+function selectBuffsByWeight() {
+    const weightedList = config.INFINITE_CHALLENGE_BUFFS.flatMap(buff => Array(buff.weight).fill(buff));
+    const shuffled = shuffle([...weightedList]);
+    const selected = [];
+    const selectedIds = new Set();
+    for (const buff of shuffled) {
+        if (!selectedIds.has(buff.id)) {
+            selected.push(buff);
+            selectedIds.add(buff.id);
+        }
+        if (selected.length === 3) break;
+    }
+    return selected;
+}
+
+/**
+ * Handles the win of a round in the Infinite Challenge by showing the buff selection modal.
+ */
+async function handleInfiniteChallengeWin() {
+    const buffs = selectBuffsByWeight();
+    dom.infiniteBuffOptions.innerHTML = buffs.map(buff => `
+        <div class="buff-option-card" data-buff-id="${buff.id}">
+            <h3>${t(`buffs.${buff.id}_name`)}</h3>
+            <p>${t(`buffs.${buff.id}_desc`)}</p>
+        </div>
+    `).join('');
+    dom.infiniteBuffSelectionModal.classList.remove('hidden');
+}
+
+/**
+ * Applies the selected buff and continues the challenge.
+ * @param {string} buffId - The ID of the selected buff.
+ */
+async function applyInfiniteChallengeBuff(buffId) {
+    const { gameState } = getState();
+    const player = gameState.players['player-1'];
+    gameState.activeBuffs = [buffId]; // Reset and set the new buff
+
+    updateLog(`Bônus ativado: ${t(`buffs.${buffId}_name`)}`);
+
+    const buff = config.INFINITE_CHALLENGE_BUFFS.find(b => b.id === buffId);
+
+    switch(buffId) {
+        case 'auto_win':
+            gameState.infiniteChallengeOpponentQueue.shift(); // Skip current opponent
+            if (gameState.infiniteChallengeOpponentQueue.length === 0) {
+                 document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'victory' } }));
+                 return;
+            }
+            handleInfiniteChallengeWin(); // Go straight to the next buff selection
+            break;
+        
+        case 'immunity_defeat':
+        case 'resto_10':
+        case 'immunity_negative':
+        case 'reveal_opponent_hand':
+            startNextInfiniteChallengeDuel();
+            break;
+        
+        case 'draw_two_effect':
+            player.hand.push(dealCard('effect'), dealCard('effect'));
+            renderAll();
+            startNextInfiniteChallengeDuel();
+            break;
+
+        case 'draw_two_value':
+            player.hand.push(dealCard('value'), dealCard('value'));
+            renderAll();
+            startNextInfiniteChallengeDuel();
+            break;
+
+        case 'discard_low_draw_value': {
+            const valueCards = player.hand.filter(c => c.type === 'value').sort((a, b) => a.value - b.value);
+            if (valueCards.length > 0) {
+                const [cardToDiscard] = player.hand.splice(player.hand.findIndex(c => c.id === valueCards[0].id), 1);
+                gameState.discardPiles.value.push(cardToDiscard);
+                player.hand.push(dealCard('value'));
+                updateLog(`Você descartou ${cardToDiscard.name} e comprou uma nova carta.`);
+                renderAll();
+            } else {
+                updateLog("Nenhuma carta de valor para descartar, bônus sem efeito.");
+            }
+            startNextInfiniteChallengeDuel();
+            break;
+        }
+        
+        case 'discard_effect_draw_effect': {
+             const effectCards = player.hand.filter(c => c.type === 'effect');
+             if (effectCards.length > 0) {
+                const [cardToDiscard] = player.hand.splice(player.hand.findIndex(c => c.id === effectCards[0].id), 1);
+                gameState.discardPiles.effect.push(cardToDiscard);
+                player.hand.push(dealCard('effect'));
+                updateLog(`Você descartou ${cardToDiscard.name} e comprou uma nova carta.`);
+                renderAll();
+             } else {
+                updateLog("Nenhuma carta de efeito para descartar, bônus sem efeito.");
+             }
+             startNextInfiniteChallengeDuel();
+            break;
+        }
+            
+        case 'draw_10_discard_one':
+            player.hand.push({ id: Date.now() + Math.random(), type: 'value', name: 10, value: 10 });
+            updateState('isDiscardingForBuff', true);
+            updateState('buffToResolve', buff);
+            updateLog("Você comprou uma carta 10. Agora, escolha QUALQUER carta para descartar.");
+            renderAll();
+            break;
+            
+        case 'draw_reversus_total':
+            player.hand.push({ id: Date.now() + Math.random(), type: 'effect', name: 'Reversus Total' });
+            if (player.hand.filter(c => c.type === 'effect' && c.name !== 'Reversus Total').length > 0) {
+                updateState('isDiscardingForBuff', true);
+                updateState('buffToResolve', buff);
+                updateLog("Você comprou Reversus Total. Agora, escolha outra carta de EFEITO para descartar.");
+                renderAll();
+            } else {
+                updateLog("Você comprou Reversus Total, mas não tem outra carta de efeito para descartar.");
+                startNextInfiniteChallengeDuel();
+            }
+            break;
+    }
+}
+
+
+/**
+ * Handles the click on a buff option card.
+ * @param {Event} e - The click event.
+ */
+async function handleBuffSelectionClick(e) {
+    const card = e.target.closest('.buff-option-card');
+    if (!card) return;
+
+    dom.infiniteBuffSelectionModal.classList.add('hidden');
+    const buffId = card.dataset.buffId;
+    await applyInfiniteChallengeBuff(buffId);
+}
+
 
 export function initializeUiHandlers() {
     document.addEventListener('aiTurnEnded', advanceToNextPlayer);
     
     initializeChatHandlers();
+
+    // Event listeners for the Infinite Challenge buff system
+    document.addEventListener('infiniteChallengeWinRound', handleInfiniteChallengeWin);
+    document.addEventListener('buffAppliedAndContinue', startNextInfiniteChallengeDuel);
+    dom.infiniteBuffOptions.addEventListener('click', handleBuffSelectionClick);
 
     document.addEventListener('startNextInfiniteDuel', () => {
         startNextInfiniteChallengeDuel();
@@ -350,19 +539,17 @@ export function initializeUiHandlers() {
     
         network.emitSubmitInfiniteResult({ level, time, didWin });
     
-        // The win message is handled by the `infiniteChallengeWin` network event
         if (!didWin) {
             let message;
             if (reason === 'loss') {
                 message = t('game_over.infinite_challenge_lose', { level, time: formatTime(time) });
-            } else { // 'time'
+            } else { 
                 message = t('game_over.infinite_challenge_timeout', { level });
             }
-            showGameOver(message, t('game_over.infinite_challenge_title'), { action: 'menu' });
+            showGameOver(message, t('game_over.infinite_challenge_title'));
         }
     });
 
-    // Listener for server success response to start the challenge
     document.addEventListener('initiateInfiniteChallengeGame', () => {
         cleanupInfiniteChallengeIntro();
         const { infiniteChallengeOpponentQueue } = getState();
@@ -378,7 +565,6 @@ export function initializeUiHandlers() {
         });
     });
 
-    // Listener for server error response or user cancellation
     document.addEventListener('cleanupInfiniteChallengeUI', () => {
         cleanupInfiniteChallengeIntro();
     });
@@ -401,7 +587,6 @@ export function initializeUiHandlers() {
     dom.endTurnButton.addEventListener('click', handleEndTurnButtonClick);
     dom.cardViewerCloseButton.addEventListener('click', () => dom.cardViewerModalEl.classList.add('hidden'));
     
-    // --- NEW LOGIN & QUICK START FLOW ---
     dom.loginButton.addEventListener('click', () => {
         sound.initializeMusic();
         if (typeof google !== 'undefined' && google.accounts) {
@@ -458,8 +643,6 @@ export function initializeUiHandlers() {
         network.emitCancelMatchmaking();
     });
 
-    // --- END NEW QUICK START FLOW ---
-    
     dom.storyModeButton.addEventListener('click', () => {
         sound.initializeMusic();
         const hasSave = saveLoad.checkForSavedGame();
@@ -497,15 +680,14 @@ export function initializeUiHandlers() {
             const hasAttemptedToday = lastAttemptDate === today;
     
             if (wins >= 3) {
-                dom.challengeEventButton.disabled = false; // Can re-challenge for fun
+                dom.challengeEventButton.disabled = false;
                 dom.eventStatusText.textContent = t('event.status_completed');
             } else {
                 dom.challengeEventButton.disabled = hasAttemptedToday;
                 dom.eventStatusText.textContent = hasAttemptedToday ? t('event.status_wait') : '';
             }
     
-            // Render progress markers
-            dom.eventProgressMarkers.innerHTML = ''; // Clear previous markers
+            dom.eventProgressMarkers.innerHTML = '';
             for (let i = 0; i < 3; i++) {
                 const marker = document.createElement('div');
                 marker.className = 'progress-marker';
@@ -529,21 +711,14 @@ export function initializeUiHandlers() {
 
     dom.challengeEventButton.addEventListener('click', () => {
         if (dom.challengeEventButton.disabled || !currentEventData) return;
-
         const today = new Date().toISOString().split('T')[0];
         localStorage.setItem('reversus-event-attempt-date', today);
-
         const gameOptions = {
             story: {
                 battle: `event_${currentEventData.ai}`,
                 eventData: { name: t(currentEventData.nameKey), ai: currentEventData.ai },
                 playerIds: ['player-1', 'player-2'],
-                overrides: {
-                    'player-2': {
-                        name: t(currentEventData.characterNameKey),
-                        aiType: currentEventData.ai,
-                    }
-                }
+                overrides: { 'player-2': { name: t(currentEventData.characterNameKey), aiType: currentEventData.ai } }
             }
         };
         document.dispatchEvent(new CustomEvent('startStoryGame', { detail: { mode: 'solo', options: gameOptions } }));
@@ -555,11 +730,8 @@ export function initializeUiHandlers() {
     });
 
     dom.rankingButton.addEventListener('click', () => {
-        // Automatically request the first page of the default (PVP) ranking
         network.emitGetRanking(1);
         dom.rankingModal.classList.remove('hidden');
-    
-        // Reset tabs to default state
         dom.rankingModal.querySelectorAll('.info-tab-button').forEach(btn => btn.classList.remove('active'));
         dom.rankingModal.querySelectorAll('.info-tab-content').forEach(content => content.classList.remove('active'));
         dom.rankingModal.querySelector('[data-tab="ranking-pvp"]').classList.add('active');
@@ -567,7 +739,6 @@ export function initializeUiHandlers() {
     });
     
     dom.rankingModal.addEventListener('click', (e) => {
-        // Tab switching
         const tabButton = e.target.closest('.info-tab-button');
         if (tabButton && !tabButton.classList.contains('active')) {
             const tabId = tabButton.dataset.tab;
@@ -575,69 +746,50 @@ export function initializeUiHandlers() {
             dom.rankingModal.querySelectorAll('.info-tab-content').forEach(content => content.classList.remove('active'));
             tabButton.classList.add('active');
             document.getElementById(`${tabId}-tab-content`).classList.add('active');
-    
-            // Fetch data for the newly activated tab
-            if (tabId === 'ranking-pvp') {
-                network.emitGetRanking(1);
-            } else if (tabId === 'ranking-infinite') {
-                network.emitGetInfiniteRanking(1);
-            }
+            if (tabId === 'ranking-pvp') network.emitGetRanking(1);
+            else if (tabId === 'ranking-infinite') network.emitGetInfiniteRanking(1);
         }
     
-        // PVP Pagination
         const pvpPrevBtn = e.target.closest('#rank-prev-btn');
         const pvpNextBtn = e.target.closest('#rank-next-btn');
         if (pvpPrevBtn || pvpNextBtn) {
-            const currentPage = parseInt(document.getElementById('ranking-pagination').querySelector('span')?.textContent.match(/(\d+)/)?.[0] || '1', 10);
+            const currentPage = parseInt(document.getElementById('ranking-pagination').querySelector('span')?.textContent.match(/(\\d+)/)?.[0] || '1', 10);
             const newPage = pvpNextBtn ? currentPage + 1 : currentPage - 1;
             network.emitGetRanking(newPage);
         }
     
-        // Infinite Challenge Pagination
         const infinitePrevBtn = e.target.closest('#infinite-rank-prev-btn');
         const infiniteNextBtn = e.target.closest('#infinite-rank-next-btn');
         if (infinitePrevBtn || infiniteNextBtn) {
-            const currentPage = parseInt(document.getElementById('infinite-ranking-pagination').querySelector('span')?.textContent.match(/(\d+)/)?.[0] || '1', 10);
+            const currentPage = parseInt(document.getElementById('infinite-ranking-pagination').querySelector('span')?.textContent.match(/(\\d+)/)?.[0] || '1', 10);
             const newPage = infiniteNextBtn ? currentPage + 1 : currentPage - 1;
             network.emitGetInfiniteRanking(newPage);
         }
     });
 
-    if (dom.rankingContainer) {
-        dom.rankingContainer.addEventListener('click', (e) => {
-            const target = e.target.closest('.rank-name.clickable');
-            if (target) {
-                const googleId = target.dataset.googleId;
-                if (googleId) {
-                    network.emitViewProfile({ googleId });
-                }
-            }
-        });
-    }
+    if (dom.rankingContainer) dom.rankingContainer.addEventListener('click', (e) => {
+        const target = e.target.closest('.rank-name.clickable');
+        if (target) {
+            const googleId = target.dataset.googleId;
+            if (googleId) network.emitViewProfile({ googleId });
+        }
+    });
 
-    if (dom.infiniteRankingContainer) {
-        dom.infiniteRankingContainer.addEventListener('click', (e) => {
-            const target = e.target.closest('.rank-name.clickable');
-            if (target) {
-                const googleId = target.dataset.googleId;
-                if (googleId) {
-                    network.emitViewProfile({ googleId });
-                }
-            }
-        });
-    }
+    if (dom.infiniteRankingContainer) dom.infiniteRankingContainer.addEventListener('click', (e) => {
+        const target = e.target.closest('.rank-name.clickable');
+        if (target) {
+            const googleId = target.dataset.googleId;
+            if (googleId) network.emitViewProfile({ googleId });
+        }
+    });
 
-    if (dom.pvpLobbyModal) {
-        dom.pvpLobbyModal.addEventListener('click', (e) => {
-            const target = e.target.closest('.lobby-player-grid .clickable');
-            if(target) {
-                const googleId = target.dataset.googleId;
-                if (googleId) {
-                    network.emitViewProfile({ googleId });
-                }
-            }
-        });
-    }
+    if (dom.pvpLobbyModal) dom.pvpLobbyModal.addEventListener('click', (e) => {
+        const target = e.target.closest('.lobby-player-grid .clickable');
+        if(target) {
+            const googleId = target.dataset.googleId;
+            if (googleId) network.emitViewProfile({ googleId });
+        }
+    });
 
     dom.storyNewGameButton.addEventListener('click', () => {
         dom.storyStartOptionsModal.classList.add('hidden');
@@ -686,9 +838,7 @@ export function initializeUiHandlers() {
         const button = e.target.closest('.profile-tab-button');
         if (button) {
             const tabId = button.dataset.tab;
-            if (tabId === 'profile-admin') {
-                network.emitAdminGetData();
-            }
+            if (tabId === 'profile-admin') network.emitAdminGetData();
             dom.profileModal.querySelectorAll('.profile-tab-button').forEach(btn => btn.classList.remove('active'));
             dom.profileModal.querySelectorAll('.info-tab-content').forEach(content => content.classList.remove('active'));
             button.classList.add('active');
@@ -748,18 +898,11 @@ export function initializeUiHandlers() {
             { name: 'Necroverso Final', aiType: 'necroverso_final', image: './necroverso2.png' }
         ];
 
-        const excludedAvatarKeys = new Set([
-            'default_1', 'default_2', 'default_3', 'default_4',
-            'necroverso', 'contravox', 'versatrix', 'reversum'
-        ]);
+        const excludedAvatarKeys = new Set(['default_1', 'default_2', 'default_3', 'default_4', 'necroverso', 'contravox', 'versatrix', 'reversum']);
 
         const avatarOpponents = Object.entries(AVATAR_CATALOG)
             .filter(([key]) => !excludedAvatarKeys.has(key))
-            .map(([key, avatar]) => ({
-                name: t(avatar.nameKey),
-                aiType: 'default',
-                image: `./${avatar.image_url}`
-            }));
+            .map(([key, avatar]) => ({ name: t(avatar.nameKey), aiType: 'default', image: `./${avatar.image_url}` }));
 
         const opponents = [...storyOpponents, ...avatarOpponents];
 
@@ -772,7 +915,6 @@ export function initializeUiHandlers() {
                 dom.opponentSpinnerName.textContent = opponents[currentIndex].name;
                 currentIndex = (currentIndex + 1) % opponents.length;
             }, 100);
-
             setTimeout(() => {
                 clearInterval(spinnerInterval);
                 selectedOpponent = opponents[Math.floor(Math.random() * opponents.length)];
@@ -797,13 +939,9 @@ export function initializeUiHandlers() {
         
         if (action === 'restart') {
             const { gameState } = getState();
-            if (gameState && gameState.isStoryMode) {
-                restartLastDuel();
-            } else if (gameState) {
-                initializeGame(gameState.gameMode, gameState.gameOptions);
-            } else {
-                 showSplashScreen();
-            }
+            if (gameState && gameState.isStoryMode) restartLastDuel();
+            else if (gameState) initializeGame(gameState.gameMode, gameState.gameOptions);
+            else showSplashScreen();
         } else {
             showSplashScreen();
         }
@@ -819,7 +957,6 @@ export function initializeUiHandlers() {
         const player = gameState.players[myPlayerId];
         
         dom.targetModal.classList.add('hidden');
-
         if (!card || !player) {
             cancelPlayerAction();
             return;
@@ -869,11 +1006,8 @@ export function initializeUiHandlers() {
         
         const targetPlayer = gameState.players[targetId];
         targetPlayer.targetPathForPula = pathId;
-        
         dom.pulaModal.classList.add('hidden');
-        
         updateLog(`${player.name} usou 'Pula' em ${targetPlayer.name}, forçando-o a pular para o caminho ${pathId + 1}.`);
-        
         if (gameState.isPvp) {
             network.emitPlayCard({ cardId: card.id, targetId, options: { pulaPath: pathId } });
         } else {
@@ -893,7 +1027,6 @@ export function initializeUiHandlers() {
         const card = gameState.selectedCard;
         const targetId = gameState.reversusTarget;
         dom.reversusTargetModal.classList.add('hidden');
-
         if (gameState.isPvp) {
             network.emitPlayCard({ cardId: card.id, targetId, options: { effectType: 'score' } });
         } else {
@@ -910,7 +1043,6 @@ export function initializeUiHandlers() {
         const card = gameState.selectedCard;
         const targetId = gameState.reversusTarget;
         dom.reversusTargetModal.classList.add('hidden');
-
         if (gameState.isPvp) {
             network.emitPlayCard({ cardId: card.id, targetId, options: { effectType: 'movement' } });
         } else {
@@ -940,10 +1072,8 @@ export function initializeUiHandlers() {
     dom.reversusTotalIndividualButton.addEventListener('click', () => {
         updateState('reversusTotalIndividualFlow', true);
         dom.reversusTotalChoiceModal.classList.add('hidden');
-        
         const { gameState } = getState();
         const allPlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
-        
         dom.targetModalCardName.textContent = 'Reversus Individual';
         dom.targetPlayerButtonsEl.innerHTML = allPlayers.map(id => `<button class="control-button target-player-${id.split('-')[1]}" data-player-id="${id}">${gameState.players[id].name}</button>`).join('');
         dom.targetModal.classList.remove('hidden');
@@ -955,13 +1085,11 @@ export function initializeUiHandlers() {
         if (e.target.tagName !== 'BUTTON') return;
         const effect = e.target.dataset.effect;
         dom.reversusIndividualEffectChoiceModal.classList.add('hidden');
-        
         const { gameState } = getState();
         const myPlayerId = getLocalPlayerId();
         const player = gameState.players[myPlayerId];
         const card = gameState.selectedCard;
         const targetId = gameState.reversusTarget;
-        
         const options = { isIndividualLock: true, effectNameToApply: effect };
         if (effect === 'Pula') {
             const targetPlayer = gameState.players[targetId];
@@ -975,10 +1103,8 @@ export function initializeUiHandlers() {
                  return;
             }
         }
-        
-        if (gameState.isPvp) {
-             network.emitPlayCard({ cardId: card.id, targetId, options });
-        } else {
+        if (gameState.isPvp) network.emitPlayCard({ cardId: card.id, targetId, options });
+        else {
             await playCard(player, card, targetId, null, options);
             updateState('reversusTotalIndividualFlow', false);
             gameState.gamePhase = 'playing';
@@ -1020,7 +1146,6 @@ export function initializeUiHandlers() {
 
     const langPtBrButton = document.getElementById('lang-pt-BR');
     const langEnUsButton = document.getElementById('lang-en-US');
-
     const handleLanguageChange = async (lang) => {
         await setLanguage(lang);
         const { userProfile } = getState();
@@ -1029,7 +1154,6 @@ export function initializeUiHandlers() {
             renderAchievementsModal();
         }
     };
-
     if (langPtBrButton) langPtBrButton.addEventListener('click', () => handleLanguageChange('pt-BR'));
     if (langEnUsButton) langEnUsButton.addEventListener('click', () => handleLanguageChange('en-US'));
 
@@ -1049,11 +1173,9 @@ export function initializeUiHandlers() {
     dom.exitGameYesButton.addEventListener('click', () => {
         dom.exitGameConfirmModal.classList.add('hidden');
         const { gameState } = getState();
-        if (gameState && gameState.isPvp) {
-            network.emitLeaveRoom();
-        } else {
-            showSplashScreen();
-        }
+        clearInversusScreenEffects();
+        if (gameState && gameState.isPvp) network.emitLeaveRoom();
+        else showSplashScreen();
     });
     dom.exitGameNoButton.addEventListener('click', () => dom.exitGameConfirmModal.classList.add('hidden'));
     
@@ -1063,42 +1185,32 @@ export function initializeUiHandlers() {
     document.addEventListener('storyWinLoss', async (e) => {
         const { battle, won, reason } = e.detail;
         const { gameState } = getState();
-        
-        if(gameState) {
-             updateState('lastStoryGameOptions', { mode: gameState.gameMode, options: gameState.gameOptions });
-        }
+        if(gameState) updateState('lastStoryGameOptions', { mode: gameState.gameMode, options: gameState.gameOptions });
         
         if (battle.startsWith('event_')) {
             const currentMonth = new Date().getMonth();
             const eventConfig = config.MONTHLY_EVENTS.find(evt => evt.month === currentMonth);
-            
             let title = won ? t('game_over.story_victory_title') : t('game_over.story_defeat_title');
             let message;
-    
             if (won) {
                 const progressKey = `reversus-event-progress-${currentMonth}`;
                 let wins = parseInt(localStorage.getItem(progressKey) || '0', 10);
-                
                 if (wins < 3) {
                     wins++;
                     localStorage.setItem(progressKey, wins);
                 }
-    
                 if (wins >= 3) {
                     const rewardName = eventConfig ? t(eventConfig.rewardTitleKey) : "";
                     message = t('event.victory_completed_message', { rewardName });
-                    
                     const year = new Date().getFullYear();
                     const challengeId = `event_${currentMonth}_${year}`;
                     network.emitClaimChallengeReward({ challengeId, amount: 1000 });
-
                 } else {
                     message = t('event.victory_progress_message', { wins });
                 }
             } else {
                 message = t('event.defeat_message');
             }
-            
             showGameOver(message, title, { action: 'menu', text: t('game_over.back_to_menu') });
             return;
         }
@@ -1113,26 +1225,23 @@ export function initializeUiHandlers() {
                     achievements.grantAchievement('tutorial_win');
                     continueStory('post_tutorial');
                     return;
-                } else {
-                    message = "Você foi derrotado, mas aprendeu o básico. Vamos tentar de novo.";
                 }
+                message = "Você foi derrotado, mas aprendeu o básico. Vamos tentar de novo.";
                 break;
             case 'contravox':
                 if (won) {
                     achievements.grantAchievement('contravox_win');
                     continueStory('post_contravox_victory');
                     return;
-                } else {
-                    message = "O Contravox te venceu. Quer tentar de novo?";
                 }
+                message = "O Contravox te venceu. Quer tentar de novo?";
                 break;
             case 'versatrix':
                 if (won) {
                     achievements.grantAchievement('versatrix_win');
                     continueStory('post_versatrix_victory');
                 } else {
-                    const { storyState } = getState();
-                    storyState.lostToVersatrix = true;
+                    getState().storyState.lostToVersatrix = true;
                     achievements.grantAchievement('versatrix_loss');
                     continueStory('post_versatrix_defeat');
                 }
@@ -1142,54 +1251,39 @@ export function initializeUiHandlers() {
                     achievements.grantAchievement('reversum_win');
                     continueStory('post_reversum_victory');
                     return;
-                } else {
-                    message = "O Rei Reversum é muito poderoso. Tentar novamente?";
                 }
+                message = "O Rei Reversum é muito poderoso. Tentar novamente?";
                 break;
             case 'necroverso_king':
                 if (won) {
                     achievements.grantAchievement('true_end_beta');
                     continueStory('post_necroverso_king_victory');
                     return;
-                } else {
-                    message = "O poder combinado dos reis é demais. Deseja tentar novamente?";
                 }
+                message = "O poder combinado dos reis é demais. Deseja tentar novamente?";
                 break;
             case 'necroverso_final':
                 if (won) {
                     achievements.grantAchievement('true_end_final');
                     playEndgameSequence();
                     return;
-                } else {
-                    message = reason === 'time' ? "O tempo acabou! O Inversus foi consumido..." : "O Necroverso venceu. A escuridão consome tudo. Tentar novamente?";
                 }
+                message = reason === 'time' ? "O tempo acabou! O Inversus foi consumido..." : "O Necroverso venceu. A escuridão consome tudo. Tentar novamente?";
                 break;
             case 'xael_challenge':
-                if (won) {
-                    achievements.grantAchievement('xael_win');
-                    message = "Você venceu o criador! Habilidade 'Revelação Estelar' desbloqueada no Modo História.";
-                    buttonAction = 'menu';
-                } else {
-                    message = "O criador conhece todos os truques. Tentar novamente?";
-                }
+                message = won ? t('game_over.xael_victory_message') : t('game_over.xael_defeat_message');
+                if(won) achievements.grantAchievement('xael_win');
+                buttonAction = 'menu';
                 break;
             case 'narrador':
-                if (won) {
-                    achievements.grantAchievement('120%_unlocked');
-                    message = "Você derrotou o Narrador! O que acontece agora...?";
-                    buttonAction = 'menu';
-                } else {
-                    message = "O Narrador reescreveu a história para te derrotar. Tentar de novo?";
-                }
+                message = won ? "Você derrotou o Narrador! O que acontece agora...?" : "O Narrador reescreveu a história para te derrotar. Tentar de novo?";
+                if(won) achievements.grantAchievement('120%_unlocked');
+                buttonAction = 'menu';
                 break;
             case 'inversus':
-                if (won) {
-                    achievements.grantAchievement('inversus_win');
-                    message = "Você derrotou o Inversus! 100% do jogo completo. Um segredo foi revelado...";
-                    buttonAction = 'menu';
-                } else {
-                    message = "O reflexo sombrio do Reversus te derrotou. Tentar novamente?";
-                }
+                message = won ? t('game_over.inversus_victory_message') : t('game_over.inversus_defeat_message');
+                if(won) achievements.grantAchievement('inversus_win');
+                buttonAction = 'menu';
                 break;
             default:
                 message = won ? 'Você venceu o duelo!' : 'Você foi derrotado.';
@@ -1268,7 +1362,6 @@ export function initializeUiHandlers() {
         }
     };
     
-    // This button does not exist in the in-game chat, but is used in the lobby. No need to remove.
     if(dom.chatSendButton) dom.chatSendButton.addEventListener('click', sendChatMessage);
     
     dom.chatInput.addEventListener('keypress', (e) => { 
@@ -1287,74 +1380,46 @@ export function initializeUiHandlers() {
     dom.chatFilterBtn.addEventListener('click', () => {
         const state = getState();
         const currentFilter = state.chatFilter;
-        const filterCycle = {
-            'all': 'log',
-            'log': 'chat',
-            'chat': 'all'
-        };
+        const filterCycle = { 'all': 'log', 'log': 'chat', 'chat': 'all' };
         const nextFilter = filterCycle[currentFilter] || 'all';
         updateState('chatFilter', nextFilter);
-        updateLog(); // Re-render the log with the new filter
-        updateChatControls(); // Update button text
+        updateLog();
+        updateChatControls();
     });
 
-
-    // --- Lobby and Invite Handlers ---
-    if (dom.pvpLobbyModal) {
-        dom.pvpLobbyModal.addEventListener('click', (e) => {
-            const inviteButton = e.target.closest('.invite-friend-slot-btn');
-            if (inviteButton) {
-                network.emitGetOnlineFriends(); // Server responds by opening the modal
-            }
-
-            const kickButton = e.target.closest('.kick-player-button');
-            if (kickButton) {
-                const kickId = kickButton.dataset.kickId;
-                const username = kickButton.title.match(/Expulsar (.*) da sala/)?.[1] || 'este jogador';
-                if (confirm(t('confirm.kick_player', { username }))) {
-                    network.emitKickPlayer(kickId);
-                }
-            }
-        });
-    }
+    if (dom.pvpLobbyModal) dom.pvpLobbyModal.addEventListener('click', (e) => {
+        if (e.target.closest('.invite-friend-slot-btn')) network.emitGetOnlineFriends();
+        const kickButton = e.target.closest('.kick-player-button');
+        if (kickButton) {
+            const kickId = kickButton.dataset.kickId;
+            const username = kickButton.title.match(/Expulsar (.*) da sala/)?.[1] || 'este jogador';
+            if (confirm(t('confirm.kick_player', { username }))) network.emitKickPlayer(kickId);
+        }
+    });
     
-    if (dom.inviteFriendsModal) {
-        dom.inviteFriendsModal.addEventListener('click', (e) => {
-            const inviteButton = e.target.closest('.invite-friend-btn');
-            if (inviteButton) {
-                const targetUserId = inviteButton.dataset.userId;
-                network.emitInviteFriendToLobby(parseInt(targetUserId, 10));
-                inviteButton.textContent = t('pvp.invite_sent_button') || 'Sent';
-                inviteButton.disabled = true;
-            }
-        });
-    }
+    if (dom.inviteFriendsModal) dom.inviteFriendsModal.addEventListener('click', (e) => {
+        const inviteButton = e.target.closest('.invite-friend-btn');
+        if (inviteButton) {
+            const targetUserId = inviteButton.dataset.userId;
+            network.emitInviteFriendToLobby(parseInt(targetUserId, 10));
+            inviteButton.textContent = t('pvp.invite_sent_button') || 'Sent';
+            inviteButton.disabled = true;
+        }
+    });
 
-    if (dom.inviteFriendsCloseButton) {
-        dom.inviteFriendsCloseButton.addEventListener('click', () => {
-            dom.inviteFriendsModal.classList.add('hidden');
-        });
-    }
+    if (dom.inviteFriendsCloseButton) dom.inviteFriendsCloseButton.addEventListener('click', () => dom.inviteFriendsModal.classList.add('hidden'));
 
-    if (dom.lobbyInviteAcceptButton) {
-        dom.lobbyInviteAcceptButton.addEventListener('click', (e) => {
-            const roomId = e.target.dataset.roomId;
-            if (roomId) {
-                network.emitAcceptInvite(roomId);
-            }
-            dom.lobbyInviteNotificationModal.classList.add('hidden');
-        });
-    }
+    if (dom.lobbyInviteAcceptButton) dom.lobbyInviteAcceptButton.addEventListener('click', (e) => {
+        const roomId = e.target.dataset.roomId;
+        if (roomId) network.emitAcceptInvite(roomId);
+        dom.lobbyInviteNotificationModal.classList.add('hidden');
+    });
 
-    if (dom.lobbyInviteDeclineButton) {
-        dom.lobbyInviteDeclineButton.addEventListener('click', (e) => {
-            const roomId = dom.lobbyInviteAcceptButton.dataset.roomId; // Get room from accept button
-            if (roomId) {
-                 network.emitDeclineInvite(roomId);
-            }
-            dom.lobbyInviteNotificationModal.classList.add('hidden');
-        });
-    }
+    if (dom.lobbyInviteDeclineButton) dom.lobbyInviteDeclineButton.addEventListener('click', () => {
+        const roomId = dom.lobbyInviteAcceptButton.dataset.roomId;
+        if (roomId) network.emitDeclineInvite(roomId);
+        dom.lobbyInviteNotificationModal.classList.add('hidden');
+    });
 
     dom.lobbyChatSendButton.addEventListener('click', () => {
         const message = dom.lobbyChatInput.value.trim();
@@ -1375,33 +1440,23 @@ export function initializeUiHandlers() {
         }
     });
 
-    dom.pvpShowCreateRoomButton.addEventListener('click', () => {
-        dom.pvpCreateRoomModal.classList.remove('hidden');
-    });
-
-    dom.pvpCreateRoomCancelButton.addEventListener('click', () => {
-        dom.pvpCreateRoomModal.classList.add('hidden');
-    });
-
+    dom.pvpShowCreateRoomButton.addEventListener('click', () => dom.pvpCreateRoomModal.classList.remove('hidden'));
+    dom.pvpCreateRoomCancelButton.addEventListener('click', () => dom.pvpCreateRoomModal.classList.add('hidden'));
     dom.pvpCreateRoomConfirmButton.addEventListener('click', () => {
         const name = dom.roomNameInput.value.trim();
         const password = dom.roomPasswordInput.value.trim();
         const betAmountRadio = document.querySelector('input[name="bet-amount"]:checked');
         const betAmount = betAmountRadio ? parseInt(betAmountRadio.value, 10) : 0;
-
         if (!name) {
             alert(t('pvp.room_name_required'));
             return;
         }
-
         network.emitCreateRoom({ name, password, betAmount });
         dom.pvpCreateRoomModal.classList.add('hidden');
         dom.roomNameInput.value = '';
         dom.roomPasswordInput.value = '';
         const defaultBetRadio = document.querySelector('input[name="bet-amount"][value="0"]');
-        if (defaultBetRadio) {
-            defaultBetRadio.checked = true;
-        }
+        if (defaultBetRadio) defaultBetRadio.checked = true;
     });
     
     let selectedRoomIdForPassword = null;
@@ -1410,7 +1465,6 @@ export function initializeUiHandlers() {
         if (button) {
             const roomId = button.dataset.roomId;
             const hasPassword = button.dataset.hasPassword === 'true';
-
             if (hasPassword) {
                 selectedRoomIdForPassword = roomId;
                 dom.pvpPasswordInput.value = '';
@@ -1423,8 +1477,7 @@ export function initializeUiHandlers() {
 
     dom.pvpPasswordSubmit.addEventListener('click', () => {
         if (selectedRoomIdForPassword) {
-            const password = dom.pvpPasswordInput.value;
-            network.emitJoinRoom({ roomId: selectedRoomIdForPassword, password });
+            network.emitJoinRoom({ roomId: selectedRoomIdForPassword, password: dom.pvpPasswordInput.value });
             dom.pvpPasswordModal.classList.add('hidden');
             selectedRoomIdForPassword = null;
         }
@@ -1449,142 +1502,89 @@ export function initializeUiHandlers() {
         if (!button) return;
         const { fieldEffectTargetResolver } = getState();
         if (fieldEffectTargetResolver) {
-            let targetId = null;
-            if (button.id !== 'field-effect-target-cancel-button') {
-                targetId = button.dataset.playerId;
-            }
-            fieldEffectTargetResolver(targetId); // Resolve with null on cancel
+            let targetId = (button.id !== 'field-effect-target-cancel-button') ? button.dataset.playerId : null;
+            fieldEffectTargetResolver(targetId);
             updateState('fieldEffectTargetResolver', null);
             dom.fieldEffectTargetModal.classList.add('hidden');
         }
     });
     
-    if (dom.profileFriendsTabContent) {
-        dom.profileFriendsTabContent.addEventListener('click', (e) => {
-            const button = e.target.closest('button');
-            if (!button) return;
-    
-            if (button.matches('.add-friend-btn')) {
-                const userId = parseInt(button.dataset.userId, 10);
-                button.disabled = true;
-                network.emitSendFriendRequest(userId, (response) => {
-                    if (response.success) {
-                        button.textContent = t('profile.request_sent');
-                    } else {
-                        alert(response.error || 'Falha ao enviar pedido.');
-                        button.disabled = false;
-                    }
-                });
-                return;
-            }
-    
-            if (button.matches('.remove-friend-btn')) {
-                const userId = parseInt(button.dataset.userId, 10);
-                const username = button.closest('.friend-item')?.querySelector('.friend-name')?.textContent.trim() || 'este amigo';
-                if (confirm(t('confirm.remove_friend', { username }))) {
-                     network.emitRemoveFriend(userId);
-                }
-                return;
-            }
-    
-            if (button.matches('.view-profile-btn')) {
-                const googleId = button.dataset.googleId;
-                if (googleId) {
-                    network.emitViewProfile(googleId);
-                }
-                return;
-            }
-    
-            if (button.matches('.send-message-btn')) {
-                const userId = button.dataset.userId;
-                const username = button.dataset.username;
-                if (userId && username) {
-                    openChatWindow(userId, username);
-                }
-                return;
-            }
-    
-            if (button.matches('.accept-request-btn') || button.matches('.decline-request-btn')) {
-                const requestId = parseInt(button.dataset.requestId, 10);
-                if (requestId) {
-                    const action = button.matches('.accept-request-btn') ? 'accept' : 'decline';
-                    network.emitRespondToRequest(requestId, action);
-                }
-                return;
-            }
-        });
-    }
-
-    if (dom.friendsSearchButton) {
-        dom.friendsSearchButton.addEventListener('click', () => {
-            const query = dom.friendsSearchInput ? dom.friendsSearchInput.value.trim() : '';
-            if (query) network.emitSearchUsers(query);
-        });
-    }
-
-    if (dom.profileModal) {
-        dom.profileModal.addEventListener('click', (e) => {
-             const actionButton = e.target.closest('button.add-friend-btn, button.remove-friend-btn, button#toggle-chat-mute-button, button.equip-avatar-btn');
-             if (!actionButton) return;
-
-             if (actionButton.matches('.add-friend-btn')) {
-                const userId = parseInt(actionButton.dataset.userId, 10);
-                actionButton.disabled = true;
-                network.emitSendFriendRequest(userId, (response) => {
-                    if (response.success) {
-                        actionButton.textContent = t('profile.request_sent');
-                    } else {
-                        alert(response.error || 'Falha ao enviar pedido.');
-                        actionButton.disabled = false;
-                    }
-                });
-            } else if (actionButton.matches('.remove-friend-btn')) {
-                const userId = parseInt(actionButton.dataset.userId, 10);
-                network.emitRemoveFriend(userId);
-            } else if (actionButton.matches('#toggle-chat-mute-button')) {
-                const state = getState();
-                const newMuteState = !state.isChatMuted;
-                updateState('isChatMuted', newMuteState);
-                localStorage.setItem('reversus-chat-muted', JSON.stringify(newMuteState));
-                
-                actionButton.textContent = t(newMuteState ? 'profile.unmute_chat' : 'profile.mute_chat');
-            } else if (actionButton.matches('.equip-avatar-btn')) {
-                const avatarCode = actionButton.dataset.avatarCode;
-                network.emitSetSelectedAvatar({ avatarCode });
-            }
-        });
-    }
-
-    // Delegated event listener for all admin actions
-    if (dom.profileAdminTabContent) {
-        dom.profileAdminTabContent.addEventListener('click', (e) => {
-            const button = e.target.closest('button');
-            if (!button) return;
-    
+    if (dom.profileFriendsTabContent) dom.profileFriendsTabContent.addEventListener('click', (e) => {
+        const button = e.target.closest('button');
+        if (!button) return;
+        if (button.matches('.add-friend-btn')) {
             const userId = parseInt(button.dataset.userId, 10);
+            button.disabled = true;
+            network.emitSendFriendRequest(userId, (response) => {
+                if (response.success) button.textContent = t('profile.request_sent');
+                else {
+                    alert(response.error || 'Falha ao enviar pedido.');
+                    button.disabled = false;
+                }
+            });
+        } else if (button.matches('.remove-friend-btn')) {
+            const userId = parseInt(button.dataset.userId, 10);
+            const username = button.closest('.friend-item')?.querySelector('.friend-name')?.textContent.trim() || 'este amigo';
+            if (confirm(t('confirm.remove_friend', { username }))) network.emitRemoveFriend(userId);
+        } else if (button.matches('.view-profile-btn')) {
+            const googleId = button.dataset.googleId;
+            if (googleId) network.emitViewProfile(googleId);
+        } else if (button.matches('.send-message-btn')) {
+            const userId = button.dataset.userId;
             const username = button.dataset.username;
+            if (userId && username) openChatWindow(userId, username);
+        } else if (button.matches('.accept-request-btn') || button.matches('.decline-request-btn')) {
+            const requestId = parseInt(button.dataset.requestId, 10);
+            if (requestId) network.emitRespondToRequest(requestId, button.matches('.accept-request-btn') ? 'accept' : 'decline');
+        }
+    });
 
-            if (button.matches('.admin-ban-btn')) {
-                if (confirm(t('confirm.ban_player', { username }))) {
-                    network.emitAdminBanUser(userId);
-                }
-            } else if (button.matches('.admin-unban-btn')) {
-                if (confirm(t('confirm.unban_player', { username }))) {
-                    network.emitAdminUnbanUser(userId);
-                }
-            } else if (button.matches('.admin-rollback-btn')) {
-                if (confirm(t('confirm.rollback_player', { username }))) {
-                    network.emitAdminRollbackUser(userId);
-                }
-            } else if (button.matches('.admin-dismiss-report-btn')) {
-                const reportId = parseInt(button.dataset.reportId, 10);
-                network.emitAdminResolveReport(reportId);
-            }
-        });
-    }
+    if (dom.friendsSearchButton) dom.friendsSearchButton.addEventListener('click', () => {
+        const query = dom.friendsSearchInput ? dom.friendsSearchInput.value.trim() : '';
+        if (query) network.emitSearchUsers(query);
+    });
 
+    if (dom.profileModal) dom.profileModal.addEventListener('click', (e) => {
+        const actionButton = e.target.closest('button.add-friend-btn, button.remove-friend-btn, button#toggle-chat-mute-button, button.equip-avatar-btn');
+        if (!actionButton) return;
+        if (actionButton.matches('.add-friend-btn')) {
+            const userId = parseInt(actionButton.dataset.userId, 10);
+            actionButton.disabled = true;
+            network.emitSendFriendRequest(userId, (response) => {
+                if (response.success) actionButton.textContent = t('profile.request_sent');
+                else {
+                    alert(response.error || 'Falha ao enviar pedido.');
+                    actionButton.disabled = false;
+                }
+            });
+        } else if (actionButton.matches('.remove-friend-btn')) {
+            network.emitRemoveFriend(parseInt(actionButton.dataset.userId, 10));
+        } else if (actionButton.matches('#toggle-chat-mute-button')) {
+            const newMuteState = !getState().isChatMuted;
+            updateState('isChatMuted', newMuteState);
+            localStorage.setItem('reversus-chat-muted', JSON.stringify(newMuteState));
+            actionButton.textContent = t(newMuteState ? 'profile.unmute_chat' : 'profile.mute_chat');
+        } else if (actionButton.matches('.equip-avatar-btn')) {
+            network.emitSetSelectedAvatar({ avatarCode: actionButton.dataset.avatarCode });
+        }
+    });
 
-    // --- Shop Handlers ---
+    if (dom.profileAdminTabContent) dom.profileAdminTabContent.addEventListener('click', (e) => {
+        const button = e.target.closest('button');
+        if (!button) return;
+        const userId = parseInt(button.dataset.userId, 10);
+        const username = button.dataset.username;
+        if (button.matches('.admin-ban-btn')) {
+            if (confirm(t('confirm.ban_player', { username }))) network.emitAdminBanUser(userId);
+        } else if (button.matches('.admin-unban-btn')) {
+            if (confirm(t('confirm.unban_player', { username }))) network.emitAdminUnbanUser(userId);
+        } else if (button.matches('.admin-rollback-btn')) {
+            if (confirm(t('confirm.rollback_player', { username }))) network.emitAdminRollbackUser(userId);
+        } else if (button.matches('.admin-dismiss-report-btn')) {
+            network.emitAdminResolveReport(parseInt(button.dataset.reportId, 10));
+        }
+    });
+
     dom.shopButton.addEventListener('click', () => {
         const { isLoggedIn } = getState();
         if (!isLoggedIn) {
@@ -1592,12 +1592,10 @@ export function initializeUiHandlers() {
             return;
         }
         dom.shopModal.classList.remove('hidden');
-        renderShopAvatars(); // Initial render
+        renderShopAvatars();
     });
 
-    dom.closeShopButton.addEventListener('click', () => {
-        dom.shopModal.classList.add('hidden');
-    });
+    dom.closeShopButton.addEventListener('click', () => dom.shopModal.classList.add('hidden'));
 
     dom.shopAvatarsGrid.addEventListener('click', (e) => {
         const button = e.target.closest('.buy-avatar-btn');

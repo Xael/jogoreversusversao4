@@ -1,4 +1,3 @@
-
 import { getState } from '../core/state.js';
 
 /**
