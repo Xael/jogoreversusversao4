@@ -1,3 +1,4 @@
+
 import { initializeUiHandlers } from '../ui/ui-handlers.js';
 import { showSplashScreen } from '../ui/splash-screen.js';
 import { setupPvpRooms } from '../game-controller.js';
@@ -12,6 +13,9 @@ import { initDom } from './dom.js';
 document.addEventListener('DOMContentLoaded', async () => {
     // Initialize DOM elements first to prevent race conditions.
     initDom();
+
+    // Initializes Google Sign-In functionality - MUST be before UI Handlers
+    initializeGoogleSignIn();
 
     // Initialize internationalization.
     await initI18n();
@@ -33,7 +37,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Displays the initial splash screen.
     showSplashScreen();
-
-    // Initializes Google Sign-In functionality
-    initializeGoogleSignIn();
 });
