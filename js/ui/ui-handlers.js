@@ -12,7 +12,7 @@ import { updateLog, formatTime, dealCard, shuffle } from '../core/utils.js';
 import * as config from '../core/config.js';
 import { AVATAR_CATALOG } from '../core/config.js';
 import * as network from '../core/network.js';
-import { shatterImage, clearInversusScreenEffects } from './animations.js';
+import { shatterImage } from './animations.js';
 import { announceEffect } from '../core/sound.js';
 import { playCard } from '../game-logic/player-actions.js';
 import { advanceToNextPlayer } from '../game-logic/turn-manager.js';
@@ -20,7 +20,7 @@ import { setLanguage, t } from '../core/i18n.js';
 import { showSplashScreen } from './splash-screen.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from './profile-renderer.js';
 import { openChatWindow, initializeChatHandlers } from './chat-handler.js';
-import { renderShopAvatars } from './shop-renderer.js';
+import { renderShopAvatars, updateCoinVersusDisplay } from './shop-renderer.js';
 
 let currentEventData = null;
 let infiniteChallengeIntroHandler = null;
