@@ -1,3 +1,4 @@
+
 // js/core/config.js
 
 // --- CONSTANTS ---
@@ -210,25 +211,4 @@ export const INFINITE_CHALLENGE_OPPONENTS = [
     ...Object.entries(AVATAR_CATALOG)
         .filter(([key]) => !['default_1', 'default_2', 'default_3', 'default_4', 'necroverso', 'contravox', 'versatrix', 'reversum'].includes(key))
         .map(([key, avatar]) => ({ nameKey: avatar.nameKey, aiType: 'default', image: avatar.image_url }))
-];
-
-export const INFINITE_CHALLENGE_BUFFS = [
-    // Common Buffs (weight 10)
-    { id: 'discard_low_draw_value', nameKey: 'buffs.discard_low_draw_value_name', descriptionKey: 'buffs.discard_low_draw_value_desc', weight: 10 },
-    { id: 'discard_effect_draw_effect', nameKey: 'buffs.discard_effect_draw_effect_name', descriptionKey: 'buffs.discard_effect_draw_effect_desc', weight: 10 },
-    { id: 'draw_two_effect', nameKey: 'buffs.draw_two_effect_name', descriptionKey: 'buffs.draw_two_effect_desc', weight: 8 },
-    { id: 'draw_two_value', nameKey: 'buffs.draw_two_value_name', descriptionKey: 'buffs.draw_two_value_desc', weight: 8 },
-    { id: 'reveal_opponent_hand', nameKey: 'buffs.reveal_opponent_hand_name', descriptionKey: 'buffs.reveal_opponent_hand_desc', weight: 7 },
-    
-    // Uncommon Buffs (weight 5)
-    { id: 'resto_10', nameKey: 'buffs.resto_10_name', descriptionKey: 'buffs.resto_10_desc', weight: 5 },
-    { id: 'immunity_negative', nameKey: 'buffs.immunity_negative_name', descriptionKey: 'buffs.immunity_negative_desc', weight: 5 },
-    { id: 'draw_10_discard_one', nameKey: 'buffs.draw_10_discard_one_name', descriptionKey: 'buffs.draw_10_discard_one_desc', weight: 5 },
-
-    // Rare Buffs (weight 2)
-    { id: 'draw_reversus_total', nameKey: 'buffs.draw_reversus_total_name', descriptionKey: 'buffs.draw_reversus_total_desc', weight: 2 },
-
-    // Super Rare Buffs (weight 1)
-    { id: 'immunity_defeat', nameKey: 'buffs.immunity_defeat_name', descriptionKey: 'buffs.immunity_defeat_desc', weight: 1 },
-    { id: 'auto_win', nameKey: 'buffs.auto_win_name', descriptionKey: 'buffs.auto_win_desc', weight: 1 },
 ];
