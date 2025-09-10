@@ -1,3 +1,4 @@
+// js/ui/splash-screen.js
 import * as dom from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
 import { playStoryMusic } from '../core/sound.js';
