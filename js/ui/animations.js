@@ -1,4 +1,4 @@
-import * as dom from '../core/dom.js';
+import * as dom from './dom.js';
 import * as config from '../core/config.js';
 import { getState, updateState } from '../core/state.js';
 import { shuffle } from '../core/utils.js';

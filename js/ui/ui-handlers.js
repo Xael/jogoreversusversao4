@@ -1,5 +1,5 @@
 // js/ui/ui-handlers.js
-import * as dom from '../core/dom.js';
+import * as dom from './dom.js';
 import { getState, updateState } from '../core/state.js';
 import { initializeGame, restartLastDuel, startNextInfiniteChallengeDuel } from '../game-controller.js';
 import { renderAchievementsModal } from './achievements-renderer.js';
@@ -1173,7 +1173,6 @@ export function initializeUiHandlers() {
     dom.exitGameYesButton.addEventListener('click', () => {
         dom.exitGameConfirmModal.classList.add('hidden');
         const { gameState } = getState();
-        clearInversusScreenEffects();
         if (gameState && gameState.isPvp) network.emitLeaveRoom();
         else showSplashScreen();
     });
@@ -1380,45 +1379,15 @@ export function initializeUiHandlers() {
     dom.chatFilterBtn.addEventListener('click', () => {
         const state = getState();
         const currentFilter = state.chatFilter;
-        const filterCycle = { 'all': 'log', 'log': 'chat', 'chat': 'all' };
+        const filterCycle = {
+            'all': 'log',
+            'log': 'chat',
+            'chat': 'all'
+        };
         const nextFilter = filterCycle[currentFilter] || 'all';
         updateState('chatFilter', nextFilter);
-        updateLog();
-        updateChatControls();
-    });
-
-    if (dom.pvpLobbyModal) dom.pvpLobbyModal.addEventListener('click', (e) => {
-        if (e.target.closest('.invite-friend-slot-btn')) network.emitGetOnlineFriends();
-        const kickButton = e.target.closest('.kick-player-button');
-        if (kickButton) {
-            const kickId = kickButton.dataset.kickId;
-            const username = kickButton.title.match(/Expulsar (.*) da sala/)?.[1] || 'este jogador';
-            if (confirm(t('confirm.kick_player', { username }))) network.emitKickPlayer(kickId);
-        }
-    });
-    
-    if (dom.inviteFriendsModal) dom.inviteFriendsModal.addEventListener('click', (e) => {
-        const inviteButton = e.target.closest('.invite-friend-btn');
-        if (inviteButton) {
-            const targetUserId = inviteButton.dataset.userId;
-            network.emitInviteFriendToLobby(parseInt(targetUserId, 10));
-            inviteButton.textContent = t('pvp.invite_sent_button') || 'Sent';
-            inviteButton.disabled = true;
-        }
-    });
-
-    if (dom.inviteFriendsCloseButton) dom.inviteFriendsCloseButton.addEventListener('click', () => dom.inviteFriendsModal.classList.add('hidden'));
-
-    if (dom.lobbyInviteAcceptButton) dom.lobbyInviteAcceptButton.addEventListener('click', (e) => {
-        const roomId = e.target.dataset.roomId;
-        if (roomId) network.emitAcceptInvite(roomId);
-        dom.lobbyInviteNotificationModal.classList.add('hidden');
-    });
-
-    if (dom.lobbyInviteDeclineButton) dom.lobbyInviteDeclineButton.addEventListener('click', () => {
-        const roomId = dom.lobbyInviteAcceptButton.dataset.roomId;
-        if (roomId) network.emitDeclineInvite(roomId);
-        dom.lobbyInviteNotificationModal.classList.add('hidden');
+        updateLog(); // Re-render the log with the new filter
+        updateChatControls(); // Update button text
     });
 
     dom.lobbyChatSendButton.addEventListener('click', () => {
@@ -1440,23 +1409,33 @@ export function initializeUiHandlers() {
         }
     });
 
-    dom.pvpShowCreateRoomButton.addEventListener('click', () => dom.pvpCreateRoomModal.classList.remove('hidden'));
-    dom.pvpCreateRoomCancelButton.addEventListener('click', () => dom.pvpCreateRoomModal.classList.add('hidden'));
+    dom.pvpShowCreateRoomButton.addEventListener('click', () => {
+        dom.pvpCreateRoomModal.classList.remove('hidden');
+    });
+
+    dom.pvpCreateRoomCancelButton.addEventListener('click', () => {
+        dom.pvpCreateRoomModal.classList.add('hidden');
+    });
+
     dom.pvpCreateRoomConfirmButton.addEventListener('click', () => {
         const name = dom.roomNameInput.value.trim();
         const password = dom.roomPasswordInput.value.trim();
         const betAmountRadio = document.querySelector('input[name="bet-amount"]:checked');
         const betAmount = betAmountRadio ? parseInt(betAmountRadio.value, 10) : 0;
+
         if (!name) {
             alert(t('pvp.room_name_required'));
             return;
         }
+
         network.emitCreateRoom({ name, password, betAmount });
         dom.pvpCreateRoomModal.classList.add('hidden');
         dom.roomNameInput.value = '';
         dom.roomPasswordInput.value = '';
         const defaultBetRadio = document.querySelector('input[name="bet-amount"][value="0"]');
-        if (defaultBetRadio) defaultBetRadio.checked = true;
+        if (defaultBetRadio) {
+            defaultBetRadio.checked = true;
+        }
     });
     
     let selectedRoomIdForPassword = null;
@@ -1465,6 +1444,7 @@ export function initializeUiHandlers() {
         if (button) {
             const roomId = button.dataset.roomId;
             const hasPassword = button.dataset.hasPassword === 'true';
+
             if (hasPassword) {
                 selectedRoomIdForPassword = roomId;
                 dom.pvpPasswordInput.value = '';
@@ -1477,7 +1457,8 @@ export function initializeUiHandlers() {
 
     dom.pvpPasswordSubmit.addEventListener('click', () => {
         if (selectedRoomIdForPassword) {
-            network.emitJoinRoom({ roomId: selectedRoomIdForPassword, password: dom.pvpPasswordInput.value });
+            const password = dom.pvpPasswordInput.value;
+            network.emitJoinRoom({ roomId: selectedRoomIdForPassword, password });
             dom.pvpPasswordModal.classList.add('hidden');
             selectedRoomIdForPassword = null;
         }
@@ -1502,89 +1483,142 @@ export function initializeUiHandlers() {
         if (!button) return;
         const { fieldEffectTargetResolver } = getState();
         if (fieldEffectTargetResolver) {
-            let targetId = (button.id !== 'field-effect-target-cancel-button') ? button.dataset.playerId : null;
-            fieldEffectTargetResolver(targetId);
+            let targetId = null;
+            if (button.id !== 'field-effect-target-cancel-button') {
+                targetId = button.dataset.playerId;
+            }
+            fieldEffectTargetResolver(targetId); // Resolve with null on cancel
             updateState('fieldEffectTargetResolver', null);
             dom.fieldEffectTargetModal.classList.add('hidden');
         }
     });
     
-    if (dom.profileFriendsTabContent) dom.profileFriendsTabContent.addEventListener('click', (e) => {
-        const button = e.target.closest('button');
-        if (!button) return;
-        if (button.matches('.add-friend-btn')) {
-            const userId = parseInt(button.dataset.userId, 10);
-            button.disabled = true;
-            network.emitSendFriendRequest(userId, (response) => {
-                if (response.success) button.textContent = t('profile.request_sent');
-                else {
-                    alert(response.error || 'Falha ao enviar pedido.');
-                    button.disabled = false;
+    if (dom.profileFriendsTabContent) {
+        dom.profileFriendsTabContent.addEventListener('click', (e) => {
+            const button = e.target.closest('button');
+            if (!button) return;
+    
+            if (button.matches('.add-friend-btn')) {
+                const userId = parseInt(button.dataset.userId, 10);
+                button.disabled = true;
+                network.emitSendFriendRequest(userId, (response) => {
+                    if (response.success) {
+                        button.textContent = t('profile.request_sent');
+                    } else {
+                        alert(response.error || 'Falha ao enviar pedido.');
+                        button.disabled = false;
+                    }
+                });
+                return;
+            }
+    
+            if (button.matches('.remove-friend-btn')) {
+                const userId = parseInt(button.dataset.userId, 10);
+                const username = button.closest('.friend-item')?.querySelector('.friend-name')?.textContent.trim() || 'este amigo';
+                if (confirm(t('confirm.remove_friend', { username }))) {
+                     network.emitRemoveFriend(userId);
                 }
-            });
-        } else if (button.matches('.remove-friend-btn')) {
+                return;
+            }
+    
+            if (button.matches('.view-profile-btn')) {
+                const googleId = button.dataset.googleId;
+                if (googleId) {
+                    network.emitViewProfile(googleId);
+                }
+                return;
+            }
+    
+            if (button.matches('.send-message-btn')) {
+                const userId = button.dataset.userId;
+                const username = button.dataset.username;
+                if (userId && username) {
+                    openChatWindow(userId, username);
+                }
+                return;
+            }
+    
+            if (button.matches('.accept-request-btn') || button.matches('.decline-request-btn')) {
+                const requestId = parseInt(button.dataset.requestId, 10);
+                if (requestId) {
+                    const action = button.matches('.accept-request-btn') ? 'accept' : 'decline';
+                    network.emitRespondToRequest(requestId, action);
+                }
+                return;
+            }
+        });
+    }
+
+    if (dom.friendsSearchButton) {
+        dom.friendsSearchButton.addEventListener('click', () => {
+            const query = dom.friendsSearchInput ? dom.friendsSearchInput.value.trim() : '';
+            if (query) network.emitSearchUsers(query);
+        });
+    }
+
+    if (dom.profileModal) {
+        dom.profileModal.addEventListener('click', (e) => {
+             const actionButton = e.target.closest('button.add-friend-btn, button.remove-friend-btn, button#toggle-chat-mute-button, button.equip-avatar-btn');
+             if (!actionButton) return;
+
+             if (actionButton.matches('.add-friend-btn')) {
+                const userId = parseInt(actionButton.dataset.userId, 10);
+                actionButton.disabled = true;
+                network.emitSendFriendRequest(userId, (response) => {
+                    if (response.success) {
+                        actionButton.textContent = t('profile.request_sent');
+                    } else {
+                        alert(response.error || 'Falha ao enviar pedido.');
+                        actionButton.disabled = false;
+                    }
+                });
+            } else if (actionButton.matches('.remove-friend-btn')) {
+                const userId = parseInt(actionButton.dataset.userId, 10);
+                network.emitRemoveFriend(userId);
+            } else if (actionButton.matches('#toggle-chat-mute-button')) {
+                const state = getState();
+                const newMuteState = !state.isChatMuted;
+                updateState('isChatMuted', newMuteState);
+                localStorage.setItem('reversus-chat-muted', JSON.stringify(newMuteState));
+                
+                actionButton.textContent = t(newMuteState ? 'profile.unmute_chat' : 'profile.mute_chat');
+            } else if (actionButton.matches('.equip-avatar-btn')) {
+                const avatarCode = actionButton.dataset.avatarCode;
+                network.emitSetSelectedAvatar({ avatarCode });
+            }
+        });
+    }
+
+    // Delegated event listener for all admin actions
+    if (dom.profileAdminTabContent) {
+        dom.profileAdminTabContent.addEventListener('click', (e) => {
+            const button = e.target.closest('button');
+            if (!button) return;
+    
             const userId = parseInt(button.dataset.userId, 10);
-            const username = button.closest('.friend-item')?.querySelector('.friend-name')?.textContent.trim() || 'este amigo';
-            if (confirm(t('confirm.remove_friend', { username }))) network.emitRemoveFriend(userId);
-        } else if (button.matches('.view-profile-btn')) {
-            const googleId = button.dataset.googleId;
-            if (googleId) network.emitViewProfile(googleId);
-        } else if (button.matches('.send-message-btn')) {
-            const userId = button.dataset.userId;
             const username = button.dataset.username;
-            if (userId && username) openChatWindow(userId, username);
-        } else if (button.matches('.accept-request-btn') || button.matches('.decline-request-btn')) {
-            const requestId = parseInt(button.dataset.requestId, 10);
-            if (requestId) network.emitRespondToRequest(requestId, button.matches('.accept-request-btn') ? 'accept' : 'decline');
-        }
-    });
 
-    if (dom.friendsSearchButton) dom.friendsSearchButton.addEventListener('click', () => {
-        const query = dom.friendsSearchInput ? dom.friendsSearchInput.value.trim() : '';
-        if (query) network.emitSearchUsers(query);
-    });
-
-    if (dom.profileModal) dom.profileModal.addEventListener('click', (e) => {
-        const actionButton = e.target.closest('button.add-friend-btn, button.remove-friend-btn, button#toggle-chat-mute-button, button.equip-avatar-btn');
-        if (!actionButton) return;
-        if (actionButton.matches('.add-friend-btn')) {
-            const userId = parseInt(actionButton.dataset.userId, 10);
-            actionButton.disabled = true;
-            network.emitSendFriendRequest(userId, (response) => {
-                if (response.success) actionButton.textContent = t('profile.request_sent');
-                else {
-                    alert(response.error || 'Falha ao enviar pedido.');
-                    actionButton.disabled = false;
+            if (button.matches('.admin-ban-btn')) {
+                if (confirm(t('confirm.ban_player', { username }))) {
+                    network.emitAdminBanUser(userId);
                 }
-            });
-        } else if (actionButton.matches('.remove-friend-btn')) {
-            network.emitRemoveFriend(parseInt(actionButton.dataset.userId, 10));
-        } else if (actionButton.matches('#toggle-chat-mute-button')) {
-            const newMuteState = !getState().isChatMuted;
-            updateState('isChatMuted', newMuteState);
-            localStorage.setItem('reversus-chat-muted', JSON.stringify(newMuteState));
-            actionButton.textContent = t(newMuteState ? 'profile.unmute_chat' : 'profile.mute_chat');
-        } else if (actionButton.matches('.equip-avatar-btn')) {
-            network.emitSetSelectedAvatar({ avatarCode: actionButton.dataset.avatarCode });
-        }
-    });
+            } else if (button.matches('.admin-unban-btn')) {
+                if (confirm(t('confirm.unban_player', { username }))) {
+                    network.emitAdminUnbanUser(userId);
+                }
+            } else if (button.matches('.admin-rollback-btn')) {
+                if (confirm(t('confirm.rollback_player', { username }))) {
+                    network.emitAdminRollbackUser(userId);
+                }
+            } else if (button.matches('.admin-dismiss-report-btn')) {
+                const reportId = parseInt(button.dataset.reportId, 10);
+                network.emitAdminResolveReport(reportId);
+            }
+        });
+    }
 
-    if (dom.profileAdminTabContent) dom.profileAdminTabContent.addEventListener('click', (e) => {
-        const button = e.target.closest('button');
-        if (!button) return;
-        const userId = parseInt(button.dataset.userId, 10);
-        const username = button.dataset.username;
-        if (button.matches('.admin-ban-btn')) {
-            if (confirm(t('confirm.ban_player', { username }))) network.emitAdminBanUser(userId);
-        } else if (button.matches('.admin-unban-btn')) {
-            if (confirm(t('confirm.unban_player', { username }))) network.emitAdminUnbanUser(userId);
-        } else if (button.matches('.admin-rollback-btn')) {
-            if (confirm(t('confirm.rollback_player', { username }))) network.emitAdminRollbackUser(userId);
-        } else if (button.matches('.admin-dismiss-report-btn')) {
-            network.emitAdminResolveReport(parseInt(button.dataset.reportId, 10));
-        }
-    });
 
+    // --- Shop Handlers ---
     dom.shopButton.addEventListener('click', () => {
         const { isLoggedIn } = getState();
         if (!isLoggedIn) {
@@ -1592,10 +1626,12 @@ export function initializeUiHandlers() {
             return;
         }
         dom.shopModal.classList.remove('hidden');
-        renderShopAvatars();
+        renderShopAvatars(); // Initial render
     });
 
-    dom.closeShopButton.addEventListener('click', () => dom.shopModal.classList.add('hidden'));
+    dom.closeShopButton.addEventListener('click', () => {
+        dom.shopModal.classList.add('hidden');
+    });
 
     dom.shopAvatarsGrid.addEventListener('click', (e) => {
         const button = e.target.closest('.buy-avatar-btn');

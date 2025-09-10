@@ -1,4 +1,4 @@
-import * as dom from '../core/dom.js';
+import * as dom from './dom.js';
 import { t } from '../core/i18n.js';
 
 /**
