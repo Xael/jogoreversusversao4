@@ -2,9 +2,9 @@
 import { getState, updateState } from './state.js';
 import { elements as dom } from './dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
-import { renderRoomList, updateLobbyUi } from '../ui/lobby-renderer.js';
-import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
-import { showSplashScreen } from '../ui/splash-screen.js';
+import { renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
+import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
+import { showSplashScreen } from './splash-screen.js';
 import { updateLog } from './utils.js';
 import { updateGameTimer } from '../game-controller.js';
 import { showPvpDrawSequence } from '../game-logic/turn-manager.js';
@@ -14,8 +14,6 @@ import { showCoinRewardNotification } from '../ui/toast-renderer.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
 import * as sound from './sound.js';
 import { renderShopAvatars, updateCoinVersusDisplay } from '../ui/shop-renderer.js';
-
-let socket;
 
 /**
  * Sets up the player areas in the UI so the local player is always at the bottom.
@@ -41,11 +39,8 @@ function setupPlayerPerspective() {
 
 
 export function connectToServer() {
-    if (getState().isConnectionAttempted) return;
-    updateState('isConnectionAttempted', true);
-    
     const SERVER_URL = "https://reversus-node.dke42d.easypanel.host";
-    socket = io(SERVER_URL, {
+    const socket = io(SERVER_URL, {
         reconnectionAttempts: 3,
         timeout: 10000,
     });
@@ -59,7 +54,7 @@ export function connectToServer() {
     
     socket.on('connect_error', (err) => {
         console.error("Falha na conexão:", err.message);
-        // Optionally show a user-facing error message
+        showSplashScreen();
     });
 
     socket.on('loginSuccess', (userProfile) => {
@@ -72,9 +67,9 @@ export function connectToServer() {
         renderProfile(userProfile);
         dom.rankingButton.classList.remove('hidden'); 
         dom.eventButton.classList.remove('hidden');
-        emitGetFriendsList(); 
-        emitGetPendingRequests(); 
-        emitClaimDailyLoginReward(); 
+        emitGetFriendsList(); // Carrega a lista de amigos após o login
+        emitGetPendingRequests(); // Carrega pedidos pendentes
+        emitClaimDailyLoginReward(); // Solicita a recompensa diária
     });
 
     socket.on('dailyRewardSuccess', ({ amount }) => {
@@ -106,6 +101,8 @@ export function connectToServer() {
 
     socket.on('profileData', (profile) => {
         const { userProfile: myProfile } = getState();
+        // This check ensures we only update the main user's profile if it matches,
+        // but it still allows viewing other profiles.
         if (myProfile && profile.google_id === myProfile.google_id) {
             updateState('userProfile', profile);
         }
@@ -117,8 +114,19 @@ export function connectToServer() {
         dom.profileModal.classList.remove('hidden');
     });
 
-    socket.on('adminData', (data) => renderAdminPanel(data));
-    socket.on('adminActionSuccess', () => emitAdminGetData());
+    socket.on('rewardClaimed', ({ titleCode }) => {
+        // A atualização do perfil via 'profileData' cuidará da UI.
+    });
+
+    // --- Admin Listeners ---
+    socket.on('adminData', (data) => {
+        renderAdminPanel(data);
+    });
+
+    socket.on('adminActionSuccess', () => {
+        // This event signals that an admin action was successful and the panel should be refreshed
+        emitAdminGetData();
+    });
 
     socket.on('newReport', () => {
         const { userProfile } = getState();
@@ -127,10 +135,24 @@ export function connectToServer() {
         }
     });
 
-    socket.on('reportSuccess', (message) => alert(message));
-    socket.on('searchResults', (results) => renderSearchResults(results));
-    socket.on('friendsList', (friends) => renderFriendsList(friends));
-    socket.on('pendingRequestsData', (requests) => renderFriendRequests(requests));
+    socket.on('reportSuccess', (message) => {
+        alert(message);
+    });
+
+
+    // --- Social Listeners ---
+    socket.on('searchResults', (results) => {
+        renderSearchResults(results);
+    });
+
+    socket.on('friendsList', (friends) => {
+        renderFriendsList(friends);
+    });
+
+    socket.on('pendingRequestsData', (requests) => {
+        renderFriendRequests(requests);
+        dom.friendRequestBadge.classList.toggle('hidden', requests.length === 0);
+    });
 
     socket.on('newFriendRequest', (request) => {
         alert(t('friends.new_request_alert', { username: request.username }));
@@ -144,13 +166,26 @@ export function connectToServer() {
         if (action === 'accept') {
             alert(t('friends.request_accepted_alert', { username }));
         }
+        // Refresh both lists to show new friend or updated request list
         emitGetFriendsList();
         emitGetPendingRequests();
     });
     
-    socket.on('friendStatusUpdate', () => emitGetFriendsList());
-    socket.on('privateMessage', (message) => addPrivateChatMessage(message));
-    socket.on('roomList', (rooms) => renderRoomList(rooms));
+    socket.on('friendStatusUpdate', () => {
+        // A simple status change for one friend requires a full refresh to guarantee
+        // that the online status and message buttons are always correct.
+        emitGetFriendsList();
+    });
+
+    socket.on('privateMessage', (message) => {
+        addPrivateChatMessage(message);
+    });
+
+
+    // --- Room & Game Listeners ---
+    socket.on('roomList', (rooms) => {
+        // renderRoomList(rooms);
+    });
     
     socket.on('lobbyUpdate', async (roomData) => {
         updateState('currentRoomId', roomData.id);
@@ -158,24 +193,38 @@ export function connectToServer() {
         const myPlayerData = roomData.players.find(p => p.id === clientId);
         if (myPlayerData) {
             updateState('playerId', myPlayerData.playerId);
-            if (userProfile) userProfile.playerId = myPlayerData.playerId;
+            if (userProfile) {
+                userProfile.playerId = myPlayerData.playerId;
+                updateState('userProfile', userProfile);
+            }
         }
         
+        // Hide other modals/screens that might be open
         dom.splashScreenEl.classList.add('hidden');
         dom.pvpRoomListModal.classList.add('hidden');
         dom.lobbyInviteNotificationModal.classList.add('hidden');
+        
+        // Show lobby
         dom.pvpLobbyModal.classList.remove('hidden');
         
         updateLobbyUi(roomData);
     });
 
-    socket.on('lobbyChatMessage', ({ speaker, message }) => addLobbyChatMessage(speaker, message));
-    socket.on('chatMessage', ({ speaker, message, googleId }) => updateLog({ type: 'dialogue', speaker, message, googleId }));
+    socket.on('lobbyChatMessage', ({ speaker, message }) => {
+        addLobbyChatMessage(speaker, message);
+    });
+
+    socket.on('chatMessage', ({ speaker, message, googleId }) => {
+        updateLog({ type: 'dialogue', speaker, message, googleId });
+    });
 
     socket.on('gameStarted', async (initialGameState) => {
+        // Determine this client's player ID from the map sent by the server.
         if (initialGameState.playerSocketMap) {
             const myEntry = Object.entries(initialGameState.playerSocketMap).find(([socketId, pId]) => socketId === getState().clientId);
-            if (myEntry) updateState('playerId', myEntry[1]);
+            if (myEntry) {
+                updateState('playerId', myEntry[1]);
+            }
         }
 
         updateState('gameState', initialGameState);
@@ -183,8 +232,8 @@ export function connectToServer() {
         dom.pvpLobbyModal.classList.add('hidden');
         dom.matchmakingStatusModal.classList.add('hidden');
         dom.appContainerEl.classList.remove('hidden');
-        sound.stopStoryMusic();
-        dom.nextTrackButton.disabled = false;
+        sound.stopStoryMusic(); // Restore default playlist and enable next track button
+        dom.nextTrackButton.disabled = false; // Explicitly re-enable for PvP
         
         const state = getState();
         if (state.gameTimerInterval) clearInterval(state.gameTimerInterval);
@@ -194,7 +243,9 @@ export function connectToServer() {
         
         if (initialGameState.gamePhase === 'initial_draw') {
             await showPvpDrawSequence(initialGameState);
+            // The server will send a gameStateUpdate with gamePhase: 'playing' after this.
         } else {
+             // Fallback for games that might not have a draw phase
             setupPlayerPerspective();
             renderAll();
         }
@@ -204,6 +255,7 @@ export function connectToServer() {
         const startElement = document.querySelector(`#hand-${casterId} [data-card-id="${card.id}"]`);
         await animateCardPlay(card, startElement, targetId, targetSlotLabel);
     
+        // Adiciona som e anúncio visual para cartas de efeito
         const soundToPlay = card.name.toLowerCase().replace(/\s/g, '');
         const effectsWithSounds = ['mais', 'menos', 'sobe', 'desce', 'pula', 'reversus'];
     
@@ -222,7 +274,12 @@ export function connectToServer() {
     socket.on('gameStateUpdate', (gameState) => {
         const { gameState: localGameState, playerId } = getState();
         const oldCurrentPlayer = localGameState?.currentPlayer;
-        const localUiState = localGameState ? { selectedCard: localGameState.selectedCard } : {};
+
+        const localUiState = localGameState ? {
+            selectedCard: localGameState.selectedCard,
+            reversusTarget: localGameState.reversusTarget,
+            pulaTarget: localGameState.pulaTarget,
+        } : {};
         const newGameState = { ...gameState, ...localUiState };
         updateState('gameState', newGameState);
         setupPlayerPerspective();
@@ -234,37 +291,76 @@ export function connectToServer() {
         }
     });
 
-    socket.on('roundSummary', (summaryData) => showRoundSummaryModal(summaryData));
-    socket.on('matchCancelled', (message) => { alert(message); showSplashScreen(); });
-    socket.on('gameOver', ({ message }) => showGameOver(message, "Fim de Jogo!", { action: 'menu' }));
-    socket.on('error', (message) => alert(`Erro do Servidor: ${message}`));
+    socket.on('roundSummary', (summaryData) => {
+        showRoundSummaryModal(summaryData);
+    });
+    
+    socket.on('matchCancelled', (message) => {
+        alert(message);
+        showSplashScreen();
+    });
+
+    socket.on('gameOver', ({ message, winnerId }) => {
+        showGameOver(message, "Fim de Jogo!", { action: 'menu' });
+    });
+
+    socket.on('error', (message) => {
+        console.error('Server Error:', message);
+        alert(`Erro do Servidor: ${message}`);
+    });
+
+    // --- Matchmaking Listeners ---
     socket.on('matchmakingStatus', ({ mode, current, needed }) => {
         if (dom.matchmakingStatusText) {
             dom.matchmakingStatusText.textContent = t('matchmaking.status_update', { mode, current, needed });
         }
     });
+
     socket.on('matchmakingCancelled', () => {
         updateState('currentQueueMode', null);
         dom.matchmakingStatusModal.classList.add('hidden');
         dom.pvpMatchmakingModal.classList.remove('hidden');
         alert(t('matchmaking.cancel_success'));
     });
-    socket.on('onlineFriendsList', (friends) => renderOnlineFriendsForInvite(friends));
+    
+    // --- New Invite Listeners ---
+    socket.on('onlineFriendsList', (friends) => {
+        renderOnlineFriendsForInvite(friends);
+        dom.inviteFriendsModal.classList.remove('hidden');
+    });
+
     socket.on('lobbyInvite', ({ inviterUsername, roomName, roomId }) => {
         dom.lobbyInviteNotificationText.textContent = t('pvp.invite_notification_text', { username: inviterUsername, roomName });
         dom.lobbyInviteAcceptButton.dataset.roomId = roomId;
+        dom.lobbyInviteDeclineButton.dataset.inviterId = inviterUsername; // Not strictly needed but good practice
         dom.lobbyInviteNotificationModal.classList.remove('hidden');
     });
+
     socket.on('inviteResponse', ({ status, username }) => {
-        const messages = {
-            'sent': t('pvp.invite_sent', { username }),
-            'declined': t('pvp.invite_declined', { username }),
-            'offline': t('pvp.invite_failed_offline', { username }),
-            'in_game': t('pvp.invite_failed_ingame', { username }),
-            'already_in_lobby': t('pvp.already_in_lobby')
-        };
-        if (messages[status]) alert(messages[status]);
+        let message = '';
+        switch (status) {
+            case 'sent':
+                message = t('pvp.invite_sent', { username });
+                break;
+            case 'declined':
+                message = t('pvp.invite_declined', { username });
+                break;
+            case 'offline':
+                message = t('pvp.invite_failed_offline', { username });
+                break;
+            case 'in_game':
+                 message = t('pvp.invite_failed_ingame', { username });
+                 break;
+            case 'already_in_lobby':
+                message = t('pvp.already_in_lobby');
+                break;
+        }
+        if (message) {
+            alert(message);
+        }
     });
+
+    // --- Shop Listeners ---
     socket.on('avatarPurchaseSuccess', ({ updatedProfile }) => {
         const { userProfile } = getState();
         if (userProfile.google_id === updatedProfile.google_id) {
@@ -274,34 +370,63 @@ export function connectToServer() {
             showCoinRewardNotification(t('shop.purchase_success'));
         }
     });
+
     socket.on('avatarPurchaseError', ({ message }) => {
         alert(t('shop.purchase_error', { error: message }));
-        renderShopAvatars();
+        renderShopAvatars(); // Re-render to re-enable button
     });
 
+    // --- Infinite Challenge Listeners ---
     socket.on('infiniteChallengePotUpdate', ({ pot }) => {
-        if (dom.infiniteChallengePotDisplay) {
-            dom.infiniteChallengePotDisplay.textContent = t('infinite_challenge.pot_display', { pot: pot || 0 });
-            dom.infiniteChallengePotDisplay.dataset.potValue = pot || 0;
+        const potDisplay = dom.infiniteChallengePotDisplay;
+        if (potDisplay) {
+            potDisplay.textContent = t('infinite_challenge.pot_display', { pot: pot || 0 });
+            potDisplay.dataset.potValue = pot || 0;
         }
     });
+
     socket.on('infiniteChallengeStartSuccess', (payload) => {
-        if (!payload || !payload.opponentQueue || payload.opponentQueue.length === 0) {
+        // BUG FIX: The server might not send a payload if there's an issue.
+        // This defensive check prevents the client from crashing.
+        if (!payload || !payload.opponentQueue) {
+            console.error("Received empty or invalid payload for infiniteChallengeStartSuccess.", payload);
             alert("Ocorreu um erro ao iniciar o desafio. Por favor, tente novamente.");
             document.dispatchEvent(new Event('cleanupInfiniteChallengeUI'));
             return;
         }
-        if (payload.updatedProfile) updateState('userProfile', payload.updatedProfile);
-        updateState('infiniteChallengeOpponentQueue', payload.opponentQueue);
+        
+        const { opponentQueue, updatedProfile } = payload;
+
+        if (opponentQueue.length === 0) {
+            console.error("Received empty opponent queue from server for Infinite Challenge.");
+            alert("Erro ao iniciar o desafio: não foi possível carregar os oponentes.");
+            document.dispatchEvent(new Event('cleanupInfiniteChallengeUI'));
+            return;
+        }
+        
+        // Update profile to reflect new coin balance immediately
+        if (updatedProfile) {
+            updateState('userProfile', updatedProfile);
+            renderProfile(updatedProfile); // This will update the header display
+        }
+
+        updateState('infiniteChallengeOpponentQueue', opponentQueue);
         document.dispatchEvent(new Event('initiateInfiniteChallengeGame'));
     });
+
     socket.on('infiniteChallengeStartError', ({ message }) => {
         alert(message);
         document.dispatchEvent(new Event('cleanupInfiniteChallengeUI'));
     });
+
     socket.on('infiniteChallengeWin', ({ potWon }) => {
         const { gameState } = getState();
-        const timeFormatted = formatTime(gameState.elapsedSeconds);
+        const level = gameState ? gameState.infiniteChallengeLevel : 'Final';
+        const timeSeconds = gameState ? gameState.elapsedSeconds : 0;
+        const minutes = Math.floor(timeSeconds / 60).toString().padStart(2, '0');
+        const seconds = (timeSeconds % 60).toString().padStart(2, '0');
+        const timeFormatted = `${minutes}:${seconds}`;
+
         showGameOver(
             t('game_over.infinite_challenge_win', { time: timeFormatted, pot: potWon }),
             t('game_over.infinite_challenge_title'),
@@ -311,46 +436,127 @@ export function connectToServer() {
 }
 
 // --- EMITTERS ---
-export function emitGetRanking(page = 1) { if (socket) socket.emit('getRanking', { page }); }
-export function emitGetInfiniteRanking(page = 1) { if (socket) socket.emit('getInfiniteRanking', { page }); }
-export function emitGetInfiniteChallengePot(callback) { if (socket) socket.emit('getInfiniteChallengePot', callback); }
-export function emitStartInfiniteChallenge() { if (socket) socket.emit('startInfiniteChallenge'); }
-export function emitSubmitInfiniteResult(result) { if (socket) socket.emit('submitInfiniteResult', result); }
-export function emitGetProfile() { if (socket) socket.emit('getProfile'); }
-export function emitViewProfile({ googleId }) { if (socket) socket.emit('viewProfile', { googleId }); }
-export function emitSetSelectedTitle(titleCode) { if (socket) socket.emit('setSelectedTitle', { titleCode }); }
-export function emitSetSelectedAvatar({ avatarCode }) { if (socket) socket.emit('setSelectedAvatar', { avatarCode }); }
-export function emitListRooms() { if (socket) socket.emit('listRooms'); }
-export function emitCreateRoom({ name, password, betAmount }) { if (socket) socket.emit('createRoom', { name, password, betAmount }); }
-export function emitJoinRoom({ roomId, password }) { if (socket) socket.emit('joinRoom', { roomId, password }); }
-export function emitLobbyChat(message) { if (socket) socket.emit('lobbyChatMessage', message); }
-export function emitChatMessage(message) { if (socket) socket.emit('chatMessage', message); }
-export function emitChangeMode(mode) { if (socket) socket.emit('changeMode', mode); }
-export function emitStartGame() { if (socket) socket.emit('startGame'); }
-export function emitPlayCard({ cardId, targetId, options = {} }) { if (socket) socket.emit('playCard', { cardId, targetId, options }); }
-export function emitSearchUsers(query) { if (socket) socket.emit('searchUsers', { query }); }
-export function emitSendFriendRequest(targetUserId, callback) { if (socket) socket.emit('sendFriendRequest', { targetUserId }, callback); }
-export function emitRespondToRequest(requestId, action) { if (socket) socket.emit('respondToRequest', { requestId, action }); }
-export function emitGetPendingRequests() { if (socket) socket.emit('getPendingRequests'); }
-export function emitRemoveFriend(targetUserId) { if (socket) socket.emit('removeFriend', { targetUserId }); }
-export function emitGetFriendsList() { if (socket) socket.emit('getFriendsList'); }
-export function emitSendPrivateMessage(recipientId, content) { if (socket) socket.emit('sendPrivateMessage', { recipientId, content }); }
-export function emitReportPlayer(reportedGoogleId, message) { if (socket) socket.emit('reportPlayer', { reportedGoogleId, message }); }
-export function emitClaimDailyLoginReward() { if (socket) socket.emit('claimDailyLoginReward'); }
-export function emitClaimChallengeReward(data) { if (socket) socket.emit('claimChallengeReward', data); }
-export function emitGrantAchievement(achievementId) { if (socket) socket.emit('grantAchievement', { achievementId }); }
-export function emitBuyAvatar({ avatarCode }) { if (socket) socket.emit('buyAvatar', { avatarCode }); }
-export function emitJoinMatchmaking({ mode }) { if (socket) { updateState('currentQueueMode', mode); socket.emit('joinMatchmaking', { mode }); } }
-export function emitCancelMatchmaking() { if (socket) socket.emit('cancelMatchmaking'); }
-export function emitGetOnlineFriends() { if (socket) socket.emit('getOnlineFriends'); }
-export function emitInviteFriendToLobby(targetUserId) { const { currentRoomId } = getState(); if (socket && currentRoomId) socket.emit('inviteFriendToLobby', { targetUserId, roomId: currentRoomId }); }
-export function emitAcceptInvite({ roomId }) { if (socket) socket.emit('acceptInvite', { roomId }); }
-export function emitDeclineInvite({ roomId }) { if (socket) socket.emit('declineInvite', { roomId }); }
-export function emitKickPlayer(targetClientId) { const { currentRoomId } = getState(); if (socket && currentRoomId) socket.emit('kickPlayer', { targetClientId, roomId: currentRoomId }); }
-export function emitLeaveRoom() { const { currentRoomId } = getState(); if (socket && currentRoomId) { socket.emit('leaveRoom'); updateState('currentRoomId', null); updateState('gameState', null); dom.pvpLobbyModal.classList.add('hidden'); dom.appContainerEl.classList.add('hidden'); showSplashScreen(); } }
-export function emitEndTurn() { const { gameState, playerId } = getState(); if (!socket || !gameState || gameState.currentPlayer !== playerId) return; const player = gameState.players[playerId]; if(!player) return; const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length; if (valueCardsInHandCount > 1 && !player.playedValueCardThisTurn) { alert("Você precisa jogar uma carta de valor neste turno!"); return; } socket.emit('endTurn'); }
-export function emitAdminGetData() { if (socket) socket.emit('admin:getData'); }
-export function emitAdminBanUser(userId) { if (socket) socket.emit('admin:banUser', { userId }); }
-export function emitAdminUnbanUser(userId) { if (socket) socket.emit('admin:unbanUser', { userId }); }
-export function emitAdminResolveReport(reportId) { if (socket) socket.emit('admin:resolveReport', { reportId }); }
-export function emitAdminRollbackUser(userId) { if (socket) socket.emit('admin:rollbackUser', { userId }); }
+export function emitGetRanking(page = 1) { const { socket } = getState(); if (socket) socket.emit('getRanking', { page }); }
+export function emitGetInfiniteRanking(page = 1) { const { socket } = getState(); if (socket) socket.emit('getInfiniteRanking', { page }); }
+export function emitGetInfiniteChallengePot(callback) { const { socket } = getState(); if (socket) socket.emit('getInfiniteChallengePot', callback); }
+export function emitStartInfiniteChallenge() { const { socket } = getState(); if (socket) socket.emit('startInfiniteChallenge'); }
+export function emitSubmitInfiniteResult(result) { const { socket } = getState(); if (socket) socket.emit('submitInfiniteResult', result); }
+export function emitClaimInfiniteChallengeReward() { const { socket } = getState(); if (socket) socket.emit('claimInfiniteChallengeReward'); }
+export function emitGetProfile() { const { socket } = getState(); if (socket) socket.emit('getProfile'); }
+export function emitViewProfile(googleId) { const { socket } = getState(); if (socket) socket.emit('viewProfile', { googleId }); }
+export function emitSetSelectedTitle(titleCode) { const { socket } = getState(); if (socket) socket.emit('setSelectedTitle', { titleCode }); }
+export function emitSetSelectedAvatar({ avatarCode }) { const { socket } = getState(); if (socket) socket.emit('setSelectedAvatar', { avatarCode }); }
+export function emitClaimEventReward(titleCode) { const { socket } = getState(); if (socket) socket.emit('claimEventReward', { titleCode });}
+export function emitListRooms() { const { socket } = getState(); if (socket) socket.emit('listRooms'); }
+export function emitCreateRoom({ name, password, betAmount }) { const { socket } = getState(); if (socket) socket.emit('createRoom', { name, password, betAmount }); }
+export function emitJoinRoom({ roomId, password }) { const { socket } = getState(); if (socket) socket.emit('joinRoom', { roomId, password }); }
+export function emitLobbyChat(message) { const { socket } = getState(); if(socket) socket.emit('lobbyChatMessage', message); }
+export function emitChatMessage(message) { const { socket } = getState(); if (socket) socket.emit('chatMessage', message); }
+export function emitChangeMode(mode) { const { socket } = getState(); if (socket) socket.emit('changeMode', mode); }
+export function emitStartGame() { const { socket } = getState(); if (socket) socket.emit('startGame'); }
+export function emitPlayCard({ cardId, targetId, options = {} }) { const { socket } = getState(); if (socket) socket.emit('playCard', { cardId, targetId, options }); }
+export function emitSearchUsers(query) { const { socket } = getState(); if (socket) socket.emit('searchUsers', { query }); }
+export function emitSendFriendRequest(targetUserId, callback) { 
+    const { socket } = getState(); 
+    if (socket) {
+        socket.emit('sendFriendRequest', { targetUserId }, callback);
+    } else {
+        callback({ success: false, error: 'Sem conexão com o servidor.' });
+    }
+}
+export function emitRespondToRequest(requestId, action) { const { socket } = getState(); if(socket) socket.emit('respondToRequest', { requestId, action }); }
+export function emitGetPendingRequests() { const { socket } = getState(); if(socket) socket.emit('getPendingRequests'); }
+export function emitRemoveFriend(targetUserId) { const { socket } = getState(); if (socket) socket.emit('removeFriend', { targetUserId }); }
+export function emitGetFriendsList() { const { socket } = getState(); if (socket) socket.emit('getFriendsList'); }
+export function emitSendPrivateMessage(recipientId, content) { const { socket } = getState(); if (socket) socket.emit('sendPrivateMessage', { recipientId, content }); }
+export function emitReportPlayer(reportedGoogleId, message) { const { socket } = getState(); if (socket) socket.emit('reportPlayer', { reportedGoogleId, message }); }
+export function emitClaimDailyLoginReward() { const { socket } = getState(); if(socket) socket.emit('claimDailyLoginReward'); }
+export function emitClaimChallengeReward(data) { const { socket } = getState(); if(socket) socket.emit('claimChallengeReward', data); }
+export function emitGrantAchievement(achievementId) { const { socket } = getState(); if (socket) socket.emit('grantAchievement', { achievementId }); }
+export function emitBuyAvatar(avatarCode) { const { socket } = getState(); if (socket) socket.emit('buyAvatar', { avatarCode }); }
+
+// --- Matchmaking Emitters ---
+export function emitJoinMatchmaking(mode) {
+    const { socket } = getState();
+    if (socket) {
+        updateState('currentQueueMode', mode);
+        socket.emit('joinMatchmaking', { mode });
+    }
+}
+export function emitCancelMatchmaking() {
+    const { socket } = getState();
+    if (socket) {
+        socket.emit('cancelMatchmaking');
+    }
+}
+
+// --- Invite Emitters ---
+export function emitGetOnlineFriends() {
+    const { socket } = getState();
+    if (socket) socket.emit('getOnlineFriends');
+}
+export function emitInviteFriendToLobby(targetUserId) {
+    const { socket, currentRoomId } = getState();
+    if (socket && currentRoomId) {
+        socket.emit('inviteFriendToLobby', { targetUserId, roomId: currentRoomId });
+    }
+}
+export function emitAcceptInvite(roomId) {
+    const { socket } = getState();
+    if (socket) socket.emit('acceptInvite', { roomId });
+}
+export function emitDeclineInvite(roomId) {
+    const { socket } = getState();
+    if (socket) socket.emit('declineInvite', { roomId });
+}
+export function emitKickPlayer(targetClientId) { 
+    const { socket, currentRoomId } = getState(); 
+    if (socket && currentRoomId) socket.emit('kickPlayer', { targetClientId, roomId: currentRoomId }); 
+}
+
+
+export function emitLeaveRoom() {
+    const { socket, currentRoomId } = getState();
+    if (socket && currentRoomId) {
+        socket.emit('leaveRoom');
+        updateState('currentRoomId', null);
+        updateState('gameState', null);
+        dom.pvpLobbyModal.classList.add('hidden');
+        dom.appContainerEl.classList.add('hidden');
+        showSplashScreen();
+    }
+}
+
+export function emitEndTurn() {
+    const { socket, gameState, playerId } = getState();
+    if (!socket || !gameState || gameState.currentPlayer !== playerId) return;
+    const player = gameState.players[playerId];
+    if(!player) return;
+    const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length;
+    if (valueCardsInHandCount > 1 && !player.playedValueCardThisTurn) {
+        alert("Você precisa jogar uma carta de valor neste turno!");
+        return;
+    }
+    socket.emit('endTurn');
+}
+
+// --- Admin Emitters ---
+export function emitAdminGetData() {
+    const { socket } = getState();
+    if (socket) socket.emit('admin:getData');
+}
+
+export function emitAdminBanUser(userId) {
+    const { socket } = getState();
+    if (socket) socket.emit('admin:banUser', { userId });
+}
+
+export function emitAdminUnbanUser(userId) {
+    const { socket } = getState();
+    if (socket) socket.emit('admin:unbanUser', { userId });
+}
+
+export function emitAdminResolveReport(reportId) {
+    const { socket } = getState();
+    if (socket) socket.emit('admin:resolveReport', { reportId });
+}

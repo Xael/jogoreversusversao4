@@ -1,14 +1,14 @@
 // js/ui/ui-handlers.js
 import { elements as dom } from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
-import { initializeGame, restartLastDuel, startNextInfiniteChallengeDuel } from '../game-controller.js';
+import { initializeGame, restartLastDuel } from '../game-controller.js';
 import { renderAchievementsModal } from './achievements-renderer.js';
 import { renderAll, showGameOver, updateChatControls } from './ui-renderer.js';
 import * as sound from '../core/sound.js';
 import { startStoryMode, renderStoryNode, playEndgameSequence } from '../story/story-controller.js';
 import * as saveLoad from '../core/save-load.js';
 import * as achievements from '../core/achievements.js';
-import { updateLog, formatTime, dealCard, shuffle } from '../core/utils.js';
+import { updateLog } from '../core/utils.js';
 import * as config from '../core/config.js';
 import { AVATAR_CATALOG } from '../core/config.js';
 import * as network from '../core/network.js';
@@ -20,7 +20,7 @@ import { setLanguage, t } from '../core/i18n.js';
 import { showSplashScreen } from './splash-screen.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from './profile-renderer.js';
 import { openChatWindow, initializeChatHandlers } from './chat-handler.js';
-import { renderShopAvatars, updateCoinVersusDisplay } from './shop-renderer.js';
+import { renderShopAvatars } from './shop-renderer.js';
 
 let currentEventData = null;
 let infiniteChallengeIntroHandler = null;
@@ -79,7 +79,7 @@ function handleCardClick(e) {
     if (!cardEl) return;
     
     const cardId = cardEl.dataset.cardId;
-    const { gameState, isDiscardingForBuff, buffToResolve } = getState();
+    const { gameState } = getState();
     if (!gameState) return;
     
     const myPlayerId = getLocalPlayerId();
@@ -98,46 +98,6 @@ function handleCardClick(e) {
         dom.cardViewerModalEl.classList.remove('hidden');
         return;
     }
-
-    // --- Handle Discarding for Buff ---
-    if (isDiscardingForBuff) {
-        const isValidDiscard = 
-            (buffToResolve.id === 'discard_low_draw_value' && card.type === 'value') ||
-            (buffToResolve.id === 'discard_effect_draw_effect' && card.type === 'effect') ||
-            (buffToResolve.id === 'draw_10_discard_one') || // any card
-            (buffToResolve.id === 'draw_reversus_total' && card.type === 'effect');
-
-        if (!isValidDiscard) {
-            updateLog("Tipo de carta inválido para o descarte do bônus.");
-            return;
-        }
-
-        // Remove card from hand and add to discard
-        const cardIndex = player.hand.findIndex(c => c.id === card.id);
-        if (cardIndex > -1) {
-            const [discardedCard] = player.hand.splice(cardIndex, 1);
-            gameState.discardPiles[discardedCard.type].push(discardedCard);
-            updateLog(`Você descartou ${discardedCard.name} para o efeito do bônus.`);
-        }
-
-        // Fulfill the rest of the buff effect
-        switch (buffToResolve.id) {
-            case 'discard_low_draw_value':
-                player.hand.push(dealCard('value'));
-                break;
-            case 'discard_effect_draw_effect':
-                player.hand.push(dealCard('effect'));
-                break;
-        }
-
-        // Reset discard state and proceed
-        updateState('isDiscardingForBuff', false);
-        updateState('buffToResolve', null);
-        renderAll();
-        document.dispatchEvent(new Event('buffAppliedAndContinue'));
-        return;
-    }
-
 
     if (gameState.currentPlayer !== myPlayerId || cardEl.classList.contains('disabled')) {
         return;
@@ -283,7 +243,6 @@ function cleanupInfiniteChallengeIntro() {
         clearInterval(introImageInterval);
         introImageInterval = null;
     }
-    sound.stopStoryMusic();
     dom.infiniteChallengeIntroModal.classList.add('hidden');
     dom.infiniteChallengeIntroModal.classList.remove('fullscreen-modal');
     if (infiniteChallengeIntroHandler) {
@@ -304,7 +263,6 @@ async function startInfiniteChallengeIntro() {
     }
     
     sound.initializeMusic();
-    sound.playStoryMusic('salamandra.ogg');
     
     dom.infiniteChallengeIntroModal.classList.add('fullscreen-modal');
     dom.infiniteChallengeIntroModal.classList.remove('hidden');
@@ -373,158 +331,11 @@ async function startInfiniteChallengeIntro() {
     });
 }
 
-/**
- * Selects 3 unique buffs from the configuration based on their weights.
- * @returns {Array<object>} An array of 3 unique buff objects.
- */
-function selectBuffsByWeight() {
-    const weightedList = config.INFINITE_CHALLENGE_BUFFS.flatMap(buff => Array(buff.weight).fill(buff));
-    const shuffled = shuffle([...weightedList]);
-    const selected = [];
-    const selectedIds = new Set();
-    for (const buff of shuffled) {
-        if (!selectedIds.has(buff.id)) {
-            selected.push(buff);
-            selectedIds.add(buff.id);
-        }
-        if (selected.length === 3) break;
-    }
-    return selected;
-}
-
-/**
- * Handles the win of a round in the Infinite Challenge by showing the buff selection modal.
- */
-async function handleInfiniteChallengeWin() {
-    const buffs = selectBuffsByWeight();
-    dom.infiniteBuffOptions.innerHTML = buffs.map(buff => `
-        <div class="buff-option-card" data-buff-id="${buff.id}">
-            <h3>${t(`buffs.${buff.id}_name`)}</h3>
-            <p>${t(`buffs.${buff.id}_desc`)}</p>
-        </div>
-    `).join('');
-    dom.infiniteBuffSelectionModal.classList.remove('hidden');
-}
-
-/**
- * Applies the selected buff and continues the challenge.
- * @param {string} buffId - The ID of the selected buff.
- */
-async function applyInfiniteChallengeBuff(buffId) {
-    const { gameState } = getState();
-    const player = gameState.players['player-1'];
-    gameState.activeBuffs = [buffId]; // Reset and set the new buff
-
-    updateLog(`Bônus ativado: ${t(`buffs.${buffId}_name`)}`);
-
-    const buff = config.INFINITE_CHALLENGE_BUFFS.find(b => b.id === buffId);
-
-    switch(buffId) {
-        case 'auto_win':
-            gameState.infiniteChallengeOpponentQueue.shift(); // Skip current opponent
-            if (gameState.infiniteChallengeOpponentQueue.length === 0) {
-                 document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'victory' } }));
-                 return;
-            }
-            handleInfiniteChallengeWin(); // Go straight to the next buff selection
-            break;
-        
-        case 'immunity_defeat':
-        case 'resto_10':
-        case 'immunity_negative':
-        case 'reveal_opponent_hand':
-            startNextInfiniteChallengeDuel();
-            break;
-        
-        case 'draw_two_effect':
-            player.hand.push(dealCard('effect'), dealCard('effect'));
-            renderAll();
-            startNextInfiniteChallengeDuel();
-            break;
-
-        case 'draw_two_value':
-            player.hand.push(dealCard('value'), dealCard('value'));
-            renderAll();
-            startNextInfiniteChallengeDuel();
-            break;
-
-        case 'discard_low_draw_value': {
-            const valueCards = player.hand.filter(c => c.type === 'value').sort((a, b) => a.value - b.value);
-            if (valueCards.length > 0) {
-                const [cardToDiscard] = player.hand.splice(player.hand.findIndex(c => c.id === valueCards[0].id), 1);
-                gameState.discardPiles.value.push(cardToDiscard);
-                player.hand.push(dealCard('value'));
-                updateLog(`Você descartou ${cardToDiscard.name} e comprou uma nova carta.`);
-                renderAll();
-            } else {
-                updateLog("Nenhuma carta de valor para descartar, bônus sem efeito.");
-            }
-            startNextInfiniteChallengeDuel();
-            break;
-        }
-        
-        case 'discard_effect_draw_effect': {
-             const effectCards = player.hand.filter(c => c.type === 'effect');
-             if (effectCards.length > 0) {
-                const [cardToDiscard] = player.hand.splice(player.hand.findIndex(c => c.id === effectCards[0].id), 1);
-                gameState.discardPiles.effect.push(cardToDiscard);
-                player.hand.push(dealCard('effect'));
-                updateLog(`Você descartou ${cardToDiscard.name} e comprou uma nova carta.`);
-                renderAll();
-             } else {
-                updateLog("Nenhuma carta de efeito para descartar, bônus sem efeito.");
-             }
-             startNextInfiniteChallengeDuel();
-            break;
-        }
-            
-        case 'draw_10_discard_one':
-            player.hand.push({ id: Date.now() + Math.random(), type: 'value', name: 10, value: 10 });
-            updateState('isDiscardingForBuff', true);
-            updateState('buffToResolve', buff);
-            updateLog("Você comprou uma carta 10. Agora, escolha QUALQUER carta para descartar.");
-            renderAll();
-            break;
-            
-        case 'draw_reversus_total':
-            player.hand.push({ id: Date.now() + Math.random(), type: 'effect', name: 'Reversus Total' });
-            if (player.hand.filter(c => c.type === 'effect' && c.name !== 'Reversus Total').length > 0) {
-                updateState('isDiscardingForBuff', true);
-                updateState('buffToResolve', buff);
-                updateLog("Você comprou Reversus Total. Agora, escolha outra carta de EFEITO para descartar.");
-                renderAll();
-            } else {
-                updateLog("Você comprou Reversus Total, mas não tem outra carta de efeito para descartar.");
-                startNextInfiniteChallengeDuel();
-            }
-            break;
-    }
-}
-
-
-/**
- * Handles the click on a buff option card.
- * @param {Event} e - The click event.
- */
-async function handleBuffSelectionClick(e) {
-    const card = e.target.closest('.buff-option-card');
-    if (!card) return;
-
-    dom.infiniteBuffSelectionModal.classList.add('hidden');
-    const buffId = card.dataset.buffId;
-    await applyInfiniteChallengeBuff(buffId);
-}
-
 
 export function initializeUiHandlers() {
     document.addEventListener('aiTurnEnded', advanceToNextPlayer);
     
     initializeChatHandlers();
-
-    // Event listeners for the Infinite Challenge buff system
-    document.addEventListener('infiniteChallengeWinRound', handleInfiniteChallengeWin);
-    document.addEventListener('buffAppliedAndContinue', startNextInfiniteChallengeDuel);
-    dom.infiniteBuffOptions.addEventListener('click', handleBuffSelectionClick);
 
     // Listener for server success response to start the challenge
     document.addEventListener('initiateInfiniteChallengeGame', () => {
@@ -535,8 +346,7 @@ export function initializeUiHandlers() {
             overrides: {
                 'player-2': {
                     name: t(infiniteChallengeOpponentQueue[0].nameKey),
-                    aiType: infiniteChallengeOpponentQueue[0].aiType,
-                    story_image_url: infiniteChallengeOpponentQueue[0].image
+                    aiType: infiniteChallengeOpponentQueue[0].aiType
                 }
             }
         });
@@ -715,7 +525,7 @@ export function initializeUiHandlers() {
     
     dom.closeEventButton.addEventListener('click', () => {
         dom.eventModal.classList.add('hidden');
-        sound.stopStoryMusic();
+        sound.playStoryMusic('tela.ogg');
     });
 
     dom.rankingButton.addEventListener('click', () => {
@@ -1331,11 +1141,11 @@ export function initializeUiHandlers() {
             case 'xael_challenge':
                 if (won) {
                     achievements.grantAchievement('xael_win');
-                    message = t('game_over.xael_victory_message');
+                    message = "Você venceu o criador! Habilidade 'Revelação Estelar' desbloqueada no Modo História.";
+                    buttonAction = 'menu';
                 } else {
-                    message = t('game_over.xael_defeat_message');
+                    message = "O criador conhece todos os truques. Tentar novamente?";
                 }
-                buttonAction = 'menu';
                 break;
             case 'narrador':
                 if (won) {
@@ -1349,10 +1159,10 @@ export function initializeUiHandlers() {
             case 'inversus':
                 if (won) {
                     achievements.grantAchievement('inversus_win');
-                    message = t('game_over.inversus_victory_message');
+                    message = "Você derrotou o Inversus! 100% do jogo completo. Um segredo foi revelado...";
                     buttonAction = 'menu';
                 } else {
-                    message = t('game_over.inversus_defeat_message');
+                    message = "O reflexo sombrio do Reversus te derrotou. Tentar novamente?";
                 }
                 break;
             default:
@@ -1520,28 +1330,24 @@ export function initializeUiHandlers() {
         });
     }
 
-    if (dom.lobbyChatSendButton) {
-        dom.lobbyChatSendButton.addEventListener('click', () => {
+    dom.lobbyChatSendButton.addEventListener('click', () => {
+        const message = dom.lobbyChatInput.value.trim();
+        if(message) {
+            network.emitLobbyChat(message);
+            dom.lobbyChatInput.value = '';
+        }
+    });
+    
+    dom.lobbyChatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
             const message = dom.lobbyChatInput.value.trim();
             if(message) {
                 network.emitLobbyChat(message);
                 dom.lobbyChatInput.value = '';
             }
-        });
-    }
-    
-    if (dom.lobbyChatInput) {
-        dom.lobbyChatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const message = dom.lobbyChatInput.value.trim();
-                if(message) {
-                    network.emitLobbyChat(message);
-                    dom.lobbyChatInput.value = '';
-                }
-            }
-        });
-    }
+        }
+    });
 
     dom.pvpShowCreateRoomButton.addEventListener('click', () => {
         dom.pvpCreateRoomModal.classList.remove('hidden');
