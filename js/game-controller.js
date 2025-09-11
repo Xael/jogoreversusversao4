@@ -1,5 +1,5 @@
 import * as config from './core/config.js';
-import * as dom from './core/dom.js';
+import { elements as dom } from './core/dom.js';
 import { getState, updateState } from './core/state.js';
 import { renderAll } from './ui/ui-renderer.js';
 import { showSplashScreen } from './ui/splash-screen.js';

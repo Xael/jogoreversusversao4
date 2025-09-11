@@ -51,7 +51,32 @@
         "pot_display": "🪙 {pot} 🪙",
         "insufficient_funds": "Your CoinVersus balance is insufficient to enter the challenge.",
         "round_announcement": "Round {level}",
-        "validating_entry": "Validating entry and preparing the challenge..."
+        "validating_entry": "Validating entry and preparing the challenge...",
+        "buff_selection_title": "Victory! Choose a bonus for the next round:"
+    },
+    "buffs": {
+        "resto_10_name": "Rest 10",
+        "resto_10_desc": "Your next 'Rest' is guaranteed to be 10, regardless of the card you play.",
+        "discard_low_draw_value_name": "Lesser Trade",
+        "discard_low_draw_value_desc": "Discard your lowest value card and draw a new value card.",
+        "discard_effect_draw_effect_name": "Effect Swap",
+        "discard_effect_draw_effect_desc": "Discard a random effect card and draw a new effect card.",
+        "draw_10_discard_one_name": "Golden Hand",
+        "draw_10_discard_one_desc": "Draw a 10 value card, then discard any other card from your hand.",
+        "draw_reversus_total_name": "Imminent Chaos",
+        "draw_reversus_total_desc": "Draw a 'Reversus Total' card and discard another effect card.",
+        "immunity_negative_name": "Protective Shield",
+        "immunity_negative_desc": "In this round, you are immune to 'Less' and 'Down' effects.",
+        "reveal_opponent_hand_name": "All-Seeing Eye",
+        "reveal_opponent_hand_desc": "In this round, your opponent's hand will be visible to you.",
+        "draw_two_effect_name": "Magic Arsenal",
+        "draw_two_effect_desc": "Draw 2 additional effect cards.",
+        "draw_two_value_name": "Reinforcements",
+        "draw_two_value_desc": "Draw 2 additional value cards.",
+        "immunity_defeat_name": "Second Chance",
+        "immunity_defeat_desc": "Immunity to defeat. If you lose this round, you will still advance to the next opponent.",
+        "auto_win_name": "Auto Win",
+        "auto_win_desc": "Skip the next opponent and advance directly to the next bonus choice."
     },
     "shop": {
         "buy_avatars_tab": "Buy Avatars",

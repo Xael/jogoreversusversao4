@@ -1,5 +1,5 @@
 import { getState, updateState } from './state.js';
-import * as dom from './dom.js';
+import { elements as dom } from './dom.js';
 import * as config from './config.js';
 import { toggleReversusTotalBackground } from '../ui/animations.js';
 

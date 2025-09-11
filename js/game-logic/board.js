@@ -1,6 +1,6 @@
 
 
-import * as dom from '../core/dom.js';
+import { elements as dom } from '../core/dom.js';
 import * as config from '../core/config.js';
 import { shuffle, updateLog } from '../core/utils.js';
 import { getState } from '../core/state.js';

@@ -1,5 +1,5 @@
 import { getState, updateState } from '../core/state.js';
-import * as dom from '../core/dom.js';
+import { elements as dom } from '../core/dom.js';
 import * as config from '../core/config.js';
 import { playStoryMusic, initializeMusic } from '../core/sound.js';
 import { shatterImage, createStarryBackground, initializeFloatingItemsAnimation } from '../ui/animations.js';
@@ -234,79 +234,4 @@ export async function playEndgameSequence() {
     await shatterImage(necroversoImg);
     characterContainer.removeChild(necroversoImg);
 
-    await typeDialogue("story_dialogue.endgame_dialogue_5");
-    await sleep(3000);
-
-    await typeDialogue("story_dialogue.endgame_dialogue_6");
-
-    dialogueOptionsEl.innerHTML = `
-        <button id="endgame-choice-return" class="control-button">${t('story_dialogue.endgame_option_return')}</button>
-        <button id="endgame-choice-stay" class="control-button secondary">${t('story_dialogue.endgame_option_stay')}</button>
-    `;
-
-    const handleChoice = async () => {
-        dialogueOptionsEl.innerHTML = ''; // Clear buttons
-        // Fade to white and start credits
-        dom.storyScreenFlashEl.classList.remove('hidden');
-        dom.storyScreenFlashEl.style.animation = 'flash-white 2s forwards';
-        await sleep(2000);
-        endgameModal.classList.add('hidden');
-        dom.storyScreenFlashEl.classList.add('hidden');
-        dom.storyScreenFlashEl.style.animation = ''; // reset animation
-        showCreditsRoll();
-    };
-
-    dialogueOptionsEl.querySelector('#endgame-choice-return').onclick = () => {
-        updateLog("Você escolheu voltar para casa, levando consigo as memórias do Inversus.");
-        handleChoice();
-    };
-    dialogueOptionsEl.querySelector('#endgame-choice-stay').onclick = () => {
-        updateLog("Você escolheu ficar, tornando-se um guardião do Inversus ao lado de Versatrix.");
-        handleChoice();
-    };
-}
-
-function showCreditsRoll() {
-    dom.creditsRollModal.classList.remove('hidden');
-    playStoryMusic('tela.ogg'); // Play credits theme music
-    
-    // Start animated background
-    const creditsAnimationContainer = document.getElementById('credits-animation-container');
-    const creditsImagePool = [...config.BASE_CARD_IMAGES, ...config.BOSS_CARD_IMAGES, ...config.CHARACTER_PORTRAIT_IMAGES];
-    initializeFloatingItemsAnimation(creditsAnimationContainer, creditsImagePool);
-
-    const creditsHtml = `
-        <h2>${t('credits.title')}</h2>
-        <p class="credits-category">${t('credits.category_script')}</p>
-        <p>Xael</p>
-        <p class="credits-category">${t('credits.category_music')}</p>
-        <p>Suno Ai</p>
-        <p class="credits-category">${t('credits.category_sound')}</p>
-        <p>Xael + RPT RPG MAKER</p>
-        <p class="credits-category">${t('credits.category_art')}</p>
-        <p>Gemini Ai + Chatgpt</p>
-        <p class="credits-category">${t('credits.category_programming')}</p>
-        <p>Xael + Google AI Studio</p>
-        <p class="credits-category">${t('credits.category_beta_testers')}</p>
-        <p>${t('credits.beta_testers_names')}<br>(${t('credits.beta_testers_thanks')})</p>
-        <br>
-        <p class="credits-category">${t('credits.category_special_thanks')}</p>
-        <p>${t('credits.special_thanks_1')}</p>
-        <p>${t('credits.special_thanks_2')}</p>
-        <p>${t('credits.special_thanks_3')}</p>
-        <p>${t('credits.special_thanks_4')}</p>
-        <br>
-        <p class="credits-thanks">${t('credits.final_thanks')}</p>
-        <p>Xael - Alex</p>
-        <br><br><br>
-        <p>${t('credits.the_end')}</p>
-    `;
-    dom.creditsContent.innerHTML = creditsHtml;
-
-    // After credits finish rolling, go back to splash screen
-    setTimeout(() => {
-        dom.creditsRollModal.classList.add('hidden');
-        if (creditsAnimationContainer) creditsAnimationContainer.innerHTML = ''; // Clean up animation
-        document.dispatchEvent(new Event('showSplashScreen'));
-    }, 60000); // Match CSS animation duration
-}
+    await typeDialogue("story_dialogue.end

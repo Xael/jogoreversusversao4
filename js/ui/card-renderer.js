@@ -53,10 +53,14 @@ export const renderCard = (card, context, playerId) => {
 
     let isCardDisabled = card.isBlocked || card.isFrozen || false;
     if (isMyTurnToSeeObscured && context === 'player-hand') {
-        const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length;
-        
-        if (card.type === 'value' && (valueCardsInHandCount <= 1 || player.playedValueCardThisTurn)) {
-             isCardDisabled = true;
+        const isDiscarding = gameState.isDiscardingForBuff;
+        if (isDiscarding) {
+            isCardDisabled = false; // All cards are clickable for discarding
+        } else {
+            const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length;
+            if (card.type === 'value' && (valueCardsInHandCount <= 1 || player.playedValueCardThisTurn)) {
+                 isCardDisabled = true;
+            }
         }
     }
     
