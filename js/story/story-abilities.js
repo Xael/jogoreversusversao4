@@ -1,8 +1,10 @@
+// js/story/story-abilities.js
+
 
 
 import { getState, updateState } from '../core/state.js';
 import * as config from '../core/config.js';
-import * as dom from '../core/dom.js';
+import { elements as dom } from '../core/dom.js';
 import { updateLog, dealCard, shuffle } from '../core/utils.js';
 import { renderAll } from '../ui/ui-renderer.js';
 import { showGameOver } from '../ui/ui-renderer.js';

@@ -1,4 +1,4 @@
-import * as dom from '../core/dom.js';
+import { elements as dom } from '../core/dom.js';
 import { getState } from '../core/state.js';
 import { t } from '../core/i18n.js';
 import * as network from '../core/network.js';

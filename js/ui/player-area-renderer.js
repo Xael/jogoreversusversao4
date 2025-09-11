@@ -1,5 +1,5 @@
 // js/ui/player-area-renderer.js
-import * as dom from '../core/dom.js';
+import { elements as dom } from '../core/dom.js';
 import * as config from '../core/config.js';
 import { getState } from '../core/state.js';
 import { getCardImageUrl, renderCard } from './card-renderer.js';
