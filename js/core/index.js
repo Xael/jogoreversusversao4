@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initDom();
 
     // Initializes Google Sign-In functionality - MUST be before UI Handlers
+    // as it can affect the UI state (e.g., showing profile vs login button).
     initializeGoogleSignIn();
 
     // Initialize internationalization.
