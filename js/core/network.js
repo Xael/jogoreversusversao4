@@ -2,7 +2,7 @@
 import { getState, updateState } from './state.js';
 import { elements as dom } from './dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
-import { renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
+import { renderPvpRanking, renderInfiniteRanking, updateLobbyUi, addLobbyChatMessage } from '../ui/lobby-renderer.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
 import { showSplashScreen } from './splash-screen.js';
 import { updateLog } from './utils.js';

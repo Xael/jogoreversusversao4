@@ -525,7 +525,7 @@ export function initializeUiHandlers() {
     
     dom.closeEventButton.addEventListener('click', () => {
         dom.eventModal.classList.add('hidden');
-        sound.playStoryMusic('tela.ogg');
+        sound.stopStoryMusic();
     });
 
     dom.rankingButton.addEventListener('click', () => {
@@ -653,7 +653,7 @@ export function initializeUiHandlers() {
 
     dom.closeEventButton.addEventListener('click', () => {
         dom.eventModal.classList.add('hidden');
-        sound.stopStoryMusic();
+        sound.playStoryMusic('tela.ogg');
     });
 
     dom.profileModal.addEventListener('click', (e) => {
@@ -1241,9 +1241,6 @@ export function initializeUiHandlers() {
             dom.chatInput.value = '';
         }
     };
-    
-    // This button does not exist in the in-game chat, but is used in the lobby. No need to remove.
-    if(dom.chatSendButton) dom.chatSendButton.addEventListener('click', sendChatMessage);
     
     dom.chatInput.addEventListener('keypress', (e) => { 
         if (e.key === 'Enter') {
