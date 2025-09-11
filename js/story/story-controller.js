@@ -1,5 +1,5 @@
 import { getState, updateState } from '../core/state.js';
-import { elements as dom } from '../core/dom.js';
+import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
 import { playStoryMusic, initializeMusic } from '../core/sound.js';
 import { shatterImage, createStarryBackground, initializeFloatingItemsAnimation } from '../ui/animations.js';

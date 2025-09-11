@@ -1,5 +1,5 @@
 // js/ui/ui-handlers.js
-import { elements as dom } from '../core/dom.js';
+import * as dom from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
 import { initializeGame, restartLastDuel } from '../game-controller.js';
 import { renderAchievementsModal } from './achievements-renderer.js';
@@ -562,7 +562,7 @@ export function initializeUiHandlers() {
         const pvpPrevBtn = e.target.closest('#rank-prev-btn');
         const pvpNextBtn = e.target.closest('#rank-next-btn');
         if (pvpPrevBtn || pvpNextBtn) {
-            const currentPage = parseInt(document.getElementById('ranking-pagination').querySelector('span')?.textContent.match(/(\\d+)/)?.[0] || '1', 10);
+            const currentPage = parseInt(document.getElementById('ranking-pagination').querySelector('span')?.textContent.match(/(\d+)/)?.[0] || '1', 10);
             const newPage = pvpNextBtn ? currentPage + 1 : currentPage - 1;
             network.emitGetRanking(newPage);
         }
@@ -571,7 +571,7 @@ export function initializeUiHandlers() {
         const infinitePrevBtn = e.target.closest('#infinite-rank-prev-btn');
         const infiniteNextBtn = e.target.closest('#infinite-rank-next-btn');
         if (infinitePrevBtn || infiniteNextBtn) {
-            const currentPage = parseInt(document.getElementById('infinite-ranking-pagination').querySelector('span')?.textContent.match(/(\\d+)/)?.[0] || '1', 10);
+            const currentPage = parseInt(document.getElementById('infinite-ranking-pagination').querySelector('span')?.textContent.match(/(\d+)/)?.[0] || '1', 10);
             const newPage = infiniteNextBtn ? currentPage + 1 : currentPage - 1;
             network.emitGetInfiniteRanking(newPage);
         }
@@ -1241,6 +1241,9 @@ export function initializeUiHandlers() {
             dom.chatInput.value = '';
         }
     };
+    
+    // This button does not exist in the in-game chat, but is used in the lobby. No need to remove.
+    if(dom.chatSendButton) dom.chatSendButton.addEventListener('click', sendChatMessage);
     
     dom.chatInput.addEventListener('keypress', (e) => { 
         if (e.key === 'Enter') {

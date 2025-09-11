@@ -1,52 +1,7 @@
-import { elements as dom } from '../core/dom.js';
+import * as dom from '../core/dom.js';
 import { getState } from '../core/state.js';
 import { t } from '../core/i18n.js';
 import * as network from '../core/network.js';
-
-export function renderRoomList(rooms) {
-    if (!dom.pvpRoomGridEl) return;
-
-    if (rooms.length === 0) {
-        dom.pvpRoomGridEl.innerHTML = `<p>${t('pvp.no_rooms')}</p>`;
-        return;
-    }
-
-    const specialRoomColors = ['color-1', 'color-2', 'color-3', 'color-4', 'special-room'];
-    let colorIndex = 0;
-
-    dom.pvpRoomGridEl.innerHTML = rooms.map(room => {
-        const passwordIcon = room.hasPassword ? `<span class="password-icon" title="Sala com Senha">🔒</span>` : '';
-        const betIcon = room.betAmount > 0 ? `<span class="bet-icon" title="${t('pvp.bet_title', {betAmount: room.betAmount})}">🪙${room.betAmount}</span>` : '';
-        const modeMap = {
-            'solo-2p': t('pvp.mode_2p'),
-            'solo-3p': t('pvp.mode_3p'),
-            'solo-4p': t('pvp.mode_4p'),
-            'duo': t('pvp.mode_duo'),
-        };
-        const modeText = modeMap[room.mode] || room.mode;
-        
-        const colorClass = specialRoomColors[colorIndex % specialRoomColors.length];
-        colorIndex++;
-
-        return `
-            <div class="room-card ${colorClass}">
-                <h3>
-                    <span>${room.name}</span>
-                    <div style="display: flex; gap: 0.5rem;">${betIcon}${passwordIcon}</div>
-                </h3>
-                <div class="room-card-players-list">
-                    ${room.players.map(p => `<span class="room-player-name clickable" data-google-id="${p.googleId}">${p.username}</span>`).join('')}
-                </div>
-                <div class="room-card-footer">
-                    <span class="room-info">${t('pvp.room_card_mode', {mode: modeText})}</span>
-                    <span class="room-info">${t('pvp.room_card_players', {count: room.playerCount})}</span>
-                    <button class="control-button join-room-button" data-room-id="${room.id}" data-has-password="${room.hasPassword}">Entrar</button>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
 
 export function renderPvpRanking(rankingData) {
     const { players, currentPage, totalPages } = rankingData;

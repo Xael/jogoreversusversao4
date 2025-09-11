@@ -1,6 +1,6 @@
 import { getState, updateState } from './state.js';
 import { updateLog } from './utils.js';
-import { elements as dom } from './dom.js';
+import * as dom from './dom.js';
 import { renderAll } from '../ui/ui-renderer.js';
 import { showSplashScreen } from '../ui/splash-screen.js';
 import { executeAiTurn } from '../ai/ai-controller.js';

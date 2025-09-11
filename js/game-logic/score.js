@@ -1,5 +1,5 @@
 import { getState } from '../core/state.js';
-import { elements as dom } from '../core/dom.js';
+import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
 
 /**

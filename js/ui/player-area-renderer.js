@@ -1,5 +1,5 @@
 // js/ui/player-area-renderer.js
-import { elements as dom } from '../core/dom.js';
+import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
 import { getState } from '../core/state.js';
 import { getCardImageUrl, renderCard } from './card-renderer.js';
@@ -74,17 +74,10 @@ export const renderPlayerArea = (player) => {
         ${handHTML}
     `;
 
-    const hasStoryPortrait = (player.aiType && !player.isHuman && config.AI_CHAT_PERSONALITIES.hasOwnProperty(player.aiType));
-    const hasAvatarUrl = player.story_image_url || player.avatar_url;
+    const hasStoryPortrait = player.aiType && !player.isHuman && config.AI_CHAT_PERSONALITIES.hasOwnProperty(player.aiType);
 
-    let portraitElement = null;
-
-    if (player.story_image_url) {
-        portraitElement = document.createElement('img');
-        portraitElement.src = `./${player.story_image_url}`;
-    } else if (hasStoryPortrait) {
-        // Fallback for original story mode bosses
-         const portraitMap = {
+    if (hasStoryPortrait) {
+        const portraitMap = {
             'necroverso_tutorial': { src: './necroverso.png', class: 'player-area-character-portrait necro-tutorial-portrait' },
             'contravox': { src: './contravox.png', class: 'player-area-character-portrait contravox-portrait' },
             'versatrix': { src: './versatrix.png', class: 'player-area-character-portrait versatrix-portrait' },
@@ -95,29 +88,25 @@ export const renderPlayerArea = (player) => {
             'xael': { src: './xaeldesafio.png', class: 'player-area-character-portrait xael-glow' },
             'inversus': { src: './INVERSUM1.png', class: 'inversus-character-portrait', id: 'inversus-character-portrait' }
         };
+        
+        config.MONTHLY_EVENTS.forEach(event => {
+            portraitMap[event.ai] = { src: `./${event.image}`, class: 'player-area-character-portrait' };
+        });
+
         const portraitInfo = portraitMap[player.aiType];
         if (portraitInfo) {
-            portraitElement = document.createElement('img');
-            portraitElement.src = portraitInfo.src;
-            portraitElement.className = portraitInfo.class;
-            if (portraitInfo.id) portraitElement.id = portraitInfo.id;
+            const portraitImg = document.createElement('img');
+            portraitImg.src = portraitInfo.src;
+            portraitImg.className = portraitInfo.class;
+            if (portraitInfo.id) portraitImg.id = portraitInfo.id;
+            playerEl.appendChild(portraitImg);
         }
     } else if (player.avatar_url && !player.avatar_url.includes('googleusercontent.com')) {
         playerEl.classList.add('has-avatar');
-        portraitElement = document.createElement('img');
-        portraitElement.src = player.avatar_url;
-        portraitElement.className = 'player-equipped-avatar';
-    }
-    
-    if (portraitElement) {
-        // Special class for Inversus
-        if (player.aiType === 'inversus') {
-            portraitElement.className = 'inversus-character-portrait';
-            portraitElement.id = 'inversus-character-portrait';
-        } else if (portraitElement.className !== 'player-equipped-avatar') {
-             portraitElement.className = 'player-area-character-portrait';
-        }
-        playerEl.appendChild(portraitElement);
+        const avatarImg = document.createElement('img');
+        avatarImg.src = player.avatar_url;
+        avatarImg.className = 'player-equipped-avatar';
+        playerEl.appendChild(avatarImg);
     }
 };
 
@@ -170,7 +159,6 @@ function renderPlayerHeader(player) {
     ` : '';
 
     const positionDisplay = gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : player.position;
-    const positionHeader = gameState.isInfiniteChallenge ? t('ranking.header_level') : t('game.house_header');
 
     return `
         <div class="player-header">
@@ -188,7 +176,7 @@ function renderPlayerHeader(player) {
                  ${coinversusHTML}
                  <span class="stat-item" title="${t('game.resto_header_title')}">${t('game.resto_header')}: <strong>${restoValue}</strong></span>
                  <span class="stat-item" title="${t('game.path_header_title')}">${t('game.path_header')}: <strong>${pathDisplay}</strong></span>
-                 <span class="stat-item" title="${t('game.house_header_title')}">${positionHeader}: <strong>${positionDisplay}</strong></span>
+                 <span class="stat-item" title="${t('game.house_header_title')}">${gameState.isInfiniteChallenge ? t('ranking.header_level') : t('game.house_header')}: <strong>${positionDisplay}</strong></span>
                  <span class="stat-item" title="${t('game.effect_header_title')}">${t('game.effect_header')}: <strong>${effectText}</strong></span>
                  ${fieldEffectHTML}
             </div>

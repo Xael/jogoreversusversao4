@@ -1,8 +1,9 @@
 
+
 import { getState, updateState } from '../core/state.js';
-import { elements as dom } from '../core/dom.js';
+import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
-import { renderAll, showTurnIndicator, showRoundSummaryModal, showGameOver, showRoundAnnounce } from '../ui/ui-renderer.js';
+import { renderAll, showTurnIndicator, showRoundSummaryModal, showGameOver } from '../ui/ui-renderer.js';
 import { renderCard } from '../ui/card-renderer.js';
 import { executeAiTurn } from '../ai/ai-controller.js';
 import { triggerFieldEffects, checkAndTriggerPawnLandingAbilities } from '../story/story-abilities.js';
@@ -278,12 +279,7 @@ export async function startNewRound(isFirstRound = false) {
     if (!isFirstRound) {
         gameState.turn++;
     }
-    
-    if (gameState.isInfiniteChallenge) {
-        await showRoundAnnounce(gameState.infiniteChallengeLevel);
-    } else {
-        updateLog(`--- Iniciando Rodada ${gameState.turn} ---`);
-    }
+    updateLog(`--- Iniciando Rodada ${gameState.turn} ---`);
 
     // Reset round-specific states for each player
     gameState.playerIdsInGame.forEach(id => {
@@ -353,9 +349,9 @@ export async function startNewRound(isFirstRound = false) {
     dom.appContainerEl.classList.remove('reversus-total-active');
     dom.reversusTotalIndicatorEl.classList.add('hidden');
 
-    // Inversus screen effects with escalating chaos (but NOT for Infinite Challenge)
+    // Inversus screen effects with escalating chaos
     clearInversusScreenEffects();
-    if (gameState.isInversusMode && !gameState.isInfiniteChallenge) {
+    if (gameState.isInversusMode) {
         const turn = gameState.turn;
         const effects = ['screen-flipped', 'screen-inverted', 'screen-mirrored'];
         shuffle(effects);
@@ -448,7 +444,7 @@ function checkGameEnd() {
         }
     }
     
-    if (gameState.isKingNecroBattle || (gameState.isInversusMode && !gameState.isInfiniteChallenge)) {
+    if (gameState.isKingNecroBattle || gameState.isInversusMode) {
         const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
         if (activePlayers.length <= 1) {
             gameState.gamePhase = 'game_over';
@@ -529,7 +525,6 @@ async function calculateScoresAndEndRound() {
         // Check for field effects on resto
         if (gameState.activeFieldEffects.some(fe => fe.name === 'Resto Maior' && fe.appliesTo === id)) restoValue = 10;
         if (gameState.activeFieldEffects.some(fe => fe.name === 'Resto Menor' && fe.appliesTo === id)) restoValue = 2;
-        if (gameState.activeBuffs?.includes('resto_10')) restoValue = 10; // Buff effect
 
         if (p.effects.score === 'Mais') score += restoValue;
 
@@ -583,43 +578,17 @@ async function calculateScoresAndEndRound() {
         }
     }
     
-    // 4. Log winner and show summary modal (skip for Infinite Challenge)
-    if (!gameState.isInfiniteChallenge) {
-        if (winners.length > 0) {
-            const winnerNames = winners.map(id => gameState.players[id].name).join(' e ');
-            updateLog(`Vencedor(es) da rodada: ${winnerNames}.`);
-        } else {
-            updateLog("A rodada terminou em empate. Ninguém avança por pontuação.");
-        }
-        await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
+    // 4. Log winner and show summary modal
+    if (winners.length > 0) {
+        const winnerNames = winners.map(id => gameState.players[id].name).join(' e ');
+        updateLog(`Vencedor(es) da rodada: ${winnerNames}.`);
+    } else {
+        updateLog("A rodada terminou em empate. Ninguém avança por pontuação.");
     }
+    await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
 
-    // Handle INFINITE CHALLENGE progression / game over
-    if (gameState.isInfiniteChallenge) {
-        let player1Won = winners.includes('player-1');
-        const player1Lost = !player1Won;
-        
-        // Check for 'Immunity to Defeat' buff
-        if (player1Lost && gameState.activeBuffs?.includes('immunity_defeat')) {
-            updateLog("Bônus 'Segunda Chance' ativado! Você perdeu a rodada, mas não foi eliminado!");
-            player1Won = true; // Treat it as a win for progression
-            gameState.activeBuffs = gameState.activeBuffs.filter(b => b !== 'immunity_defeat'); // Consume buff
-        }
-        
-        if (player1Won) {
-            document.dispatchEvent(new Event('infiniteChallengeWinRound'));
-            return;
-        } else {
-            // Player lost, game over
-            gameState.players['player-1'].isEliminated = true;
-            gameState.gamePhase = 'game_over';
-            document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'loss' } }));
-            return;
-        }
-    }
-    
     // Handle INVERSUS heart loss
-    if (gameState.isInversusMode && !gameState.isInfiniteChallenge && !checkGameEnd()) {
+    if (gameState.isInversusMode && !checkGameEnd()) {
         const player1Won = winners.includes('player-1');
         const inversusWon = winners.includes('player-2');
         const player1 = gameState.players['player-1'];

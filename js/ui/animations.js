@@ -1,5 +1,4 @@
-
-import { elements as dom } from '../core/dom.js';
+import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
 import { getState, updateState } from '../core/state.js';
 import { shuffle } from '../core/utils.js';
@@ -450,5 +449,4 @@ export function showInversusVictoryAnimation() {
  */
 export function clearInversusScreenEffects() {
     dom.scalableContainer.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
-    dom.boardEl.classList.remove('board-rotating', 'board-rotating-fast', 'board-rotating-super-fast');
 }

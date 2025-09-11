@@ -1,4 +1,5 @@
 
+
 // This object holds the single source of truth for the application's state.
 const appState = {
     // Core game state object, holds all data about the current match.
@@ -50,10 +51,6 @@ const appState = {
     isChatMuted: false,
     // Holds the shuffled queue of opponents for the current infinite challenge run.
     infiniteChallengeOpponentQueue: [],
-    // Flag indicating the player must discard a card to resolve a buff.
-    isDiscardingForBuff: false,
-    // Holds information about the buff that requires a discard.
-    buffToResolve: null,
 
 
     // --- PVP/Network State ---

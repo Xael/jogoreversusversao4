@@ -1,5 +1,5 @@
 import { getState } from './state.js';
-import { elements as dom } from './dom.js';
+import * as dom from './dom.js';
 import * as config from './config.js';
 import { createDeck } from '../game-logic/deck.js';
 
@@ -110,15 +110,4 @@ export const updateLog = (logEntry) => {
             dom.logEl.scrollTop = dom.logEl.scrollHeight;
         }
     }, 0);
-};
-
-/**
- * Formats a total number of seconds into a MM:SS string.
- * @param {number} totalSeconds - The total seconds to format.
- * @returns {string} The formatted time string.
- */
-export const formatTime = (totalSeconds) => {
-    const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
-    const seconds = (totalSeconds % 60).toString().padStart(2, '0');
-    return `${minutes}:${seconds}`;
 };

@@ -1,31 +1,22 @@
-
-
-// js/ui/splash-screen.js
-import { elements as dom } from '../core/dom.js';
+import * as dom from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
-import { playStoryMusic } from '../core/sound.js';
+import { playStoryMusic, stopStoryMusic, updateMusic } from '../core/sound.js';
+import { checkForSavedGame } from '../core/save-load.js';
 import { checkAndShowSpecialFeatures } from '../core/achievements.js';
-import { initializeFloatingItemsAnimation, clearInversusScreenEffects } from './animations.js';
+import { initializeFloatingItemsAnimation } from './animations.js';
 
 export const showSplashScreen = () => {
     // Stop any ongoing game logic
-    const { gameTimerInterval, isLoggedIn, infiniteChallengeTimerInterval } = getState();
+    const { gameTimerInterval, isLoggedIn } = getState();
     if (gameTimerInterval) {
         clearInterval(gameTimerInterval);
         updateState('gameTimerInterval', null);
-    }
-    if (infiniteChallengeTimerInterval) {
-        clearInterval(infiniteChallengeTimerInterval);
-        updateState('infiniteChallengeTimerInterval', null);
     }
     
     // Reset core game and PvP states
     updateState('gameState', null);
     updateState('playerId', null);
     updateState('currentRoomId', null);
-
-    // Reset visual effects from previous games
-    clearInversusScreenEffects();
 
     // Play menu music
     playStoryMusic('tela.ogg');

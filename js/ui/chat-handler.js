@@ -1,5 +1,6 @@
+
 // js/ui/chat-handler.js
-import { elements as dom } from '../core/dom.js';
+import * as dom from '../core/dom.js';
 import { t } from '../core/i18n.js';
 import * as network from '../core/network.js';
 
