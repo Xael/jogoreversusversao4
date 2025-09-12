@@ -1,5 +1,3 @@
-
-
 // This object holds the single source of truth for the application's state.
 const appState = {
     // Core game state object, holds all data about the current match.

@@ -394,7 +394,9 @@ export function showInversusVictoryAnimation() {
     const containerEl = dom.splashAnimationContainerEl;
     dom.splashScreenEl.classList.remove('hidden');
     containerEl.innerHTML = ''; // Clear previous animations
-    dom.splashScreenEl.querySelector('.splash-content').classList.add('hidden'); // Hide buttons/logo
+    
+    const splashContent = dom.splashScreenEl.querySelector('.splash-content');
+    if(splashContent) splashContent.classList.add('hidden'); // Hide buttons/logo
     
     // Create the background
     createStarryBackground(containerEl, '#FFFFFF', 150);
@@ -439,7 +441,7 @@ export function showInversusVictoryAnimation() {
 
     // Return to main menu after a delay
     setTimeout(() => {
-        dom.splashScreenEl.querySelector('.splash-content').classList.remove('hidden');
+        if(splashContent) splashContent.classList.remove('hidden');
         document.dispatchEvent(new Event('showSplashScreen'));
     }, 15000); // Show animation for 15 seconds
 }

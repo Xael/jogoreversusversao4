@@ -140,6 +140,11 @@ export const toastText = document.getElementById('toast-text');
 export const dailyRewardToast = document.getElementById('daily-reward-toast');
 export const rewardToastText = document.getElementById('reward-toast-text');
 
+// Infinite Challenge Buff Modal
+export const infiniteChallengeBuffModal = document.getElementById('infinite-challenge-buff-modal');
+export const infiniteChallengeBuffOptions = document.getElementById('infinite-challenge-buff-options');
+
+
 // Quick Start & Matchmaking Modals
 export const quickStartModal = document.getElementById('quick-start-modal');
 export const quickStartPvpButton = document.getElementById('quick-start-pvp-button');

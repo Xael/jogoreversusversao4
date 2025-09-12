@@ -1,4 +1,3 @@
-
 // js/core/config.js
 
 // --- CONSTANTS ---
@@ -210,5 +209,18 @@ export const INFINITE_CHALLENGE_OPPONENTS = [
     ...MONTHLY_EVENTS.map(event => ({ nameKey: event.characterNameKey, aiType: event.ai })),
     ...Object.entries(AVATAR_CATALOG)
         .filter(([key]) => !['default_1', 'default_2', 'default_3', 'default_4', 'necroverso', 'contravox', 'versatrix', 'reversum'].includes(key))
-        .map(([key, avatar]) => ({ nameKey: avatar.nameKey, aiType: 'default' }))
+        .map(([key, avatar]) => ({ nameKey: avatar.nameKey, aiType: 'default', avatar_url: avatar.image_url }))
 ];
+
+export const INFINITE_CHALLENGE_BUFFS = {
+    common: [
+        'resto_10', 'discard_low_draw_value', 'discard_effect_draw_effect',
+        'reveal_opponent_hand', 'draw_two_effect', 'draw_two_value'
+    ],
+    rare: [
+        'draw_10_discard_one', 'draw_reversus_total', 'immunity_negative'
+    ],
+    very_rare: [
+        'immunity_defeat', 'auto_win'
+    ]
+};

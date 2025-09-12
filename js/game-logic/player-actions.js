@@ -127,7 +127,13 @@ export async function playCard(player, card, targetId, effectTypeToReverse = nul
     if (card.type === 'value') {
         player.playedCards.value.push(card);
         player.playedValueCardThisTurn = true;
-        player.nextResto = card;
+        // Handle "Resto 10" buff from Infinite Challenge
+        if (player.forceResto10) {
+            player.nextResto = { id: 'buff_10', type: 'value', name: 10, value: 10 };
+            player.forceResto10 = false; // Consume the buff
+        } else {
+            player.nextResto = card;
+        }
     } else {
          if (card.name !== 'Carta da Versatrix') {
             cardDestinationPlayer.playedCards.effect.push(card);
