@@ -1,3 +1,5 @@
+
+
 import { getState, updateState } from '../core/state.js';
 import { updateLog, dealCard } from '../core/utils.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
@@ -27,11 +29,12 @@ export async function applyEffect(card, targetId, casterName, effectTypeToRevers
         return; // Efeito é ignorado
     }
 
-
-    if (gameState.activeFieldEffects.some(fe => fe.name === 'Imunidade' && fe.appliesTo === targetId) && (effectName === 'Menos' || effectName === 'Desce')) {
+    // Check for field effect immunity AND the player's own immunity buff from Infinite Challenge
+    if ((gameState.activeFieldEffects.some(fe => fe.name === 'Imunidade' && fe.appliesTo === targetId) || target.isImmuneToNegativeEffects) && (effectName === 'Menos' || effectName === 'Desce')) {
         updateLog(`${target.name} está imune a ${effectName} nesta rodada!`);
-        return;
+        return; // Buff lasts for the whole duel, so we don't consume it here.
     }
+
 
     const getInverseEffect = (effect) => {
         const map = { 'Mais': 'Menos', 'Menos': 'Mais', 'Sobe': 'Desce', 'Desce': 'Sobe', 'NECRO X': 'NECRO X Invertido', 'NECRO X Invertido': 'NECRO X' };
@@ -69,36 +72,22 @@ export async function applyEffect(card, targetId, casterName, effectTypeToRevers
             target.effects.movement = effectName;
             break;
         case 'Reversus': {
-            // Check if the target effect is locked
             const targetScoreEffectCard = target.playedCards.effect.find(c => ['Mais', 'Menos'].includes(c.name) || (c.isLocked && ['Mais', 'Menos'].includes(c.lockedEffect)));
             const targetMoveEffectCard = target.playedCards.effect.find(c => ['Sobe', 'Desce', 'Pula'].includes(c.name) || (c.isLocked && ['Sobe', 'Desce'].includes(c.lockedEffect)));
 
             if (effectTypeToReverse === 'score' && targetScoreEffectCard?.isLocked) {
                 updateLog(`Ação bloqueada! O efeito ${target.effects.score} em ${target.name} está travado por um Reversus Individual e não pode ser revertido!`);
-                return; // Do nothing
+                return; 
             }
              if (effectTypeToReverse === 'movement' && targetMoveEffectCard?.isLocked) {
                 updateLog(`Ação bloqueada! O efeito ${target.effects.movement} em ${target.name} está travado por um Reversus Individual e não pode ser revertido!`);
-                return; // Do nothing
+                return; 
             }
-
-            const scoreEffectCategory = ['Mais', 'Menos', 'NECRO X', 'NECRO X Invertido', 'Carta da Versatrix'];
-            const moveEffectCategory = ['Sobe', 'Desce', 'Pula'];
             
             if (effectTypeToReverse === 'score') {
-                const cardIndex = target.playedCards.effect.findIndex(c => scoreEffectCategory.includes(c.name));
-                if (cardIndex > -1) {
-                    const removedCard = target.playedCards.effect.splice(cardIndex, 1)[0];
-                    gameState.discardPiles.effect.push(removedCard);
-                }
                 target.effects.score = getInverseEffect(target.effects.score);
                 updateLog(`${casterName} usou ${card.name} em ${target.name} para reverter efeito de pontuação para ${target.effects.score || 'Nenhum'}.`);
             } else if (effectTypeToReverse === 'movement') {
-                const cardIndex = target.playedCards.effect.findIndex(c => moveEffectCategory.includes(c.name));
-                 if (cardIndex > -1) {
-                    const removedCard = target.playedCards.effect.splice(cardIndex, 1)[0];
-                    gameState.discardPiles.effect.push(removedCard);
-                }
                 if (target.effects.movement === 'Pula') {
                     target.effects.movement = null;
                     updateLog(`${casterName} anulou o efeito 'Pula' de ${target.name} com Reversus!`);
@@ -107,7 +96,6 @@ export async function applyEffect(card, targetId, casterName, effectTypeToRevers
                     updateLog(`${casterName} usou ${card.name} em ${target.name} para reverter efeito de movimento para ${target.effects.movement || 'Nenhum'}.`);
                 }
             }
-            // The card object itself is modified in playCard to be displayed correctly
             break;
         }
         case 'Reversus Total': {

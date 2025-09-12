@@ -1,3 +1,4 @@
+
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
 import { getState, updateState } from '../core/state.js';
@@ -10,9 +11,10 @@ import { playSoundEffect } from '../core/sound.js';
  * @param {HTMLElement} startElement - The card element in the player's hand.
  * @param {string} targetPlayerId - The ID of the player whose play zone is the destination.
  * @param {string} targetSlotLabel - The data-label of the target slot (e.g., 'Valor 1').
+ * @param {boolean} [forceHiddenAnimation=false] - If true, the animation will show the card back.
  * @returns {Promise<void>} A promise that resolves when the animation is complete.
  */
-export async function animateCardPlay(card, startElement, targetPlayerId, targetSlotLabel) {
+export async function animateCardPlay(card, startElement, targetPlayerId, targetSlotLabel, forceHiddenAnimation = false) {
      return new Promise(resolve => {
         const targetArea = document.getElementById(`player-area-${targetPlayerId}`);
         if (!targetArea) {
@@ -31,7 +33,14 @@ export async function animateCardPlay(card, startElement, targetPlayerId, target
 
         const clone = document.createElement('div');
         clone.className = 'card card-animation-clone';
-        clone.style.backgroundImage = startElement.style.backgroundImage;
+
+        if (forceHiddenAnimation) {
+            const backImage = card.type === 'value' ? 'verso_valor.png' : 'verso_efeito.png';
+            clone.style.backgroundImage = `url('./${backImage}')`;
+        } else {
+            clone.style.backgroundImage = startElement.style.backgroundImage;
+        }
+        
         clone.style.width = `${startRect.width}px`;
         clone.style.height = `${startRect.height}px`;
         clone.style.top = `${startRect.top}px`;

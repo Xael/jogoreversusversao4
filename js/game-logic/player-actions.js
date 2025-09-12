@@ -1,3 +1,4 @@
+
 import { getState } from '../core/state.js';
 import { updateLog } from '../core/utils.js';
 import { renderAll } from '../ui/ui-renderer.js';
@@ -58,7 +59,8 @@ export async function playCard(player, card, targetId, effectTypeToReverse = nul
     // --- Animate and move card from hand to play zone ---
     const startElement = document.querySelector(`#hand-${player.id} [data-card-id="${card.id}"]`);
     if (startElement) {
-        await animateCardPlay(card, startElement, animationTargetPlayerId, targetSlotLabel);
+        const shouldAnimateHidden = player.aiType === 'oespectro';
+        await animateCardPlay(card, startElement, animationTargetPlayerId, targetSlotLabel, shouldAnimateHidden);
     }
     
     const cardIndexInHand = player.hand.findIndex(c => c.id === card.id);

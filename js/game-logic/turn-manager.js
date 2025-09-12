@@ -1,3 +1,5 @@
+
+
 import { getState, updateState } from '../core/state.js';
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
@@ -728,12 +730,63 @@ export function startNextInfiniteChallengeDuel() {
         return;
     }
 
-    const player1 = gameState.players['player-1'];
-    // Reset previous buffs
-    player1.forceResto10 = false;
-    player1.isImmuneToNegativeEffects = false;
+    // Store previous opponent's rest value before looping
+    const previousOpponentResto = gameState.players['player-2'] ? gameState.players['player-2'].resto : null;
 
-    // Apply new active buff
+    // 1. Reset player states, preserving player 1's hand/resto and setting up the new opponent.
+    Object.values(gameState.players).forEach(p => {
+        if (p.id === 'player-1') {
+            // Player 1 (Human) Partial Reset
+            p.position = 1;
+            // hand and resto are preserved
+            p.nextResto = null;
+            p.effects = { score: null, movement: null };
+            p.playedCards = { value: [], effect: [] };
+            p.playedValueCardThisTurn = false;
+            p.liveScore = 0;
+            p.status = 'neutral';
+            p.isEliminated = false; 
+            p.forceResto10 = false; // Buff-related flags should be reset unless re-applied
+            p.isImmuneToNegativeEffects = false;
+            p.isImmuneToDefeat = false;
+        } else if (p.id === 'player-2') {
+            // Player 2 (New Opponent) Full Reset
+            p.position = 1;
+            p.hand = [];
+            p.resto = previousOpponentResto; // Inherit resto
+            p.nextResto = null;
+            p.effects = { score: null, movement: null };
+            p.playedCards = { value: [], effect: [] };
+            p.playedValueCardThisTurn = false;
+            p.liveScore = 0;
+            p.status = 'neutral';
+            p.hearts = 1;
+            p.isEliminated = false;
+            // Clear any special AI properties
+            p.isEventBoss = false;
+            p.eventAbilityUsedThisMatch = false;
+            p.narratorAbilities = undefined;
+            p.stars = 0;
+            p.forceResto10 = false;
+            p.isImmuneToNegativeEffects = false;
+            p.isImmuneToDefeat = false;
+        }
+    });
+
+    // 2. Set up the new opponent for the next duel.
+    const nextOpponentData = infiniteChallengeOpponentQueue[0];
+    const opponent = gameState.players['player-2'];
+    opponent.name = t(nextOpponentData.nameKey);
+    opponent.aiType = nextOpponentData.aiType;
+    opponent.avatar_url = nextOpponentData.avatar_url;
+
+    // Reset decks for a fresh match BEFORE applying buffs that draw cards.
+    gameState.decks.value = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
+    gameState.decks.effect = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
+    gameState.discardPiles = { value: [], effect: [] };
+
+    // 3. Apply the chosen buff for the human player.
+    const player1 = gameState.players['player-1'];
     if (activeBuff) {
         updateLog(`Bônus ativado: ${t(`buffs.${activeBuff}_name`)}`);
         switch (activeBuff) {
@@ -799,32 +852,6 @@ export function startNextInfiniteChallengeDuel() {
         updateState('activeBuff', null);
     }
 
-    const nextOpponentData = infiniteChallengeOpponentQueue[0];
-    const opponent = gameState.players['player-2'];
-
-    opponent.name = t(nextOpponentData.nameKey);
-    opponent.aiType = nextOpponentData.aiType;
-    opponent.avatar_url = nextOpponentData.avatar_url;
-
-    // Reset players for the new duel
-    Object.values(gameState.players).forEach(p => {
-        p.position = 1;
-        p.hand = [];
-        p.resto = null;
-        p.nextResto = null;
-        p.effects = { score: null, movement: null };
-        p.playedCards = { value: [], effect: [] };
-        p.playedValueCardThisTurn = false;
-        p.liveScore = 0;
-        p.status = 'neutral';
-        p.hearts = 1;
-    });
-
-    // Reset decks
-    gameState.decks.value = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
-    gameState.decks.effect = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
-    gameState.discardPiles = { value: [], effect: [] };
-
-    // Start the new round (which deals cards)
+    // Start the new round, which will deal cards to replenish hands.
     startNewRound(true);
 }

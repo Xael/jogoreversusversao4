@@ -779,7 +779,7 @@ export function initializeUiHandlers() {
 
     dom.closeEventButton.addEventListener('click', () => {
         dom.eventModal.classList.add('hidden');
-        sound.playStoryMusic('tela.ogg');
+        sound.stopStoryMusic();
     });
 
     dom.profileModal.addEventListener('click', (e) => {
@@ -1300,7 +1300,10 @@ export function initializeUiHandlers() {
     dom.splashLogo.addEventListener('click', (e) => {
         const { achievements } = getState();
         if (!achievements.has('inversus_win')) return;
-        if(document.querySelector('.modal-overlay:not(.hidden)')) return;
+        
+        const openModal = document.querySelector('.modal-overlay:not(.hidden)');
+        if (openModal && openModal.id !== 'splash-screen') return;
+
         e.preventDefault();
         sound.playSoundEffect('x');
         document.body.classList.add('screen-shaking');
