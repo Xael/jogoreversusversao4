@@ -560,3 +560,8 @@ export function emitAdminResolveReport(reportId) {
     const { socket } = getState();
     if (socket) socket.emit('admin:resolveReport', { reportId });
 }
+
+export function emitAdminRollbackUser(userId) {
+    const { socket } = getState();
+    if (socket) socket.emit('admin:rollbackUser', { userId });
+}

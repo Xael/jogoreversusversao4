@@ -275,13 +275,15 @@ async function endRound() {
 }
 
 
-export async function startNewRound(isFirstRound = false) {
+export async function startNewRound(isFirstRound = false, autoStartTurn = true) {
     const { gameState } = getState();
     if (!isFirstRound) {
         gameState.turn++;
     }
-    updateLog(`--- ${t('log.new_round', { turn: gameState.turn })} ---`);
-    announceEffect(t('log.new_round_announcement', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn }), 'default', 2000);
+    updateLog(`--- ${t('log.new_round', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn })} ---`);
+    if(autoStartTurn) {
+        announceEffect(t('log.new_round_announcement', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn }), 'default', 2000);
+    }
 
 
     // Reset round-specific states for each player
@@ -384,14 +386,16 @@ export async function startNewRound(isFirstRound = false) {
     gameState.gamePhase = 'playing';
     const currentPlayer = gameState.players[gameState.currentPlayer];
     currentPlayer.playedValueCardThisTurn = false; // Reset for the first player of the round
-    updateLog(`É a vez de ${currentPlayer.name}.`);
-    
-    renderAll();
 
-    if (currentPlayer.isHuman) {
-        await showTurnIndicator();
-    } else {
-        executeAiTurn(currentPlayer);
+    if (autoStartTurn) {
+        updateLog(`É a vez de ${currentPlayer.name}.`);
+        renderAll();
+
+        if (currentPlayer.isHuman) {
+            await showTurnIndicator();
+        } else {
+            executeAiTurn(currentPlayer);
+        }
     }
 }
 
@@ -724,8 +728,8 @@ async function calculateScoresAndEndRound() {
 }
 
 
-export function startNextInfiniteChallengeDuel() {
-    const { gameState, infiniteChallengeOpponentQueue, activeBuff } = getState();
+export async function startNextInfiniteChallengeDuel() {
+    const { gameState, infiniteChallengeOpponentQueue } = getState();
     if (!gameState || !gameState.isInfiniteChallenge || infiniteChallengeOpponentQueue.length === 0) {
         return;
     }
@@ -785,8 +789,14 @@ export function startNextInfiniteChallengeDuel() {
     gameState.decks.effect = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
     gameState.discardPiles = { value: [], effect: [] };
 
-    // 3. Apply the chosen buff for the human player.
-    const player1 = gameState.players['player-1'];
+    // 3. Replenish hand to base size, but don't start the turn yet.
+    await startNewRound(true, false);
+
+    // 4. Apply the chosen buff for the human player.
+    // Re-fetch state because `await` allows other code to run.
+    const { gameState: updatedGameState, activeBuff } = getState();
+    const player1 = updatedGameState.players['player-1'];
+    
     if (activeBuff) {
         updateLog(`Bônus ativado: ${t(`buffs.${activeBuff}_name`)}`);
         switch (activeBuff) {
@@ -831,7 +841,7 @@ export function startNextInfiniteChallengeDuel() {
                  player1.hand.push({ id: Date.now(), type: 'effect', name: 'Reversus Total' });
                  break;
             case 'reveal_opponent_hand':
-                gameState.revealedHands.push('player-2');
+                updatedGameState.revealedHands.push('player-2');
                 break;
             case 'draw_two_effect':
                 for(let i=0; i<2; i++) {
@@ -851,7 +861,16 @@ export function startNextInfiniteChallengeDuel() {
         }
         updateState('activeBuff', null);
     }
+    
+    // 5. Manually start the first turn now that buffs are applied.
+    const currentPlayer = updatedGameState.players[updatedGameState.currentPlayer];
+    announceEffect(t('log.new_round_announcement', { turn: updatedGameState.isInfiniteChallenge ? updatedGameState.infiniteChallengeLevel : updatedGameState.turn }), 'default', 2000);
+    updateLog(`É a vez de ${currentPlayer.name}.`);
+    renderAll(); // Re-render to show buffed hand
 
-    // Start the new round, which will deal cards to replenish hands.
-    startNewRound(true);
+    if (currentPlayer.isHuman) {
+        await showTurnIndicator();
+    } else {
+        executeAiTurn(currentPlayer);
+    }
 }

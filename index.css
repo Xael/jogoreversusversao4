@@ -63,6 +63,16 @@
     50% { box-shadow: 0 0 25px 5px var(--accent-red), 0 0 8px 2px var(--accent-red) inset; }
 }
 
+@keyframes rare-buff-glow {
+    0%, 100% { box-shadow: 0 0 15px 3px var(--accent-blue), inset 0 0 5px var(--accent-blue); }
+    50% { box-shadow: 0 0 25px 5px var(--accent-blue), inset 0 0 10px var(--accent-blue); }
+}
+
+@keyframes very-rare-buff-glow {
+    0%, 100% { box-shadow: 0 0 20px 5px var(--accent-yellow), inset 0 0 8px var(--accent-yellow); }
+    50% { box-shadow: 0 0 35px 8px var(--accent-yellow), inset 0 0 15px var(--accent-yellow); }
+}
+
 @keyframes reversus-pulse {
     0% { box-shadow: 0 0 20px 5px var(--accent-red), inset 0 0 20px 2px var(--accent-red); }
     50% { box-shadow: 0 0 20px 5px var(--accent-blue), inset 0 0 20px 2px var(--accent-blue); }
@@ -3697,4 +3707,93 @@ body.screen-shaking {
     min-height: 80px;
     font-weight: 600;
     text-shadow: 2px 2px 4px #000;
+}
+
+/* --- Infinite Challenge Buff Selection --- */
+.buff-cards-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    margin-top: 2rem;
+    min-height: 280px;
+    perspective: 1000px;
+}
+
+.buff-card {
+    width: 180px;
+    height: 250px;
+    background-color: transparent;
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+}
+
+.buff-cards-container.selection-made .buff-card:not(.flipped) {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.buff-card:not(.flipped):hover {
+    transform: translateY(-15px) scale(1.05);
+}
+
+.buff-card.rare .buff-card-front {
+    animation: rare-buff-glow 2s infinite ease-in-out;
+}
+
+.buff-card.very-rare .buff-card-front {
+    animation: very-rare-buff-glow 1.5s infinite ease-in-out;
+}
+
+.buff-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.8s;
+    transform-style: preserve-3d;
+}
+
+.buff-card.flipped .buff-card-inner {
+    transform: rotateY(180deg);
+}
+
+.buff-card-front, .buff-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.buff-card-front {
+    background-color: #bbb;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid var(--text-secondary);
+}
+
+.buff-card-back {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    transform: rotateY(180deg);
+    border: 2px solid var(--accent-yellow);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+}
+
+.buff-card-back strong {
+    font-size: 1.2rem;
+    color: var(--accent-yellow);
+    margin-bottom: 0.75rem;
+}
+
+.buff-card-back p {
+    font-size: 0.9rem;
+    line-height: 1.4;
 }

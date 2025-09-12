@@ -142,7 +142,7 @@ export const rewardToastText = document.getElementById('reward-toast-text');
 
 // Infinite Challenge Buff Modal
 export const infiniteChallengeBuffModal = document.getElementById('infinite-challenge-buff-modal');
-export const infiniteChallengeBuffOptions = document.getElementById('infinite-challenge-buff-options');
+export const infiniteChallengeBuffCards = document.getElementById('infinite-challenge-buff-cards');
 
 
 // Quick Start & Matchmaking Modals

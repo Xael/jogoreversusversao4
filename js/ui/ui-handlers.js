@@ -42,7 +42,9 @@ export function showBuffSelectionModal() {
         buffs.push(...shuffle(config.INFINITE_CHALLENGE_BUFFS.very_rare).slice(0, 1));
     }
     if (level % 3 === 0 && config.INFINITE_CHALLENGE_BUFFS.rare.length > 0) {
-        buffs.push(...shuffle(config.INFINITE_CHALLENGE_BUFFS.rare).slice(0, 1));
+        const rareBuffs = shuffle([...config.INFINITE_CHALLENGE_BUFFS.rare]);
+        const buffToAdd = rareBuffs.find(b => !buffs.includes(b));
+        if (buffToAdd) buffs.push(buffToAdd);
     }
 
     // Fill the rest with common buffs
@@ -65,45 +67,68 @@ export function showBuffSelectionModal() {
     
     // Final shuffle to randomize order
     shuffle(buffs);
+    
+    const valueBuffs = new Set(['resto_10', 'discard_low_draw_value', 'draw_two_value', 'draw_10_discard_one']);
 
-    dom.infiniteChallengeBuffOptions.innerHTML = buffs.map(buffCode => {
+    const getRarityClass = (buffCode) => {
+        if (config.INFINITE_CHALLENGE_BUFFS.very_rare.includes(buffCode)) return 'very-rare';
+        if (config.INFINITE_CHALLENGE_BUFFS.rare.includes(buffCode)) return 'rare';
+        return 'common';
+    };
+
+    dom.infiniteChallengeBuffCards.innerHTML = buffs.map(buffCode => {
+        const cardBack = valueBuffs.has(buffCode) ? 'verso_valor.png' : 'verso_efeito.png';
+        const rarityClass = getRarityClass(buffCode);
+        
         return `
-            <button class="control-button" data-buff="${buffCode}">
-                <strong>${t(`buffs.${buffCode}_name`)}</strong>
-                <p style="font-size: 0.8rem; text-transform: none; font-weight: 400; margin-top: 4px;">${t(`buffs.${buffCode}_desc`)}</p>
-            </button>
+            <div class="buff-card ${rarityClass}" data-buff="${buffCode}">
+                <div class="buff-card-inner">
+                    <div class="buff-card-front" style="background-image: url('./${cardBack}');"></div>
+                    <div class="buff-card-back">
+                        <strong>${t(`buffs.${buffCode}_name`)}</strong>
+                        <p>${t(`buffs.${buffCode}_desc`)}</p>
+                    </div>
+                </div>
+            </div>
         `;
     }).join('');
 
-    const buffClickHandler = (e) => {
-        const button = e.target.closest('button');
-        if (!button) return;
+    const buffClickHandler = async (e) => {
+        const card = e.target.closest('.buff-card');
+        if (!card || dom.infiniteChallengeBuffCards.classList.contains('selection-made')) return;
         
-        const buff = button.dataset.buff;
-        updateState('activeBuff', buff);
+        dom.infiniteChallengeBuffCards.classList.add('selection-made');
+        card.classList.add('flipped');
+        sound.playSoundEffect('jogarcarta');
         
-        dom.infiniteChallengeBuffModal.classList.add('hidden');
-        dom.infiniteChallengeBuffOptions.removeEventListener('click', buffClickHandler);
+        const buff = card.dataset.buff;
 
-        // Apply immediate buffs before starting the next duel
-        if (buff === 'auto_win') {
-            const { gameState, infiniteChallengeOpponentQueue } = getState();
-            opponentQueue.shift(); // Remove the skipped opponent
-            gameState.infiniteChallengeLevel++;
-            updateLog(`Vitória Automática! Pulando oponente e avançando para o nível ${gameState.infiniteChallengeLevel}.`);
+        setTimeout(async () => {
+            updateState('activeBuff', buff);
             
-            if (opponentQueue.length === 0) {
-                // This means auto-win was chosen on the final opponent
-                document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
+            dom.infiniteChallengeBuffModal.classList.add('hidden');
+            dom.infiniteChallengeBuffCards.removeEventListener('click', buffClickHandler);
+            dom.infiniteChallengeBuffCards.classList.remove('selection-made');
+
+
+            if (buff === 'auto_win') {
+                const { gameState, infiniteChallengeOpponentQueue } = getState();
+                opponentQueue.shift();
+                gameState.infiniteChallengeLevel++;
+                updateLog(`Vitória Automática! Pulando oponente e avançando para o nível ${gameState.infiniteChallengeLevel}.`);
+                
+                if (opponentQueue.length === 0) {
+                    document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
+                } else {
+                    showBuffSelectionModal();
+                }
             } else {
-                showBuffSelectionModal(); // Immediately show the next buff selection
+                await startNextInfiniteChallengeDuel();
             }
-        } else {
-            startNextInfiniteChallengeDuel();
-        }
+        }, 2000); // Wait 2s to show the card before continuing
     };
     
-    dom.infiniteChallengeBuffOptions.addEventListener('click', buffClickHandler);
+    dom.infiniteChallengeBuffCards.addEventListener('click', buffClickHandler);
     dom.infiniteChallengeBuffModal.classList.remove('hidden');
 }
 
