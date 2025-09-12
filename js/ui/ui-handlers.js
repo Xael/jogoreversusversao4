@@ -8,14 +8,14 @@ import * as sound from '../core/sound.js';
 import { startStoryMode, renderStoryNode, playEndgameSequence } from '../story/story-controller.js';
 import * as saveLoad from '../core/save-load.js';
 import * as achievements from '../core/achievements.js';
-import { updateLog } from '../core/utils.js';
+import { updateLog, shuffle } from '../core/utils.js';
 import * as config from '../core/config.js';
 import { AVATAR_CATALOG } from '../core/config.js';
 import * as network from '../core/network.js';
 import { shatterImage } from './animations.js';
 import { announceEffect } from '../core/sound.js';
 import { playCard } from '../game-logic/player-actions.js';
-import { advanceToNextPlayer } from '../game-logic/turn-manager.js';
+import { advanceToNextPlayer, startNextInfiniteChallengeDuel } from '../game-logic/turn-manager.js';
 import { setLanguage, t } from '../core/i18n.js';
 import { showSplashScreen } from './splash-screen.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from './profile-renderer.js';
@@ -25,6 +25,87 @@ import { renderShopAvatars } from './shop-renderer.js';
 let currentEventData = null;
 let infiniteChallengeIntroHandler = null;
 let introImageInterval = null;
+
+/**
+ * Shows the buff selection modal for the Infinite Challenge.
+ */
+export function showBuffSelectionModal() {
+    const { gameState } = getState();
+    if (!gameState || !gameState.isInfiniteChallenge) return;
+
+    // Determine buff rarities based on level
+    const buffs = [];
+    const level = gameState.infiniteChallengeLevel;
+
+    // Guarantee one rare buff every 3 levels, and one very rare every 5.
+    if (level % 5 === 0 && config.INFINITE_CHALLENGE_BUFFS.very_rare.length > 0) {
+        buffs.push(...shuffle(config.INFINITE_CHALLENGE_BUFFS.very_rare).slice(0, 1));
+    }
+    if (level % 3 === 0 && config.INFINITE_CHALLENGE_BUFFS.rare.length > 0) {
+        buffs.push(...shuffle(config.INFINITE_CHALLENGE_BUFFS.rare).slice(0, 1));
+    }
+
+    // Fill the rest with common buffs
+    const needed = 3 - buffs.length;
+    if (needed > 0 && config.INFINITE_CHALLENGE_BUFFS.common.length > 0) {
+        const commonBuffs = shuffle([...config.INFINITE_CHALLENGE_BUFFS.common]);
+        buffs.push(...commonBuffs.slice(0, needed));
+    }
+
+    // Ensure we have exactly 3 buffs by filling with common if needed
+    while (buffs.length < 3 && config.INFINITE_CHALLENGE_BUFFS.common.length > 0) {
+        const commonBuffs = shuffle([...config.INFINITE_CHALLENGE_BUFFS.common]);
+        const buffToAdd = commonBuffs.find(b => !buffs.includes(b));
+        if (buffToAdd) {
+            buffs.push(buffToAdd);
+        } else {
+            break; // No more unique common buffs to add
+        }
+    }
+    
+    // Final shuffle to randomize order
+    shuffle(buffs);
+
+    dom.infiniteChallengeBuffOptions.innerHTML = buffs.map(buffCode => {
+        return `
+            <button class="control-button" data-buff="${buffCode}">
+                <strong>${t(`buffs.${buffCode}_name`)}</strong>
+                <p style="font-size: 0.8rem; text-transform: none; font-weight: 400; margin-top: 4px;">${t(`buffs.${buffCode}_desc`)}</p>
+            </button>
+        `;
+    }).join('');
+
+    const buffClickHandler = (e) => {
+        const button = e.target.closest('button');
+        if (!button) return;
+        
+        const buff = button.dataset.buff;
+        updateState('activeBuff', buff);
+        
+        dom.infiniteChallengeBuffModal.classList.add('hidden');
+        dom.infiniteChallengeBuffOptions.removeEventListener('click', buffClickHandler);
+
+        // Apply immediate buffs before starting the next duel
+        if (buff === 'auto_win') {
+            const { gameState, infiniteChallengeOpponentQueue } = getState();
+            opponentQueue.shift(); // Remove the skipped opponent
+            gameState.infiniteChallengeLevel++;
+            updateLog(`Vitória Automática! Pulando oponente e avançando para o nível ${gameState.infiniteChallengeLevel}.`);
+            
+            if (opponentQueue.length === 0) {
+                // This means auto-win was chosen on the final opponent
+                document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
+            } else {
+                showBuffSelectionModal(); // Immediately show the next buff selection
+            }
+        } else {
+            startNextInfiniteChallengeDuel();
+        }
+    };
+    
+    dom.infiniteChallengeBuffOptions.addEventListener('click', buffClickHandler);
+    dom.infiniteChallengeBuffModal.classList.remove('hidden');
+}
 
 /**
  * Hides the game UI, shows the story modal, and renders the next story node.
@@ -356,6 +437,48 @@ export function initializeUiHandlers() {
     document.addEventListener('cleanupInfiniteChallengeUI', () => {
         cleanupInfiniteChallengeIntro();
     });
+
+    // Listener to show the buff selection modal
+    document.addEventListener('showBuffSelection', showBuffSelectionModal);
+
+    // Listener for the end of an infinite challenge run
+    document.addEventListener('infiniteChallengeEnd', (e) => {
+        const { reason } = e.detail;
+        const { gameState } = getState();
+        const level = gameState ? gameState.infiniteChallengeLevel : 1;
+        const timeSeconds = gameState ? gameState.elapsedSeconds : 0;
+        const minutes = Math.floor(timeSeconds / 60).toString().padStart(2, '0');
+        const seconds = (timeSeconds % 60).toString().padStart(2, '0');
+        const timeFormatted = `${minutes}:${seconds}`;
+
+        let message;
+        if (reason === 'win') {
+            achievements.grantAchievement('infinite_challenge_win');
+            // The final win message with the pot is shown by the server's response
+        } else if (reason === 'time') {
+            message = t('game_over.infinite_challenge_timeout', { level, time: timeFormatted });
+        } else { // reason === 'loss'
+            const player1 = gameState.players['player-1'];
+            if (player1 && player1.isImmuneToDefeat) {
+                updateLog("Segunda Chance ativada! Você evitou a derrota e continuará para a próxima rodada.");
+                player1.isImmuneToDefeat = false; // Consume the buff
+                showBuffSelectionModal();
+                return;
+            }
+            message = t('game_over.infinite_challenge_lose', { level, time: timeFormatted });
+        }
+        
+        network.emitSubmitInfiniteResult({ level, time: timeSeconds, didWin: reason === 'win' });
+        
+        if (reason !== 'win') {
+            showGameOver(
+                message,
+                t('game_over.infinite_challenge_title'),
+                { action: 'menu', text: t('game_over.back_to_menu') }
+            );
+        }
+    });
+
 
     document.body.addEventListener('click', (e) => {
         if (e.target.closest('.player-hand')) handleCardClick(e);

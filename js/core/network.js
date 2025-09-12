@@ -422,7 +422,6 @@ export function connectToServer() {
 
     socket.on('infiniteChallengeWin', ({ potWon }) => {
         const { gameState } = getState();
-        const level = gameState ? gameState.infiniteChallengeLevel : 'Final';
         const timeSeconds = gameState ? gameState.elapsedSeconds : 0;
         const minutes = Math.floor(timeSeconds / 60).toString().padStart(2, '0');
         const seconds = (timeSeconds % 60).toString().padStart(2, '0');
@@ -431,7 +430,7 @@ export function connectToServer() {
         showGameOver(
             t('game_over.infinite_challenge_win', { time: timeFormatted, pot: potWon }),
             t('game_over.infinite_challenge_title'),
-            { action: 'menu' }
+            { action: 'menu', text: t('game_over.back_to_menu') }
         );
     });
 }

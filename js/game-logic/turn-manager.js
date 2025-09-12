@@ -13,7 +13,6 @@ import { updateLiveScoresAndWinningStatus } from './score.js';
 import { rotateAndApplyKingNecroversoBoardEffects } from './board.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
 import { t } from '../core/i18n.js';
-import { showBuffSelectionModal } from '../ui/ui-handlers.js';
 import { createDeck } from './deck.js';
 
 
@@ -711,8 +710,9 @@ async function calculateScoresAndEndRound() {
                 document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
                 return;
             }
-            showBuffSelectionModal();
-            return;
+            // Dispatch event to show buff selection modal
+            document.dispatchEvent(new Event('showBuffSelection'));
+            return; // Stop processing, wait for player to select a buff
         }
     }
 
@@ -746,13 +746,15 @@ async function calculateScoresAndEndRound() {
 export function startNextInfiniteChallengeDuel() {
     const { gameState, infiniteChallengeOpponentQueue, activeBuff } = getState();
     if (!gameState || !gameState.isInfiniteChallenge || infiniteChallengeOpponentQueue.length === 0) {
-        return; 
+        return;
     }
-    
+
     const player1 = gameState.players['player-1'];
+    // Reset previous buffs
     player1.forceResto10 = false;
     player1.isImmuneToNegativeEffects = false;
 
+    // Apply new active buff
     if (activeBuff) {
         updateLog(`Bônus ativado: ${t(`buffs.${activeBuff}_name`)}`);
         switch (activeBuff) {
@@ -762,18 +764,70 @@ export function startNextInfiniteChallengeDuel() {
             case 'immunity_negative':
                 player1.isImmuneToNegativeEffects = true;
                 break;
+            case 'discard_low_draw_value':
+                const lowValueCard = player1.hand.filter(c => c.type === 'value').sort((a,b) => a.value - b.value)[0];
+                if (lowValueCard) {
+                    const idx = player1.hand.findIndex(c => c.id === lowValueCard.id);
+                    player1.hand.splice(idx, 1);
+                    const newCard = dealCard('value');
+                    if(newCard) player1.hand.push(newCard);
+                }
+                break;
+            case 'discard_effect_draw_effect':
+                 const effectCard = player1.hand.find(c => c.type === 'effect');
+                 if (effectCard) {
+                    const idx = player1.hand.findIndex(c => c.id === effectCard.id);
+                    player1.hand.splice(idx, 1);
+                    const newCard = dealCard('effect');
+                    if(newCard) player1.hand.push(newCard);
+                 }
+                break;
+            case 'draw_10_discard_one':
+                const lowCard = player1.hand.filter(c => c.type === 'value').sort((a,b) => a.value - b.value)[0];
+                if (lowCard) {
+                    const idx = player1.hand.findIndex(c => c.id === lowCard.id);
+                    player1.hand.splice(idx, 1);
+                }
+                player1.hand.push({ id: Date.now(), type: 'value', name: 10, value: 10 });
+                break;
+             case 'draw_reversus_total':
+                 const effectCardToDiscard = player1.hand.find(c => c.type === 'effect');
+                 if (effectCardToDiscard) {
+                    const idx = player1.hand.findIndex(c => c.id === effectCardToDiscard.id);
+                    player1.hand.splice(idx, 1);
+                 }
+                 player1.hand.push({ id: Date.now(), type: 'effect', name: 'Reversus Total' });
+                 break;
+            case 'reveal_opponent_hand':
+                gameState.revealedHands.push('player-2');
+                break;
+            case 'draw_two_effect':
+                for(let i=0; i<2; i++) {
+                    const newCard = dealCard('effect');
+                    if (newCard) player1.hand.push(newCard);
+                }
+                break;
+            case 'draw_two_value':
+                 for(let i=0; i<2; i++) {
+                    const newCard = dealCard('value');
+                    if (newCard) player1.hand.push(newCard);
+                }
+                break;
+            case 'immunity_defeat':
+                player1.isImmuneToDefeat = true;
+                break;
         }
         updateState('activeBuff', null);
     }
 
-    
     const nextOpponentData = infiniteChallengeOpponentQueue[0];
     const opponent = gameState.players['player-2'];
 
     opponent.name = t(nextOpponentData.nameKey);
     opponent.aiType = nextOpponentData.aiType;
     opponent.avatar_url = nextOpponentData.avatar_url;
-    
+
+    // Reset players for the new duel
     Object.values(gameState.players).forEach(p => {
         p.position = 1;
         p.hand = [];
@@ -787,9 +841,11 @@ export function startNextInfiniteChallengeDuel() {
         p.hearts = 1;
     });
 
+    // Reset decks
     gameState.decks.value = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
     gameState.decks.effect = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
     gameState.discardPiles = { value: [], effect: [] };
-    
-    startNewRound(true); 
+
+    // Start the new round (which deals cards)
+    startNewRound(true);
 }
