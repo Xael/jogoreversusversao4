@@ -449,6 +449,9 @@ export function showInversusVictoryAnimation() {
 /**
  * Clears all reality-warping screen effects from the Inversus battle.
  */
-export function clearInversusScreenEffects() {
+export function resetGameEffects() {
     dom.scalableContainer.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
+    if (dom.boardEl) {
+        dom.boardEl.classList.remove('board-rotating', 'board-rotating-fast', 'board-rotating-super-fast');
+    }
 }

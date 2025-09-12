@@ -49,6 +49,8 @@ const appState = {
     isChatMuted: false,
     // Holds the shuffled queue of opponents for the current infinite challenge run.
     infiniteChallengeOpponentQueue: [],
+    // Holds the active buff for the current infinite challenge round
+    activeBuff: null,
 
 
     // --- PVP/Network State ---

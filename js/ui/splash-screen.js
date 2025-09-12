@@ -3,7 +3,7 @@ import { getState, updateState } from '../core/state.js';
 import { playStoryMusic, stopStoryMusic, updateMusic } from '../core/sound.js';
 import { checkForSavedGame } from '../core/save-load.js';
 import { checkAndShowSpecialFeatures } from '../core/achievements.js';
-import { initializeFloatingItemsAnimation } from './animations.js';
+import { initializeFloatingItemsAnimation, resetGameEffects } from './animations.js';
 
 export const showSplashScreen = () => {
     // Stop any ongoing game logic
@@ -17,6 +17,9 @@ export const showSplashScreen = () => {
     updateState('gameState', null);
     updateState('playerId', null);
     updateState('currentRoomId', null);
+
+    // Reset all visual effects
+    resetGameEffects();
 
     // Play menu music
     playStoryMusic('tela.ogg');

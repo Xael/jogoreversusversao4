@@ -2,7 +2,7 @@
 
 
 
-import { elements as dom } from './dom.js';
+import * as dom from './dom.js';
 import * as config from './config.js';
 import { getState, updateState } from './state.js';
 import { playSoundEffect } from './sound.js';

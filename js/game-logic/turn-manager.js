@@ -10,7 +10,7 @@ import { triggerFieldEffects, checkAndTriggerPawnLandingAbilities } from '../sto
 import { updateLog, dealCard, shuffle } from '../core/utils.js';
 import { grantAchievement } from '../core/achievements.js';
 import { showSplashScreen } from '../ui/splash-screen.js';
-import { toggleReversusTotalBackground, clearInversusScreenEffects } from '../ui/animations.js';
+import { toggleReversusTotalBackground, resetGameEffects } from '../ui/animations.js';
 import { updateLiveScoresAndWinningStatus } from './score.js';
 import { rotateAndApplyKingNecroversoBoardEffects } from './board.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
@@ -279,7 +279,9 @@ export async function startNewRound(isFirstRound = false) {
     if (!isFirstRound) {
         gameState.turn++;
     }
-    updateLog(`--- Iniciando Rodada ${gameState.turn} ---`);
+    updateLog(`--- ${t('log.new_round', { turn: gameState.turn })} ---`);
+    announceEffect(t('log.new_round_announcement', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn }), 'default', 2000);
+
 
     // Reset round-specific states for each player
     gameState.playerIdsInGame.forEach(id => {
@@ -348,41 +350,6 @@ export async function startNewRound(isFirstRound = false) {
     toggleReversusTotalBackground(false);
     dom.appContainerEl.classList.remove('reversus-total-active');
     dom.reversusTotalIndicatorEl.classList.add('hidden');
-
-    // Inversus screen effects with escalating chaos
-    clearInversusScreenEffects();
-    if (gameState.isInversusMode) {
-        const turn = gameState.turn;
-        const effects = ['screen-flipped', 'screen-inverted', 'screen-mirrored'];
-        shuffle(effects);
-        let effectApplied = false;
-
-        if (turn >= 7) {
-            dom.scalableContainer.classList.add(effects[0], effects[1], effects[2]);
-            announceEffect('REALIDADE DISTORCIDA', 'reversus');
-            effectApplied = true;
-        } else if (turn >= 4) {
-            dom.scalableContainer.classList.add(effects[0], effects[1]);
-            announceEffect('CONFUSÃO DUPLA', 'reversus');
-            effectApplied = true;
-        } else if (turn >= 1) {
-            const effectChance = Math.random();
-            if (effectChance < 0.6) { // 60% chance for an effect on early turns
-                dom.scalableContainer.classList.add(effects[0]);
-                const effectNameMap = {
-                    'screen-flipped': 'TELA INVERTIDA',
-                    'screen-inverted': 'CORES INVERTIDAS',
-                    'screen-mirrored': 'TELA ESPELHADA'
-                };
-                announceEffect(effectNameMap[effects[0]], 'reversus');
-                effectApplied = true;
-            }
-        }
-
-        if (effectApplied) {
-            playSoundEffect('campoinverso');
-        }
-    }
 
     // Draw cards to replenish hands
     gameState.playerIdsInGame.forEach(id => {
@@ -585,7 +552,12 @@ async function calculateScoresAndEndRound() {
     } else {
         updateLog("A rodada terminou em empate. Ninguém avança por pontuação.");
     }
-    await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
+    
+    // For non-infinite challenge modes, show the summary and wait
+    if (!gameState.isInfiniteChallenge) {
+        await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
+    }
+
 
     // Handle INVERSUS heart loss
     if (gameState.isInversusMode && !checkGameEnd()) {

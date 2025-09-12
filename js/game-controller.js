@@ -9,7 +9,7 @@ import { createDeck } from './game-logic/deck.js';
 import { initiateGameStartSequence, startNewRound } from './game-logic/turn-manager.js';
 import { generateBoardPaths } from './game-logic/board.js';
 import { executeAiTurn } from './ai/ai-controller.js';
-import { createSpiralStarryBackground, clearInversusScreenEffects } from './ui/animations.js';
+import { createSpiralStarryBackground, resetGameEffects } from './ui/animations.js';
 import { t } from './core/i18n.js';
 
 
@@ -108,7 +108,7 @@ export const initializeGame = async (mode, options) => {
 
     // Clean up special background effects from previous games
     dom.cosmicGlowOverlay.classList.add('hidden');
-    clearInversusScreenEffects();
+    resetGameEffects();
     const { inversusAnimationInterval } = getState();
     if (inversusAnimationInterval) clearInterval(inversusAnimationInterval);
     if(dom.storyStarsBackgroundEl) dom.storyStarsBackgroundEl.innerHTML = '';
@@ -129,7 +129,7 @@ export const initializeGame = async (mode, options) => {
         modeText = 'Desafio Infinito';
         await playStoryMusic('oprofetasombrio.ogg');
         const nextOpponent = infiniteChallengeOpponentQueue[0];
-        options.overrides = { 'player-2': { name: t(nextOpponent.nameKey), aiType: nextOpponent.aiType } };
+        options.overrides = { 'player-2': { name: t(nextOpponent.nameKey), aiType: nextOpponent.aiType, avatar_url: nextOpponent.avatar_url } };
     }
     else if (options.story) { // Covers both Story Mode and Events
         isStoryMode = true; // We use the story mode flag to handle shared logic like win/loss events.
@@ -418,14 +418,16 @@ export const initializeGame = async (mode, options) => {
 };
 
 export function startNextInfiniteChallengeDuel() {
-    const { gameState, infiniteChallengeOpponentQueue } = getState();
+    const { gameState, infiniteChallengeOpponentQueue, activeBuff } = getState();
     if (!gameState || !gameState.isInfiniteChallenge || infiniteChallengeOpponentQueue.length === 0) {
-        return; // Should not happen if logic is correct
+        return; 
     }
 
-    // Increment level
-    gameState.infiniteChallengeLevel++;
-
+    // Reset buff effect flags before starting
+    const player1 = gameState.players['player-1'];
+    player1.forceResto10 = false;
+    player1.isImmuneToNegativeEffects = false;
+    
     // Get next opponent
     const nextOpponentData = infiniteChallengeOpponentQueue[0];
     const opponent = gameState.players['player-2'];
@@ -433,6 +435,7 @@ export function startNextInfiniteChallengeDuel() {
     // Update opponent's data
     opponent.name = t(nextOpponentData.nameKey);
     opponent.aiType = nextOpponentData.aiType;
+    opponent.avatar_url = nextOpponentData.avatar_url;
     
     // Reset players for the new duel (except for things that persist like timer)
     Object.values(gameState.players).forEach(p => {
@@ -453,9 +456,7 @@ export function startNextInfiniteChallengeDuel() {
     gameState.decks.effect = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
     gameState.discardPiles = { value: [], effect: [] };
     
-    updateLog(`--- ${t('infinite_challenge.round_announcement', { level: gameState.infiniteChallengeLevel })} ---`);
-    
-    startNewRound(true); // Start the new round logic without incrementing the main turn counter
+    startNewRound(true); 
 }
 
 

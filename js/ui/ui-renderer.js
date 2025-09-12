@@ -8,6 +8,7 @@ import { grantAchievement } from '../core/achievements.js';
 import { showSplashScreen } from './splash-screen.js';
 import { updateLog } from '../core/utils.js';
 import { t } from '../core/i18n.js';
+import { resetGameEffects } from './animations.js';
 
 /**
  * Updates the UI for the chat filter and mute/unmute buttons.
@@ -219,6 +220,8 @@ export async function showRoundSummaryModal(summaryData) {
 export const showGameOver = (message, title = t('game_over.title'), buttonOptions = {}) => {
     const { text = t('game_over.play_again'), action = 'restart' } = buttonOptions;
     
+    resetGameEffects();
+
     dom.gameOverTitle.textContent = title;
     dom.gameOverMessage.textContent = message;
     dom.restartButton.textContent = text;
