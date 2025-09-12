@@ -140,18 +140,20 @@ function updateSideScoreBoxes(scores) {
         
         // Find the leading opponent to display on the right side
         if (opponents.length > 0) {
-            const leadingOpponent = opponents.sort((a, b) => (scores[b] || 0) - (scores[a] || 0))[0];
-            const opponentPlayer = gameState.players[leadingOpponent];
-            const pIdNum = parseInt(leadingOpponent.split('-')[1]);
+            const leadingOpponentId = opponents.sort((a, b) => (scores[b] || 0) - (scores[a] || 0))[0];
+            const opponentPlayer = gameState.players[leadingOpponentId];
+            const pIdNum = parseInt(leadingOpponentId.split('-')[1]);
 
             dom.rightScoreBox.classList.remove('hidden');
             dom.rightScoreBox.className = `side-score-box player-${pIdNum}-score`;
-            dom.rightScoreValue.textContent = scores[leadingOpponent] || 0;
             
-            if (opponentPlayer.status === 'winning') {
+            const rightScoreDisplay = (opponentPlayer.aiType === 'oespectro' && gameState.gamePhase === 'playing') ? '??' : (scores[leadingOpponentId] || 0);
+            dom.rightScoreValue.textContent = rightScoreDisplay;
+            
+            if (opponentPlayer.status === 'winning' && rightScoreDisplay !== '??') {
                 dom.rightScoreStatus.textContent = 'Ganhando';
                 dom.rightScoreStatus.classList.add('winning');
-            } else if (opponentPlayer.status === 'losing') {
+            } else if (opponentPlayer.status === 'losing' && rightScoreDisplay !== '??') {
                 dom.rightScoreStatus.textContent = 'Perdendo';
                 dom.rightScoreStatus.classList.add('losing');
             }

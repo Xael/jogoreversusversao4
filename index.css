@@ -1384,6 +1384,12 @@ body.screen-shaking {
     filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.5));
     opacity: 0.8;
 }
+
+.player-area-character-portrait.specter-glow,
+.player-equipped-avatar.specter-glow {
+    filter: drop-shadow(0 0 4px white) drop-shadow(0 0 8px white);
+}
+
 .player-area-character-portrait.xael-glow {
     filter: drop-shadow(0 0 8px #fff) drop-shadow(0 0 15px #fff);
 }

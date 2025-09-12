@@ -410,17 +410,12 @@ function checkGameEnd() {
         }
     }
     
-    if (gameState.isKingNecroBattle || gameState.isInversusMode) {
+    if (gameState.isKingNecroBattle || (gameState.isInversusMode && !gameState.isInfiniteChallenge)) {
         const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
         if (activePlayers.length <= 1) {
             gameState.gamePhase = 'game_over';
             const player1Victorious = activePlayers.length === 1 && activePlayers[0] === 'player-1';
             
-            if (gameState.isInfiniteChallenge) {
-                document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: player1Victorious ? 'win' : 'loss' } }));
-                return true;
-            }
-
             document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: gameState.currentStoryBattle || 'inversus', won: player1Victorious } }));
             return true;
         }
@@ -558,40 +553,52 @@ async function calculateScoresAndEndRound() {
         updateLog("A rodada terminou em empate. Ninguém avança por pontuação.");
     }
     
-    // For non-infinite challenge modes, show the summary and wait
     if (!gameState.isInfiniteChallenge) {
         await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
     }
 
-
-    // Handle INVERSUS heart loss
-    if (gameState.isInversusMode && !checkGameEnd()) {
+    // Handle INVERSUS heart loss & Infinite Challenge duel end
+    if (gameState.isInversusMode) {
         const player1Won = winners.includes('player-1');
-        const inversusWon = winners.includes('player-2');
+        const opponentWon = winners.includes('player-2');
         const player1 = gameState.players['player-1'];
-        const inversus = gameState.players['player-2'];
-    
-        if (inversusWon && player1) {
+        const opponent = gameState.players['player-2'];
+
+        if (opponentWon && player1) {
             player1.hearts = Math.max(0, player1.hearts - 1);
             updateLog(`Você perdeu a rodada e 1 coração! Restam: ${player1.hearts}.`);
             playSoundEffect('coracao');
             announceEffect('💔', 'heartbreak', 1500);
-            if (player1.hearts === 0) {
-                player1.isEliminated = true;
-            }
-        } else if (player1Won && inversus) {
-            inversus.hearts = Math.max(0, inversus.hearts - 1);
-            updateLog(`Inversus perdeu a rodada e 1 coração! Restam: ${inversus.hearts}.`);
+            if (player1.hearts <= 0) player1.isEliminated = true;
+        } else if (player1Won && opponent) {
+            opponent.hearts = Math.max(0, opponent.hearts - 1);
+            updateLog(`O oponente perdeu a rodada e 1 coração! Restam: ${opponent.hearts}.`);
             playSoundEffect('coracao');
             announceEffect('💔', 'heartbreak', 1500);
-            if (inversus.hearts === 0) {
-                inversus.isEliminated = true;
-            }
+            if (opponent.hearts <= 0) opponent.isEliminated = true;
         }
-        if(checkGameEnd()) return;
+
+        if (gameState.isInfiniteChallenge) {
+            if (opponent.isEliminated) {
+                gameState.infiniteChallengeLevel++;
+                const opponentQueue = getState().infiniteChallengeOpponentQueue;
+                opponentQueue.shift();
+                if (opponentQueue.length === 0) {
+                    document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
+                } else {
+                    document.dispatchEvent(new Event('showBuffSelection'));
+                }
+                return; 
+            }
+            if (player1.isEliminated) {
+                document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'loss' } }));
+                return;
+            }
+        } else {
+            if (checkGameEnd()) return;
+        }
     }
     
-    // Handle King Necro Battle punishment
     if (gameState.isKingNecroBattle) {
         const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
         if (activePlayers.length > 1) {
@@ -626,7 +633,6 @@ async function calculateScoresAndEndRound() {
         if (checkGameEnd()) return; // Stop if game ended due to heart loss
     }
     
-    // Handle heart loss for final battle
     if (gameState.currentStoryBattle === 'necroverso_final' && winners.length > 0) {
         const winningTeamIsA = (gameState.currentStoryBattle === 'necroverso_final' ? ['player-1', 'player-4'] : config.TEAM_A).includes(winners[0]);
         if (winningTeamIsA) {
@@ -641,13 +647,11 @@ async function calculateScoresAndEndRound() {
         if (checkGameEnd()) return; // Stop if game ended due to heart loss
     }
     
-    // 5. Apply pawn movements using a consolidated approach (skip for heart-based battles)
     if (!gameState.isInversusMode && !gameState.isKingNecroBattle) {
         for (const id of gameState.playerIdsInGame) {
             const p = gameState.players[id];
             if (p.isEliminated) continue;
 
-            // First, handle path changes from 'Pula'
             if (p.effects.movement === 'Pula' && p.targetPathForPula !== null) {
                 p.pathId = p.targetPathForPula;
                 updateLog(`${p.name} foi forçado a pular para o caminho ${p.targetPathForPula + 1}.`);
@@ -657,14 +661,12 @@ async function calculateScoresAndEndRound() {
             const isWinner = winners.includes(id);
             const isLoser = !isWinner && winners.length > 0;
 
-            // A. Card Effects
             if (p.effects.movement === 'Sobe') netMovement++;
             if (p.effects.movement === 'Desce') {
                 let movementModifier = gameState.activeFieldEffects.some(fe => fe.name === 'Super Exposto' && fe.appliesTo === id) ? 2 : 1;
                 netMovement -= (1 * movementModifier);
             }
 
-            // B. Win/Loss Effects (Field & Standard)
             if (isWinner) {
                 if (gameState.activeFieldEffects.some(fe => fe.name === 'Parada' && fe.appliesTo === id)) {
                     updateLog(`Efeito 'Parada' impede ${p.name} de avançar.`);
@@ -687,7 +689,6 @@ async function calculateScoresAndEndRound() {
                 }
             }
 
-            // C. Apply the final calculated movement
             if (netMovement !== 0) {
                 const oldPosition = p.position;
                 p.position = Math.min(config.WINNING_POSITION, Math.max(1, p.position + netMovement));
@@ -700,45 +701,23 @@ async function calculateScoresAndEndRound() {
         return;
     }
 
-    if (gameState.isInfiniteChallenge) {
-        const player1Won = winners.includes('player-1');
-        if (player1Won) {
-            gameState.infiniteChallengeLevel++;
-            const opponentQueue = getState().infiniteChallengeOpponentQueue;
-            opponentQueue.shift(); 
-            if (opponentQueue.length === 0) {
-                document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
-                return;
-            }
-            // Dispatch event to show buff selection modal
-            document.dispatchEvent(new Event('showBuffSelection'));
-            return; // Stop processing, wait for player to select a buff
-        }
-    }
-
-
-    // 6. Check for pawn landing abilities and field effects before next round starts
     for (const id of gameState.playerIdsInGame) {
         if (!gameState.players[id].isEliminated) {
             await checkAndTriggerPawnLandingAbilities(gameState.players[id]);
         }
     }
     
-    // 7. Check for game win/loss conditions
     if (checkGameEnd()) {
-        return; // Stop processing if the game has ended
+        return;
     }
 
-    // 8. Set next player for the new round
     if (winners.length > 0) {
-        // In duo mode, if multiple players from the winning team won, pick the one who comes first in turn order
         const winnerTurnOrder = gameState.playerIdsInGame.filter(pId => winners.includes(pId));
         if (winnerTurnOrder.length > 0) {
             gameState.currentPlayer = winnerTurnOrder[0];
         }
     }
     
-    // 9. Start the next round
     await startNewRound();
 }
 

@@ -81,6 +81,9 @@ export const renderPlayerArea = (player) => {
         const avatarImg = document.createElement('img');
         avatarImg.src = `./${player.avatar_url}`; // Local image path
         avatarImg.className = 'player-equipped-avatar';
+        if (player.aiType === 'oespectro') {
+            avatarImg.classList.add('specter-glow');
+        }
         playerEl.appendChild(avatarImg);
     } else if (hasStoryPortrait) {
         const portraitMap = {
@@ -104,6 +107,9 @@ export const renderPlayerArea = (player) => {
             const portraitImg = document.createElement('img');
             portraitImg.src = portraitInfo.src;
             portraitImg.className = portraitInfo.class;
+            if (player.aiType === 'oespectro') {
+                portraitImg.classList.add('specter-glow');
+            }
             if (portraitInfo.id) portraitImg.id = portraitInfo.id;
             playerEl.appendChild(portraitImg);
         }
@@ -131,6 +137,7 @@ function renderPlayerHeader(player) {
         .join(' / ') || t('game.none');
     
     const restoValue = player.resto ? player.resto.value : 'N/A';
+    const scoreValue = (player.aiType === 'oespectro' && gameState.gamePhase === 'playing') ? '??' : (player.liveScore || 0);
 
     const activeFieldEffect = (gameState.activeFieldEffects || []).find(fe => fe.appliesTo === player.id);
 
@@ -178,7 +185,7 @@ function renderPlayerHeader(player) {
                  </div>
             </div>
             <div class="player-stats">
-                 <span class="stat-item" title="${t('game.score_header_title')}">${t('game.score_header')}: <strong>${player.liveScore || 0}</strong></span>
+                 <span class="stat-item" title="${t('game.score_header_title')}">${t('game.score_header')}: <strong>${scoreValue}</strong></span>
                  ${coinversusHTML}
                  <span class="stat-item" title="${t('game.resto_header_title')}">${t('game.resto_header')}: <strong>${restoValue}</strong></span>
                  <span class="stat-item" title="${t('game.path_header_title')}">${t('game.path_header')}: <strong>${pathDisplay}</strong></span>

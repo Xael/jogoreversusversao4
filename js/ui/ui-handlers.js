@@ -330,6 +330,7 @@ function cleanupInfiniteChallengeIntro() {
         dom.infiniteChallengeIntroOptions.removeEventListener('click', infiniteChallengeIntroHandler);
         infiniteChallengeIntroHandler = null;
     }
+    sound.stopStoryMusic();
 }
 
 
@@ -344,6 +345,7 @@ async function startInfiniteChallengeIntro() {
     }
     
     sound.initializeMusic();
+    sound.playStoryMusic('salamandra.ogg');
     
     dom.infiniteChallengeIntroModal.classList.add('fullscreen-modal');
     dom.infiniteChallengeIntroModal.classList.remove('hidden');
@@ -470,6 +472,7 @@ export function initializeUiHandlers() {
         
         network.emitSubmitInfiniteResult({ level, time: timeSeconds, didWin: reason === 'win' });
         
+        sound.stopStoryMusic();
         if (reason !== 'win') {
             showGameOver(
                 message,
