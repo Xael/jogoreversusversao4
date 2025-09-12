@@ -198,15 +198,15 @@ export const AVATAR_CATALOG = {
 };
 
 export const INFINITE_CHALLENGE_OPPONENTS = [
-    { nameKey: 'player_names.player-2', aiType: 'default', avatar_url: null },
-    { nameKey: 'story_dialogue.start_contravox_text', aiType: 'contravox', avatar_url: null },
-    { nameKey: 'story_dialogue.start_versatrix_dialogue_text_1', aiType: 'versatrix', avatar_url: null },
-    { nameKey: 'story_dialogue.start_reversum_text', aiType: 'reversum', avatar_url: null },
-    { nameKey: 'story_dialogue.final_confrontation_1_text', aiType: 'necroverso_final', avatar_url: null },
-    { nameKey: 'ai_dialogue.narrador_winning_1', aiType: 'narrador', avatar_url: null },
-    { nameKey: 'story_dialogue.xael_challenge_intro_text', aiType: 'xael', avatar_url: null },
-    { nameKey: 'splash.inversus', aiType: 'inversus', avatar_url: null },
-    ...MONTHLY_EVENTS.map(event => ({ nameKey: event.characterNameKey, aiType: event.ai, avatar_url: null })),
+    { nameKey: 'player_names.player-2', aiType: 'default', avatar_url: 'aleatorio1.png' },
+    { nameKey: 'story_dialogue.start_contravox_text', aiType: 'contravox', avatar_url: 'contravox.png' },
+    { nameKey: 'story_dialogue.start_versatrix_dialogue_text_1', aiType: 'versatrix', avatar_url: 'versatrix.png' },
+    { nameKey: 'story_dialogue.start_reversum_text', aiType: 'reversum', avatar_url: 'reversum.png' },
+    { nameKey: 'story_dialogue.final_confrontation_1_text', aiType: 'necroverso_final', avatar_url: 'necroverso2.png' },
+    { nameKey: 'ai_dialogue.narrador_winning_1', aiType: 'narrador', avatar_url: 'narrador.png' },
+    { nameKey: 'story_dialogue.xael_challenge_intro_text', aiType: 'xael', avatar_url: 'xaeldesafio.png' },
+    { nameKey: 'splash.inversus', aiType: 'inversus', avatar_url: 'inversum1.png' },
+    ...MONTHLY_EVENTS.map(event => ({ nameKey: event.characterNameKey, aiType: event.ai, avatar_url: event.image })),
     ...Object.entries(AVATAR_CATALOG)
         .filter(([key]) => !['default_1', 'default_2', 'default_3', 'default_4', 'necroverso', 'contravox', 'versatrix', 'reversum'].includes(key))
         .map(([key, avatar]) => ({ nameKey: avatar.nameKey, aiType: 'default', avatar_url: avatar.image_url }))

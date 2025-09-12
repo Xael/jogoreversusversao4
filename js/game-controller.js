@@ -417,49 +417,6 @@ export const initializeGame = async (mode, options) => {
     await initiateGameStartSequence();
 };
 
-export function startNextInfiniteChallengeDuel() {
-    const { gameState, infiniteChallengeOpponentQueue, activeBuff } = getState();
-    if (!gameState || !gameState.isInfiniteChallenge || infiniteChallengeOpponentQueue.length === 0) {
-        return; 
-    }
-
-    // Reset buff effect flags before starting
-    const player1 = gameState.players['player-1'];
-    player1.forceResto10 = false;
-    player1.isImmuneToNegativeEffects = false;
-    
-    // Get next opponent
-    const nextOpponentData = infiniteChallengeOpponentQueue[0];
-    const opponent = gameState.players['player-2'];
-
-    // Update opponent's data
-    opponent.name = t(nextOpponentData.nameKey);
-    opponent.aiType = nextOpponentData.aiType;
-    opponent.avatar_url = nextOpponentData.avatar_url;
-    
-    // Reset players for the new duel (except for things that persist like timer)
-    Object.values(gameState.players).forEach(p => {
-        p.position = 1;
-        p.hand = [];
-        p.resto = null;
-        p.nextResto = null;
-        p.effects = { score: null, movement: null };
-        p.playedCards = { value: [], effect: [] };
-        p.playedValueCardThisTurn = false;
-        p.liveScore = 0;
-        p.status = 'neutral';
-        p.hearts = 1; // Reset hearts for sudden death
-    });
-
-    // Reset decks
-    gameState.decks.value = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
-    gameState.decks.effect = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
-    gameState.discardPiles = { value: [], effect: [] };
-    
-    startNewRound(true); 
-}
-
-
 export function restartLastDuel() {
     const { lastStoryGameOptions } = getState();
     if (!lastStoryGameOptions) {

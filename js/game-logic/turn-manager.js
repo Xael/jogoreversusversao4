@@ -1,5 +1,3 @@
-
-
 import { getState, updateState } from '../core/state.js';
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
@@ -15,6 +13,8 @@ import { updateLiveScoresAndWinningStatus } from './score.js';
 import { rotateAndApplyKingNecroversoBoardEffects } from './board.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
 import { t } from '../core/i18n.js';
+import { showBuffSelectionModal } from '../ui/ui-handlers.js';
+import { createDeck } from './deck.js';
 
 
 /**
@@ -416,6 +416,12 @@ function checkGameEnd() {
         if (activePlayers.length <= 1) {
             gameState.gamePhase = 'game_over';
             const player1Victorious = activePlayers.length === 1 && activePlayers[0] === 'player-1';
+            
+            if (gameState.isInfiniteChallenge) {
+                document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: player1Victorious ? 'win' : 'loss' } }));
+                return true;
+            }
+
             document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: gameState.currentStoryBattle || 'inversus', won: player1Victorious } }));
             return true;
         }
@@ -690,6 +696,26 @@ async function calculateScoresAndEndRound() {
             }
         }
     }
+    
+    if (checkGameEnd()) {
+        return;
+    }
+
+    if (gameState.isInfiniteChallenge) {
+        const player1Won = winners.includes('player-1');
+        if (player1Won) {
+            gameState.infiniteChallengeLevel++;
+            const opponentQueue = getState().infiniteChallengeOpponentQueue;
+            opponentQueue.shift(); 
+            if (opponentQueue.length === 0) {
+                document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
+                return;
+            }
+            showBuffSelectionModal();
+            return;
+        }
+    }
+
 
     // 6. Check for pawn landing abilities and field effects before next round starts
     for (const id of gameState.playerIdsInGame) {
@@ -714,4 +740,56 @@ async function calculateScoresAndEndRound() {
     
     // 9. Start the next round
     await startNewRound();
+}
+
+
+export function startNextInfiniteChallengeDuel() {
+    const { gameState, infiniteChallengeOpponentQueue, activeBuff } = getState();
+    if (!gameState || !gameState.isInfiniteChallenge || infiniteChallengeOpponentQueue.length === 0) {
+        return; 
+    }
+    
+    const player1 = gameState.players['player-1'];
+    player1.forceResto10 = false;
+    player1.isImmuneToNegativeEffects = false;
+
+    if (activeBuff) {
+        updateLog(`Bônus ativado: ${t(`buffs.${activeBuff}_name`)}`);
+        switch (activeBuff) {
+            case 'resto_10':
+                player1.forceResto10 = true;
+                break;
+            case 'immunity_negative':
+                player1.isImmuneToNegativeEffects = true;
+                break;
+        }
+        updateState('activeBuff', null);
+    }
+
+    
+    const nextOpponentData = infiniteChallengeOpponentQueue[0];
+    const opponent = gameState.players['player-2'];
+
+    opponent.name = t(nextOpponentData.nameKey);
+    opponent.aiType = nextOpponentData.aiType;
+    opponent.avatar_url = nextOpponentData.avatar_url;
+    
+    Object.values(gameState.players).forEach(p => {
+        p.position = 1;
+        p.hand = [];
+        p.resto = null;
+        p.nextResto = null;
+        p.effects = { score: null, movement: null };
+        p.playedCards = { value: [], effect: [] };
+        p.playedValueCardThisTurn = false;
+        p.liveScore = 0;
+        p.status = 'neutral';
+        p.hearts = 1;
+    });
+
+    gameState.decks.value = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
+    gameState.decks.effect = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
+    gameState.discardPiles = { value: [], effect: [] };
+    
+    startNewRound(true); 
 }

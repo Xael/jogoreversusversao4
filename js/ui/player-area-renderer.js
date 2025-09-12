@@ -75,8 +75,14 @@ export const renderPlayerArea = (player) => {
     `;
 
     const hasStoryPortrait = player.aiType && !player.isHuman && config.AI_CHAT_PERSONALITIES.hasOwnProperty(player.aiType);
-
-    if (hasStoryPortrait) {
+    
+    if (gameState.isInfiniteChallenge && player.avatar_url) {
+        playerEl.classList.add('has-avatar');
+        const avatarImg = document.createElement('img');
+        avatarImg.src = `./${player.avatar_url}`; // Local image path
+        avatarImg.className = 'player-equipped-avatar';
+        playerEl.appendChild(avatarImg);
+    } else if (hasStoryPortrait) {
         const portraitMap = {
             'necroverso_tutorial': { src: './necroverso.png', class: 'player-area-character-portrait necro-tutorial-portrait' },
             'contravox': { src: './contravox.png', class: 'player-area-character-portrait contravox-portrait' },
@@ -101,10 +107,10 @@ export const renderPlayerArea = (player) => {
             if (portraitInfo.id) portraitImg.id = portraitInfo.id;
             playerEl.appendChild(portraitImg);
         }
-    } else if (player.avatar_url && !player.avatar_url.includes('googleusercontent.com')) {
+    } else if (player.avatar_url) {
         playerEl.classList.add('has-avatar');
         const avatarImg = document.createElement('img');
-        avatarImg.src = player.avatar_url;
+        avatarImg.src = player.avatar_url.startsWith('http') ? player.avatar_url : `./${player.avatar_url}`;
         avatarImg.className = 'player-equipped-avatar';
         playerEl.appendChild(avatarImg);
     }
