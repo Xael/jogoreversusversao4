@@ -1,7 +1,7 @@
 
 {
     "document": {
-        "title": "Reversus - 4 Jogadores"
+        "title": "Reversus - Jogo Online"
     },
     "card": {
         "Mais": "Mais",
@@ -107,9 +107,9 @@
         "rodrigo": "Avatar Rodrigo",
         "karol": "Avatar Karol",
         "necroverso": "Avatar Necroverso",
-        "contravox": "Avatar Contravox",
-        "versatrix": "Avatar Versatrix",
-        "reversum": "Avatar Rei Reversum"
+        "contravox": "Contravox",
+        "versatrix": "Versatrix",
+        "reversum": "Rei Reversum"
     },
     "quick_start": {
         "title": "Início Rápido",
@@ -527,7 +527,10 @@
         "player-1": "Você",
         "player-2": "Jogador 2",
         "player-3": "Jogador 3",
-        "player-4": "Jogador 4"
+        "player-4": "Jogador 4",
+        "narrador": "Narrador",
+        "xael": "Xael",
+        "necroverso_final": "Necroverso Final"
     },
     "titles": {
         "creator": "Criador",
@@ -612,10 +615,10 @@
     },
     "achievement_descriptions": {
         "first_win": "Parabéns, você venceu sua primeira partida.",
-        "first_defeat": "A vida é feita de derrotas... não se abale, ou o jogo acaba.",
+        "first_defeat": "A vida é feita de derrotas... não desânima senão o jogo termina.",
         "versatrix_loss": "Será que a Versatrix realmente queria te vencer?",
         "speed_run": "Vença uma partida em menos de 5 minutos.",
-        "contravox_win": ".sárt arap ed odut é oãçacilpxe A",
+        "contravox_win": ".etnref arap sárt ed odut é oãçacilpxe A",
         "versatrix_win": "Você derrotou a Versatrix... Talvez ela tenha deixado algo para você.",
         "versatrix_card_collected": "Você encontrou e coletou a carta especial da Versatrix!",
         "reversum_win": "Ele se achava o mais poderoso, mas agora existe outro Rei.",
@@ -702,7 +705,7 @@
         "start_contravox_option_1": "Zatanna?",
         "start_contravox_option_2": "Não entendi nada...",
         "start_contravox_option_3": "É hora do duelo!",
-        "post_contravox_victory_text": "Incrível... você realmente derrotou o Contravox... agora só restam mais dois, a próxima é a Versatrix, mas cuidado... nem tudo é o que parece.",
+        "post_contravox_victory_text": "Incrível... você realmente derrotou o Contravox?... certo... então... agora só restam mais dois, a próxima é a Versatrix, mas cuidado... nem tudo é o que parece.",
         "pre_versatrix_intro_text": "A Versatrix é uma Geminiana... e ela é... valiosa!",
         "pre_versatrix_intro_option_1": "Certo... signos do zodíaco...",
         "pre_versatrix_intro_option_2": "Defina valiosa...",
@@ -723,8 +726,8 @@
         "pre_reversum_intro_text": "Duas informações valiosas... ele é o mais poderoso e é imune ao vermelho!",
         "pre_reversum_intro_option_1": "Isso é pra me ajudar?",
         "pre_reversum_intro_option_2": "Espero que isso acabe logo",
-        "start_reversum_text": "EU SOU O REI REVERSUM TOTEM! CURVE-SE DIANTE DO SEU REI!",
-        "start_reversum_option_1": "Rei? tipo um cachorro?",
+        "start_reversum_text": "EU SOU O REX REVERSUM TOTEM! CURVE-SE DIANTE DO SEU REI!",
+        "start_reversum_option_1": "Rex? tipo um cachorro?",
         "start_reversum_option_2": "Eu só quero terminar o jogo...",
         "start_reversum_option_3": "Leônidas?",
         "post_reversum_victory_text": "Finalmente, com eles derrotados, o Inversus é meu.",
@@ -740,8 +743,8 @@
         "versatrix_warning_1_option_2": "Não sei o que fazer...",
         "versatrix_warning_2_text": "Eu vou te ajudar... juntos venceremos!",
         "versatrix_warning_2_option_1": "Vamos!",
-        "pre_final_battle_text": "Duas dicas para você... seu tempo acabou e não há escapatória!",
-        "pre_final_battle_option_1": "Isso não soou como uma dica...",
+        "pre_final_battle_text": "Mais duas dicas para você... seu tempo acabou e não há escapatória!",
+        "pre_final_battle_option_1": "Isso não pareceu ser uma dica...",
         "pre_final_battle_option_2": "Ah, entendi!",
         "final_battle_final": "Finalizar",
         "xael_challenge_intro_text": "Então você aceita meu desafio! As regras aqui são diferentes. O objetivo é alcançar o espaço 10 com MAIS estrelas do que eu. Colete-as no tabuleiro e use seus efeitos com sabedoria. Pronto?",
@@ -751,13 +754,13 @@
         "endgame_dialogue_3": "Mesmo que você me derrote... o Inversus... nunca deixará de existir.",
         "endgame_dialogue_4": "E com o tempo... um novo Necroverso surgirá.",
         "endgame_dialogue_5": "Ele se foi... por enquanto. Você nos salvou. Obrigada.",
-        "endgame_dialogue_6": "Acho que é hora de você ir para casa, não é? Ou... se quiser, pode ficar. A escolha é sua.",
+        "endgame_dialogue_6": "Acho que é hora de você ir para casa, não é? Ou... se quiser, pode ficar... A escolha é sua.",
         "endgame_option_return": "Voltar para casa",
         "endgame_option_stay": "Ficar no Inversus"
     },
     "event_names": {
         "january": "Reversus Eclipse",
-        "february": "Duelos do Destino",
+        "february": "Duels of Destiny",
         "march": "Sorte do Reversus",
         "april": "Reversus Ancestral",
         "may": "Noite dos Esquecidos",

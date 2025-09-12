@@ -107,9 +107,9 @@
         "rodrigo": "Rodrigo Avatar",
         "karol": "Karol Avatar",
         "necroverso": "Necroverso Avatar",
-        "contravox": "Contravox Avatar",
-        "versatrix": "Versatrix Avatar",
-        "reversum": "King Reversum Avatar"
+        "contravox": "Contravox",
+        "versatrix": "Versatrix",
+        "reversum": "King Reversum"
     },
     "quick_start": {
         "title": "Quick Start",
@@ -527,7 +527,10 @@
         "player-1": "You",
         "player-2": "Player 2",
         "player-3": "Player 3",
-        "player-4": "Player 4"
+        "player-4": "Player 4",
+        "narrador": "Narrator",
+        "xael": "Xael",
+        "necroverso_final": "Final Necroverso"
     },
     "titles": {
         "creator": "Creator",

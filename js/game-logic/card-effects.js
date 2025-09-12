@@ -109,11 +109,11 @@ export async function applyEffect(card, targetId, casterName, effectTypeToRevers
             dom.reversusTotalIndicatorEl.classList.remove('hidden');
             Object.values(gameState.players).forEach(p => {
                 const scoreEffectCard = p.playedCards.effect.find(c => ['Mais', 'Menos', 'NECRO X', 'NECRO X Invertido'].includes(c.name) || (c.name === 'Reversus' && c.reversedEffectType === 'score'));
-                if (p.effects.score && (!scoreEffectCard || !scoreEffectCard.isLocked)) {
+                if (p.effects.score && !scoreEffectCard?.isLocked) {
                     p.effects.score = getInverseEffect(p.effects.score);
                 }
                 const moveEffectCard = p.playedCards.effect.find(c => ['Sobe', 'Desce', 'Pula'].includes(c.name) || (c.name === 'Reversus' && c.reversedEffectType === 'movement'));
-                if (p.effects.movement && p.effects.movement !== 'Pula' && (!moveEffectCard || !moveEffectCard.isLocked)) {
+                if (p.effects.movement && p.effects.movement !== 'Pula' && !moveEffectCard?.isLocked) {
                     p.effects.movement = getInverseEffect(p.effects.movement);
                 }
             });
