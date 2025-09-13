@@ -123,6 +123,10 @@ export function connectToServer() {
         renderAdminPanel(data);
     });
 
+    socket.on('adminActionSuccess', (message) => {
+        alert(message); // Simple feedback for the admin
+    });
+
     socket.on('newReport', () => {
         const { userProfile } = getState();
         if (userProfile?.isAdmin && !dom.profileModal.classList.contains('hidden') && document.getElementById('profile-admin-tab-content')?.classList.contains('active')) {
