@@ -90,28 +90,33 @@ export const renderPlayerArea = (player) => {
         portraitMap[event.ai] = { src: `./${event.image}`, class: 'player-area-character-portrait' };
     });
 
-    const portraitInfo = portraitMap[player.aiType];
+    let portraitSrc = null;
+    let portraitClass = 'player-area-character-portrait';
+    let portraitId = null;
 
-    // Check for a specific story/event portrait FIRST using the direct map lookup.
-    if (portraitInfo) {
-        const portraitImg = document.createElement('img');
-        portraitImg.src = portraitInfo.src;
-        portraitImg.className = portraitInfo.class;
-        if (player.aiType === 'oespectro') {
-            portraitImg.classList.add('specter-glow');
-        }
-        if (portraitInfo.id) portraitImg.id = portraitInfo.id;
-        playerEl.appendChild(portraitImg);
+    // Priority 1: A specific avatar_url on the player object (from PvP, Infinite Challenge, equipped avatar)
+    if (player.avatar_url) {
+        portraitSrc = player.avatar_url.startsWith('http') ? player.avatar_url : `./${player.avatar_url}`;
+        // Add special glows based on AI type even if they use a generic avatar
+        if (player.aiType === 'oespectro') portraitClass += ' specter-glow';
+
     } 
-    // THEN, check for a generic avatar (from shop, PvP, etc.) and render it using the SAME class for consistency.
-    else if (player.avatar_url) {
-        const avatarImg = document.createElement('img');
-        avatarImg.src = player.avatar_url.startsWith('http') ? player.avatar_url : `./${player.avatar_url}`;
-        avatarImg.className = 'player-area-character-portrait'; // Use the same class as story opponents
-        if (player.aiType === 'oespectro') { // oespectro is also a monthly event AI, but this is a safeguard
-            avatarImg.classList.add('specter-glow');
+    // Priority 2: Fallback to the story/event map based on aiType for characters without a specific avatar_url
+    else {
+        const portraitInfo = portraitMap[player.aiType];
+        if (portraitInfo) {
+            portraitSrc = portraitInfo.src;
+            portraitClass = portraitInfo.class;
+            if (portraitInfo.id) portraitId = portraitInfo.id;
         }
-        playerEl.appendChild(avatarImg);
+    }
+
+    if (portraitSrc) {
+        const portraitImg = document.createElement('img');
+        portraitImg.src = portraitSrc;
+        portraitImg.className = portraitClass;
+        if (portraitId) portraitImg.id = portraitId;
+        playerEl.appendChild(portraitImg);
     }
 };
 
