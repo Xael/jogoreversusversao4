@@ -408,6 +408,28 @@
     to { transform: rotate(360deg); }
 }
 
+@keyframes slide-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slide-out-down {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(100%);
+    }
+}
+
 
 /* --- GENERAL --- */
 body {
@@ -1308,15 +1330,6 @@ body.screen-shaking {
     background-color: rgba(0,0,0,0.1);
 }
 
-#player-1-area-container .player-hand {
-    justify-content: center; /* Center the larger cards */
-    min-height: 145px; /* Guarantee space for one row of tall cards */
-    flex-shrink: 0; /* Prevent vertical shrinking */
-}
-#player-1-area-container .player-hand .card {
-    width: 91px; /* ~30% bigger */
-    height: 130px; /* ~30% bigger */
-}
 #player-1-area-container .play-zone {
     grid-auto-rows: 130px; /* Make row height match hand cards */
     min-height: auto; /* Remove old min-height */
@@ -1550,6 +1563,71 @@ body.screen-shaking {
     flex-direction: column;
     gap: 1rem;
 }
+
+/* --- Floating Hand Overlay --- */
+#floating-hand-overlay {
+    background: rgba(0, 0, 0, 0.6);
+    align-items: flex-end; /* Align to bottom */
+    padding-bottom: 3rem;
+    backdrop-filter: blur(4px);
+    pointer-events: none; /* Allows clicks to pass through */
+}
+#floating-hand-overlay.visible {
+    pointer-events: all; /* Capture clicks when visible */
+}
+
+#floating-hand-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.floating-card-wrapper {
+    position: relative;
+    transition: transform 0.2s ease-out;
+    transform: translateY(100%);
+    opacity: 0;
+    animation: slide-in-up 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+#floating-hand-overlay.hiding .floating-card-wrapper {
+    animation: slide-out-down 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+}
+
+.floating-card-wrapper .card {
+    width: 105px; /* Slightly larger than opponent cards */
+    height: 150px;
+    cursor: default;
+}
+
+.floating-card-wrapper:hover {
+    transform: translateY(-20px) scale(1.1);
+    z-index: 10;
+}
+
+.floating-card-actions {
+    position: absolute;
+    bottom: -50px; /* Appear below the card */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.floating-card-wrapper:hover .floating-card-actions {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.floating-card-actions .control-button {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
 
 #one-v-one-setup-modal .modal-content {
     width: 450px;

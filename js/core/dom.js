@@ -1,7 +1,9 @@
 export const appContainerEl = document.getElementById('app-container');
 export const boardEl = document.getElementById('game-board');
-export const playButton = document.getElementById('play-button');
+export const cardsButton = document.getElementById('cards-button');
 export const endTurnButton = document.getElementById('end-turn-button');
+// FIX: Added missing 'playButton' constant.
+export const playButton = document.getElementById('play-button');
 export const logEl = document.getElementById('game-log');
 export const teamScoresContainer = document.getElementById('team-scores-container');
 export const reversusTotalIndicatorEl = document.getElementById('reversus-total-indicator');
@@ -139,6 +141,8 @@ export const achievementUnlockedToast = document.getElementById('achievement-unl
 export const toastText = document.getElementById('toast-text');
 export const dailyRewardToast = document.getElementById('daily-reward-toast');
 export const rewardToastText = document.getElementById('reward-toast-text');
+export const floatingHandOverlay = document.getElementById('floating-hand-overlay');
+export const floatingHandContainer = document.getElementById('floating-hand-container');
 
 // Infinite Challenge Buff Modal
 export const infiniteChallengeBuffModal = document.getElementById('infinite-challenge-buff-modal');
@@ -213,6 +217,7 @@ export const chatInput = document.getElementById('chat-input');
 export const chatSendButton = document.getElementById('chat-send-button');
 export const chatFilterBtn = document.getElementById('chat-filter-btn');
 export const chatToggleBtn = document.getElementById('chat-toggle-btn');
+export const privateChatPanel = document.getElementById('private-chat-panel');
 
 
 // PVP / Auth
@@ -257,6 +262,12 @@ export const eventStatusText = document.getElementById('event-status-text');
 export const challengeEventButton = document.getElementById('challenge-event-button');
 export const closeEventButton = document.getElementById('close-event-button');
 
+// Shop
+export const shopButton = document.getElementById('shop-button');
+export const shopModal = document.getElementById('shop-modal');
+export const shopAvatarsGrid = document.getElementById('shop-avatars-grid');
+export const closeShopButton = document.getElementById('close-shop-button');
+
 // Friends Tab
 export const friendsSearchButton = document.getElementById('friends-search-button');
 export const friendsSearchInput = document.getElementById('friends-search-input');
@@ -271,19 +282,11 @@ export const profileAdminTabContent = document.getElementById('profile-admin-tab
 // Invite Friends Modal
 export const inviteFriendsModal = document.getElementById('invite-friends-modal');
 export const inviteFriendsList = document.getElementById('invite-friends-list');
+// FIX: Completed the unfinished constant declaration and added other missing invite-related elements.
 export const inviteFriendsCloseButton = document.getElementById('invite-friends-close-button');
 
-// Lobby Invite Notification Modal
+// Invite Notification Modal
 export const lobbyInviteNotificationModal = document.getElementById('lobby-invite-notification-modal');
 export const lobbyInviteNotificationText = document.getElementById('lobby-invite-notification-text');
 export const lobbyInviteAcceptButton = document.getElementById('lobby-invite-accept-button');
 export const lobbyInviteDeclineButton = document.getElementById('lobby-invite-decline-button');
-
-// Chat
-export const privateChatPanel = document.getElementById('private-chat-panel');
-
-// Shop
-export const shopButton = document.getElementById('shop-button');
-export const shopModal = document.getElementById('shop-modal');
-export const shopAvatarsGrid = document.getElementById('shop-avatars-grid');
-export const closeShopButton = document.getElementById('close-shop-button');

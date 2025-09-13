@@ -431,7 +431,7 @@
                  <!-- Player 1 Area will be rendered here -->
             </div>
             <div class="actions-container">
-                 <button id="play-button" class="control-button" disabled data-i18n="game.play_card">Jogar Carta</button>
+                 <button id="cards-button" class="control-button" disabled data-i18n="game.show_cards">Cartas</button>
                  <button id="end-turn-button" class="control-button secondary" disabled data-i18n="game.end_turn">Passar Turno</button>
             </div>
         </div>
@@ -441,6 +441,11 @@
     </div>
     
     <!-- Other Modals & Overlays -->
+    <div id="floating-hand-overlay" class="modal-overlay hidden">
+        <div id="floating-hand-container">
+            <!-- Floating cards will be injected here by JS -->
+        </div>
+    </div>
     <div id="private-chat-panel" class="private-chat-panel hidden">
         <!-- Chat windows will be injected here by JS -->
     </div>
