@@ -1,5 +1,4 @@
-
-
+// js/core/network.js
 import { getState, updateState } from './state.js';
 import * as dom from './dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
@@ -473,7 +472,7 @@ export function emitReportPlayer(reportedGoogleId, message) { const { socket } =
 export function emitClaimDailyLoginReward() { const { socket } = getState(); if(socket) socket.emit('claimDailyLoginReward'); }
 export function emitClaimChallengeReward(data) { const { socket } = getState(); if(socket) socket.emit('claimChallengeReward', data); }
 export function emitGrantAchievement(achievementId) { const { socket } = getState(); if (socket) socket.emit('grantAchievement', { achievementId }); }
-export function emitBuyAvatar(avatarCode) { const { socket } = getState(); if (socket) socket.emit('buyAvatar', { avatarCode }); }
+export function emitBuyAvatar(data) { const { socket } = getState(); if (socket) socket.emit('buyAvatar', data); }
 
 // --- Matchmaking Emitters ---
 export function emitJoinMatchmaking(mode) {
