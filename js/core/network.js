@@ -123,11 +123,6 @@ export function connectToServer() {
         renderAdminPanel(data);
     });
 
-    socket.on('adminActionSuccess', () => {
-        // This event signals that an admin action was successful and the panel should be refreshed
-        emitAdminGetData();
-    });
-
     socket.on('newReport', () => {
         const { userProfile } = getState();
         if (userProfile?.isAdmin && !dom.profileModal.classList.contains('hidden') && document.getElementById('profile-admin-tab-content')?.classList.contains('active')) {
