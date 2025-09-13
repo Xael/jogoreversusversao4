@@ -74,39 +74,36 @@ export const renderPlayerArea = (player) => {
         ${handHTML}
     `;
 
-    const hasStoryPortrait = player.aiType && !player.isHuman && config.AI_CHAT_PERSONALITIES.hasOwnProperty(player.aiType);
+    const portraitMap = {
+        'necroverso_tutorial': { src: './necroverso.png', class: 'player-area-character-portrait necro-tutorial-portrait' },
+        'contravox': { src: './contravox.png', class: 'player-area-character-portrait contravox-portrait' },
+        'versatrix': { src: './versatrix.png', class: 'player-area-character-portrait versatrix-portrait' },
+        'reversum': { src: './reversum.png', class: 'player-area-character-portrait reversum-portrait' },
+        'necroverso_king': { src: './necroverso.png', class: 'player-area-character-portrait' },
+        'necroverso_final': { src: './necroverso2.png', class: 'player-area-character-portrait final-boss-glow' },
+        'narrador': { src: './narrador.png', class: 'player-area-character-portrait effect-glitch' },
+        'xael': { src: './xaeldesafio.png', class: 'player-area-character-portrait xael-glow' },
+        'inversus': { src: './INVERSUM1.png', class: 'inversus-character-portrait', id: 'inversus-character-portrait' }
+    };
     
-    // Check for a specific story/event portrait FIRST.
-    if (hasStoryPortrait) {
-        const portraitMap = {
-            'necroverso_tutorial': { src: './necroverso.png', class: 'player-area-character-portrait necro-tutorial-portrait' },
-            'contravox': { src: './contravox.png', class: 'player-area-character-portrait contravox-portrait' },
-            'versatrix': { src: './versatrix.png', class: 'player-area-character-portrait versatrix-portrait' },
-            'reversum': { src: './reversum.png', class: 'player-area-character-portrait reversum-portrait' },
-            'necroverso_king': { src: './necroverso.png', class: 'player-area-character-portrait' },
-            'necroverso_final': { src: './necroverso2.png', class: 'player-area-character-portrait final-boss-glow' },
-            'narrador': { src: './narrador.png', class: 'player-area-character-portrait effect-glitch' },
-            'xael': { src: './xaeldesafio.png', class: 'player-area-character-portrait xael-glow' },
-            'inversus': { src: './INVERSUM1.png', class: 'inversus-character-portrait', id: 'inversus-character-portrait' }
-        };
-        
-        config.MONTHLY_EVENTS.forEach(event => {
-            portraitMap[event.ai] = { src: `./${event.image}`, class: 'player-area-character-portrait' };
-        });
+    config.MONTHLY_EVENTS.forEach(event => {
+        portraitMap[event.ai] = { src: `./${event.image}`, class: 'player-area-character-portrait' };
+    });
 
-        const portraitInfo = portraitMap[player.aiType];
-        if (portraitInfo) {
-            const portraitImg = document.createElement('img');
-            portraitImg.src = portraitInfo.src;
-            portraitImg.className = portraitInfo.class;
-            if (player.aiType === 'oespectro') {
-                portraitImg.classList.add('specter-glow');
-            }
-            if (portraitInfo.id) portraitImg.id = portraitInfo.id;
-            playerEl.appendChild(portraitImg);
+    const portraitInfo = portraitMap[player.aiType];
+
+    // Check for a specific story/event portrait FIRST using the direct map lookup.
+    if (portraitInfo) {
+        const portraitImg = document.createElement('img');
+        portraitImg.src = portraitInfo.src;
+        portraitImg.className = portraitInfo.class;
+        if (player.aiType === 'oespectro') {
+            portraitImg.classList.add('specter-glow');
         }
+        if (portraitInfo.id) portraitImg.id = portraitInfo.id;
+        playerEl.appendChild(portraitImg);
     } 
-    // THEN, check for a generic avatar (from shop, PvP, etc.). This now covers Infinite Challenge avatars correctly.
+    // THEN, check for a generic avatar (from shop, PvP, etc.).
     else if (player.avatar_url) {
         playerEl.classList.add('has-avatar');
         const avatarImg = document.createElement('img');
