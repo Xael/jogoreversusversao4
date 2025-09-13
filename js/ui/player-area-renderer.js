@@ -103,13 +103,12 @@ export const renderPlayerArea = (player) => {
         if (portraitInfo.id) portraitImg.id = portraitInfo.id;
         playerEl.appendChild(portraitImg);
     } 
-    // THEN, check for a generic avatar (from shop, PvP, etc.).
+    // THEN, check for a generic avatar (from shop, PvP, etc.) and render it using the SAME class for consistency.
     else if (player.avatar_url) {
-        playerEl.classList.add('has-avatar');
         const avatarImg = document.createElement('img');
         avatarImg.src = player.avatar_url.startsWith('http') ? player.avatar_url : `./${player.avatar_url}`;
-        avatarImg.className = 'player-equipped-avatar';
-        if (player.aiType === 'oespectro') {
+        avatarImg.className = 'player-area-character-portrait'; // Use the same class as story opponents
+        if (player.aiType === 'oespectro') { // oespectro is also a monthly event AI, but this is a safeguard
             avatarImg.classList.add('specter-glow');
         }
         playerEl.appendChild(avatarImg);

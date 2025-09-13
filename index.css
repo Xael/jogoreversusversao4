@@ -1360,41 +1360,26 @@ body.screen-shaking {
 
 
 /* Story Battle Character Portrait & Equipped Avatar */
-.player-equipped-avatar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    object-position: bottom left;
-    z-index: 1; /* Below cards */
-    opacity: 0.6;
-    pointer-events: none;
-    filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.5));
-}
-
-.player-area.p1-bg .player-equipped-avatar { filter: drop-shadow(0 0 8px var(--player-1-color)); }
-.player-area.p2-bg .player-equipped-avatar { filter: drop-shadow(0 0 8px var(--player-2-color)); }
-.player-area.p3-bg .player-equipped-avatar { filter: drop-shadow(0 0 8px var(--player-3-color)); }
-.player-area.p4-bg .player-equipped-avatar { filter: drop-shadow(0 0 8px var(--player-4-color)); }
-
 .player-area-character-portrait {
     position: absolute;
     bottom: 0;
-    left: 0;
+    right: 0;
     width: 100%;
     height: 100%;
     object-fit: contain;
-    object-position: bottom left;
+    object-position: bottom right;
     pointer-events: none;
     z-index: 1;
-    filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.5));
+    filter: drop-shadow(-2px 2px 5px rgba(0,0,0,0.5));
     opacity: 0.8;
 }
 
-.player-area-character-portrait.specter-glow,
-.player-equipped-avatar.specter-glow {
+.player-area.p1-bg .player-area-character-portrait { filter: drop-shadow(0 0 8px var(--player-1-color)); }
+.player-area.p2-bg .player-area-character-portrait { filter: drop-shadow(0 0 8px var(--player-2-color)); }
+.player-area.p3-bg .player-area-character-portrait { filter: drop-shadow(0 0 8px var(--player-3-color)); }
+.player-area.p4-bg .player-area-character-portrait { filter: drop-shadow(0 0 8px var(--player-4-color)); }
+
+.player-area-character-portrait.specter-glow {
     filter: drop-shadow(0 0 4px white) drop-shadow(0 0 8px white);
 }
 
