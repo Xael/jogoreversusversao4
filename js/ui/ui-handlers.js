@@ -30,16 +30,32 @@ let introImageInterval = null;
  * Shows the buff selection modal for the Infinite Challenge.
  */
 export function showBuffSelectionModal() {
-    const { gameState } = getState();
+    const { gameState, achievements } = getState();
     if (!gameState || !gameState.isInfiniteChallenge) return;
+
+    // Define ultra-rare buffs and their requirements
+    const ultraBuffs = {
+        'versatrix_card': { achievements: ['versatrix_win'], image: 'cartaversatrix.png' },
+        'contravox_card': { achievements: ['contravox_win'], image: 'cartacontravox.png' },
+        'necroverso_card': { achievements: ['true_end_final'], image: 'cartanecroverso.png' },
+        'rei_reversum_card': { achievements: ['reversum_win'], image: 'cartarei.png' }
+    };
+
+    // Filter which very rare buffs are available based on achievements
+    const availableVeryRare = config.INFINITE_CHALLENGE_BUFFS.very_rare.filter(buffCode => {
+        if (ultraBuffs[buffCode]) {
+            return ultraBuffs[buffCode].achievements.every(ach => achievements.has(ach));
+        }
+        return true; // It's a default very rare buff
+    });
 
     // Determine buff rarities based on level
     const buffs = [];
     const level = gameState.infiniteChallengeLevel;
 
     // Guarantee one rare buff every 3 levels, and one very rare every 5.
-    if (level % 5 === 0 && config.INFINITE_CHALLENGE_BUFFS.very_rare.length > 0) {
-        buffs.push(...shuffle(config.INFINITE_CHALLENGE_BUFFS.very_rare).slice(0, 1));
+    if (level % 5 === 0 && availableVeryRare.length > 0) {
+        buffs.push(...shuffle(availableVeryRare).slice(0, 1));
     }
     if (level % 3 === 0 && config.INFINITE_CHALLENGE_BUFFS.rare.length > 0) {
         const rareBuffs = shuffle([...config.INFINITE_CHALLENGE_BUFFS.rare]);
@@ -77,8 +93,9 @@ export function showBuffSelectionModal() {
     };
 
     dom.infiniteChallengeBuffCards.innerHTML = buffs.map(buffCode => {
-        const cardBack = valueBuffs.has(buffCode) ? 'verso_valor.png' : 'verso_efeito.png';
+        const isUltra = ultraBuffs[buffCode];
         const rarityClass = getRarityClass(buffCode);
+        const cardBack = isUltra ? ultraBuffs[buffCode].image : (valueBuffs.has(buffCode) ? 'verso_valor.png' : 'verso_efeito.png');
         
         return `
             <div class="buff-card ${rarityClass}" data-buff="${buffCode}">

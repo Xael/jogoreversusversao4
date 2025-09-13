@@ -76,7 +76,15 @@
         "immunity_defeat_name": "Second Chance",
         "immunity_defeat_desc": "Immunity to defeat. If you lose this round, you will still advance to the next opponent.",
         "auto_win_name": "Auto Win",
-        "auto_win_desc": "Skip the next opponent and advance directly to the next bonus choice."
+        "auto_win_desc": "Skip the next opponent and advance directly to the next bonus choice.",
+        "versatrix_card_name": "Queen's Gift",
+        "versatrix_card_desc": "Draw 4 effect cards and 4 value cards immediately.",
+        "contravox_card_name": "Mental Confusion",
+        "contravox_card_desc": "The opponent discards 2 of their effect cards at random.",
+        "necroverso_card_name": "Dark Curse",
+        "necroverso_card_desc": "The opponent's highest value card is blocked for the next round.",
+        "rei_reversum_card_name": "Royal Decree",
+        "rei_reversum_card_desc": "Trade one of your effect cards for a 'Reversus Total' card."
     },
     "shop": {
         "buy_avatars_tab": "Buy Avatars",

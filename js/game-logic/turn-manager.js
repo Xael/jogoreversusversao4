@@ -1,3 +1,5 @@
+// js/game-logic/turn-manager.js
+
 
 
 import { getState, updateState } from '../core/state.js';
@@ -734,15 +736,20 @@ export async function startNextInfiniteChallengeDuel() {
         return;
     }
 
-    // Store previous opponent's rest value before looping
-    const previousOpponentResto = gameState.players['player-2'] ? gameState.players['player-2'].resto : null;
+    // Capture the final 'resto' from the previous duel for both players
+    const player1 = gameState.players['player-1'];
+    const previousOpponent = gameState.players['player-2'];
+    const player1FinalResto = player1.nextResto || player1.resto;
+    const opponentFinalResto = previousOpponent ? (previousOpponent.nextResto || previousOpponent.resto) : null;
+
 
     // 1. Reset player states, preserving player 1's hand/resto and setting up the new opponent.
     Object.values(gameState.players).forEach(p => {
         if (p.id === 'player-1') {
             // Player 1 (Human) Partial Reset
             p.position = 1;
-            // hand and resto are preserved
+            p.resto = player1FinalResto; // Carry over the final resto
+            // hand is preserved
             p.nextResto = null;
             p.effects = { score: null, movement: null };
             p.playedCards = { value: [], effect: [] };
@@ -757,7 +764,7 @@ export async function startNextInfiniteChallengeDuel() {
             // Player 2 (New Opponent) Full Reset
             p.position = 1;
             p.hand = [];
-            p.resto = previousOpponentResto; // Inherit resto
+            p.resto = opponentFinalResto; // Inherit previous opponent's final resto
             p.nextResto = null;
             p.effects = { score: null, movement: null };
             p.playedCards = { value: [], effect: [] };
@@ -795,50 +802,50 @@ export async function startNextInfiniteChallengeDuel() {
     // 4. Apply the chosen buff for the human player.
     // Re-fetch state because `await` allows other code to run.
     const { gameState: updatedGameState, activeBuff } = getState();
-    const player1 = updatedGameState.players['player-1'];
+    const player1Updated = updatedGameState.players['player-1'];
     
     if (activeBuff) {
         updateLog(`Bônus ativado: ${t(`buffs.${activeBuff}_name`)}`);
         switch (activeBuff) {
             case 'resto_10':
-                player1.forceResto10 = true;
+                player1Updated.forceResto10 = true;
                 break;
             case 'immunity_negative':
-                player1.isImmuneToNegativeEffects = true;
+                player1Updated.isImmuneToNegativeEffects = true;
                 break;
             case 'discard_low_draw_value':
-                const lowValueCard = player1.hand.filter(c => c.type === 'value').sort((a,b) => a.value - b.value)[0];
+                const lowValueCard = player1Updated.hand.filter(c => c.type === 'value').sort((a,b) => a.value - b.value)[0];
                 if (lowValueCard) {
-                    const idx = player1.hand.findIndex(c => c.id === lowValueCard.id);
-                    player1.hand.splice(idx, 1);
+                    const idx = player1Updated.hand.findIndex(c => c.id === lowValueCard.id);
+                    player1Updated.hand.splice(idx, 1);
                     const newCard = dealCard('value');
-                    if(newCard) player1.hand.push(newCard);
+                    if(newCard) player1Updated.hand.push(newCard);
                 }
                 break;
             case 'discard_effect_draw_effect':
-                 const effectCard = player1.hand.find(c => c.type === 'effect');
+                 const effectCard = player1Updated.hand.find(c => c.type === 'effect');
                  if (effectCard) {
-                    const idx = player1.hand.findIndex(c => c.id === effectCard.id);
-                    player1.hand.splice(idx, 1);
+                    const idx = player1Updated.hand.findIndex(c => c.id === effectCard.id);
+                    player1Updated.hand.splice(idx, 1);
                     const newCard = dealCard('effect');
-                    if(newCard) player1.hand.push(newCard);
+                    if(newCard) player1Updated.hand.push(newCard);
                  }
                 break;
             case 'draw_10_discard_one':
-                const lowCard = player1.hand.filter(c => c.type === 'value').sort((a,b) => a.value - b.value)[0];
+                const lowCard = player1Updated.hand.filter(c => c.type === 'value').sort((a,b) => a.value - b.value)[0];
                 if (lowCard) {
-                    const idx = player1.hand.findIndex(c => c.id === lowCard.id);
-                    player1.hand.splice(idx, 1);
+                    const idx = player1Updated.hand.findIndex(c => c.id === lowCard.id);
+                    player1Updated.hand.splice(idx, 1);
                 }
-                player1.hand.push({ id: Date.now(), type: 'value', name: 10, value: 10 });
+                player1Updated.hand.push({ id: Date.now(), type: 'value', name: 10, value: 10 });
                 break;
              case 'draw_reversus_total':
-                 const effectCardToDiscard = player1.hand.find(c => c.type === 'effect');
+                 const effectCardToDiscard = player1Updated.hand.find(c => c.type === 'effect');
                  if (effectCardToDiscard) {
-                    const idx = player1.hand.findIndex(c => c.id === effectCardToDiscard.id);
-                    player1.hand.splice(idx, 1);
+                    const idx = player1Updated.hand.findIndex(c => c.id === effectCardToDiscard.id);
+                    player1Updated.hand.splice(idx, 1);
                  }
-                 player1.hand.push({ id: Date.now(), type: 'effect', name: 'Reversus Total' });
+                 player1Updated.hand.push({ id: Date.now(), type: 'effect', name: 'Reversus Total' });
                  break;
             case 'reveal_opponent_hand':
                 updatedGameState.revealedHands.push('player-2');
@@ -846,18 +853,59 @@ export async function startNextInfiniteChallengeDuel() {
             case 'draw_two_effect':
                 for(let i=0; i<2; i++) {
                     const newCard = dealCard('effect');
-                    if (newCard) player1.hand.push(newCard);
+                    if (newCard) player1Updated.hand.push(newCard);
                 }
                 break;
             case 'draw_two_value':
                  for(let i=0; i<2; i++) {
                     const newCard = dealCard('value');
-                    if (newCard) player1.hand.push(newCard);
+                    if (newCard) player1Updated.hand.push(newCard);
                 }
                 break;
             case 'immunity_defeat':
-                player1.isImmuneToDefeat = true;
+                player1Updated.isImmuneToDefeat = true;
                 break;
+            case 'versatrix_card':
+                for (let i = 0; i < 4; i++) {
+                    const newCard = dealCard('effect');
+                    if (newCard) player1Updated.hand.push(newCard);
+                }
+                for (let i = 0; i < 4; i++) {
+                    const newCard = dealCard('value');
+                    if (newCard) player1Updated.hand.push(newCard);
+                }
+                break;
+            case 'contravox_card':
+                const opp = updatedGameState.players['player-2'];
+                for (let i = 0; i < 2; i++) {
+                    const effectCardIndex = opp.hand.findIndex(c => c.type === 'effect');
+                    if (effectCardIndex > -1) {
+                        const [removedCard] = opp.hand.splice(effectCardIndex, 1);
+                        updatedGameState.discardPiles.effect.push(removedCard);
+                    }
+                }
+                break;
+            case 'necroverso_card': {
+                const opp = updatedGameState.players['player-2'];
+                const valueCards = opp.hand.filter(c => c.type === 'value').sort((a, b) => b.value - a.value);
+                if (valueCards.length > 0) {
+                    const highestCard = valueCards[0];
+                    const cardInHand = opp.hand.find(c => c.id === highestCard.id);
+                    if (cardInHand) {
+                        cardInHand.isFrozen = true;
+                    }
+                }
+                break;
+            }
+            case 'rei_reversum_card': {
+                const effectToDiscard = player1Updated.hand.find(c => c.type === 'effect');
+                if (effectToDiscard) {
+                    const idx = player1Updated.hand.findIndex(c => c.id === effectToDiscard.id);
+                    player1Updated.hand.splice(idx, 1);
+                }
+                player1Updated.hand.push({ id: Date.now(), type: 'effect', name: 'Reversus Total' });
+                break;
+            }
         }
         updateState('activeBuff', null);
     }

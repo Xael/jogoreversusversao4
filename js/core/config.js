@@ -221,6 +221,7 @@ export const INFINITE_CHALLENGE_BUFFS = {
         'draw_10_discard_one', 'draw_reversus_total', 'immunity_negative'
     ],
     very_rare: [
-        'immunity_defeat', 'auto_win'
+        'immunity_defeat', 'auto_win',
+        'versatrix_card', 'contravox_card', 'necroverso_card', 'rei_reversum_card'
     ]
 };

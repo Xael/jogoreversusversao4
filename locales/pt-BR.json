@@ -76,7 +76,15 @@
         "immunity_defeat_name": "Segunda Chance",
         "immunity_defeat_desc": "Imunidade à derrota. Se você perder esta rodada, ainda assim avançará para o próximo oponente.",
         "auto_win_name": "Vitória Automática",
-        "auto_win_desc": "Pule o próximo oponente e avance diretamente para a próxima escolha de bônus."
+        "auto_win_desc": "Pule o próximo oponente e avance diretamente para a próxima escolha de bônus.",
+        "versatrix_card_name": "Presente da Rainha",
+        "versatrix_card_desc": "Compre 4 cartas de efeito e 4 cartas de valor imediatamente.",
+        "contravox_card_name": "Confusão Mental",
+        "contravox_card_desc": "O oponente descarta 2 de suas cartas de efeito aleatoriamente.",
+        "necroverso_card_name": "Maldição Sombria",
+        "necroverso_card_desc": "A carta de valor mais alta do oponente é bloqueada para a próxima rodada.",
+        "rei_reversum_card_name": "Decreto Real",
+        "rei_reversum_card_desc": "Troque uma de suas cartas de efeito por uma carta 'Reversus Total'."
     },
     "shop": {
         "buy_avatars_tab": "Comprar Avatares",
@@ -537,8 +545,8 @@
         "inversus": "Inversus"
     },
     "titles": {
-        "creator": "Criador",
-        "eternal_reversus": "ETERNAMENTE REVERSUS",
+        "creator": "Creator",
+        "eternal_reversus": "Eternamente Reversus",
         "event_jan": "O Visionário",
         "event_feb": "Unidor de Restos",
         "event_mar": "Abençoado pelo Resto",
@@ -598,7 +606,7 @@
         "parada": "Se vencer a rodada, não avance.",
         "troca_injusta": "Troque sua carta de maior valor pela carta de menor valor de um oponente aleatório.",
         "total_revesus_nada": "Descarte todas as suas cartas de efeito."
-    },
+   },
     "achievement_names": {
         "first_win": "Primeira Vitória",
         "first_defeat": "Primeira Derrota",
@@ -819,18 +827,18 @@
         "december_new": "No início de cada rodada, ele pode trocar de mãos com você (50% de chance)."
     },
     "event": {
-        "title": "Monthly Event",
-        "challenge_title": "Challenge of the Month",
-        "description": "Defeat the event opponent 3 times to earn an exclusive reward. You can only try once per day!",
-        "ability_title": "Special Ability",
-        "progress_title": "Progress",
-        "reward_title": "Exclusive Reward",
-        "reward_text_placeholder": "Title: \"{rewardName}\"",
-        "challenge_button": "Challenge!",
-        "status_wait": "You have already attempted the challenge today. Come back tomorrow!",
-        "status_completed": "Challenge complete! Play again whenever you want this month.",
-        "victory_progress_message": "You won! Event progress: {wins}/3. Come back tomorrow to continue.",
-        "victory_completed_message": "Challenge complete! You unlocked the title: \"{rewardName}\"!",
-        "defeat_message": "You were defeated. Come back tomorrow for a new attempt."
+        "title": "Evento Mensal",
+        "challenge_title": "Desafio do Mês",
+        "description": "Vença o oponente do evento 3 vezes para ganhar uma recompensa exclusiva. Você só pode tentar uma vez por dia!",
+        "ability_title": "Habilidade Especial",
+        "progress_title": "Progresso",
+        "reward_title": "Recompensa Exclusiva",
+        "reward_text_placeholder": "Título: \"{rewardName}\"",
+        "challenge_button": "Desafiar!",
+        "status_wait": "Você já tentou o desafio hoje. Volte amanhã!",
+        "status_completed": "Desafio completo! Jogue novamente quando quiser este mês.",
+        "victory_progress_message": "Você venceu! Progresso do evento: {wins}/3. Volte amanhã para continuar.",
+        "victory_completed_message": "Desafio completo! Você desbloqueou o título: \"{rewardName}\"!",
+        "defeat_message": "Você foi derrotado. Volte amanhã para uma nova tentativa."
     }
 }
