@@ -65,18 +65,18 @@ const MONTHLY_EVENTS_FOR_QUEUE = [
 ];
 
 const AVATAR_CATALOG_FOR_QUEUE = {
-    'graxa': { nameKey: 'avatars.graxa', image_url: 'graxa.png' },
-    'jujuba': { nameKey: 'avatars.jujuba', image_url: 'jujuba.png' },
-    'frank': { nameKey: 'avatars.frank', image_url: 'frank.png' },
-    'lele': { nameKey: 'avatars.lele', image_url: 'lele.png' },
-    'vini': { nameKey: 'avatars.vini', image_url: 'vini.png' },
-    'vini2': { nameKey: 'avatars.vini2', image_url: 'vini2.png' },
-    'nathan': { nameKey: 'avatars.nathan', image_url: 'nathan.png' },
-    'pao': { nameKey: 'avatars.pao', image_url: 'pao.png' },
-    'luan': { nameKey: 'avatars.luan', image_url: 'luan.png' },
-    'lorenzo': { nameKey: 'avatars.lorenzo', image_url: 'lorenzo.png' },
-    'rodrigo': { nameKey: 'avatars.rodrigo', image_url: 'rodrigo.png' },
-    'karol': { nameKey: 'avatars.karol', image_url: 'karol.png' },
+    'graxa': { name: 'Graxa', image_url: 'graxa.png', cost: 2000, unlock_achievement_code: null },
+    'jujuba': { name: 'Jujuba', image_url: 'jujuba.png', cost: 2000, unlock_achievement_code: null },
+    'frank': { name: 'Frank', image_url: 'frank.png', cost: 2000, unlock_achievement_code: null },
+    'lele': { name: 'Lelê', image_url: 'lele.png', cost: 2000, unlock_achievement_code: null },
+    'vini': { name: 'Vini', image_url: 'vini.png', cost: 2000, unlock_achievement_code: null },
+    'vini2': { name: 'Vini2', image_url: 'vini2.png', cost: 2000, unlock_achievement_code: null },
+    'nathan': { name: 'Nathan', image_url: 'nathan.png', cost: 2000, unlock_achievement_code: null },
+    'pao': { name: 'Pão', image_url: 'pao.png', cost: 2000, unlock_achievement_code: null },
+    'luan': { name: 'Luan', image_url: 'luan.png', cost: 2000, unlock_achievement_code: null },
+    'lorenzo': { name: 'Lorenzo', image_url: 'lorenzo.png', cost: 2000, unlock_achievement_code: null },
+    'rodrigo': { name: 'Rodrigo', image_url: 'rodrigo.png', cost: 2000, unlock_achievement_code: null },
+    'karol': { name: 'Karol', image_url: 'karol.png', cost: 2000, unlock_achievement_code: null },
 };
 
 const INFINITE_CHALLENGE_OPPONENTS = [
@@ -90,7 +90,7 @@ const INFINITE_CHALLENGE_OPPONENTS = [
     { nameKey: 'splash.inversus', aiType: 'inversus', avatar_url: 'inversum1.png' },
     ...MONTHLY_EVENTS_FOR_QUEUE.map(event => ({ nameKey: event.characterNameKey, aiType: event.ai, avatar_url: event.image })),
     ...Object.entries(AVATAR_CATALOG_FOR_QUEUE)
-        .map(([key, avatar]) => ({ nameKey: avatar.nameKey, aiType: 'default', avatar_url: avatar.image_url }))
+        .map(([key, avatar]) => ({ nameKey: `avatars.${key}`, aiType: 'default', avatar_url: avatar.image_url }))
 ];
 
 

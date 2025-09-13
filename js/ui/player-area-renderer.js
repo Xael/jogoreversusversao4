@@ -76,16 +76,8 @@ export const renderPlayerArea = (player) => {
 
     const hasStoryPortrait = player.aiType && !player.isHuman && config.AI_CHAT_PERSONALITIES.hasOwnProperty(player.aiType);
     
-    if (gameState.isInfiniteChallenge && player.avatar_url) {
-        playerEl.classList.add('has-avatar');
-        const avatarImg = document.createElement('img');
-        avatarImg.src = `./${player.avatar_url}`; // Local image path
-        avatarImg.className = 'player-equipped-avatar';
-        if (player.aiType === 'oespectro') {
-            avatarImg.classList.add('specter-glow');
-        }
-        playerEl.appendChild(avatarImg);
-    } else if (hasStoryPortrait) {
+    // Check for a specific story/event portrait FIRST.
+    if (hasStoryPortrait) {
         const portraitMap = {
             'necroverso_tutorial': { src: './necroverso.png', class: 'player-area-character-portrait necro-tutorial-portrait' },
             'contravox': { src: './contravox.png', class: 'player-area-character-portrait contravox-portrait' },
@@ -113,11 +105,16 @@ export const renderPlayerArea = (player) => {
             if (portraitInfo.id) portraitImg.id = portraitInfo.id;
             playerEl.appendChild(portraitImg);
         }
-    } else if (player.avatar_url) {
+    } 
+    // THEN, check for a generic avatar (from shop, PvP, etc.). This now covers Infinite Challenge avatars correctly.
+    else if (player.avatar_url) {
         playerEl.classList.add('has-avatar');
         const avatarImg = document.createElement('img');
         avatarImg.src = player.avatar_url.startsWith('http') ? player.avatar_url : `./${player.avatar_url}`;
         avatarImg.className = 'player-equipped-avatar';
+        if (player.aiType === 'oespectro') {
+            avatarImg.classList.add('specter-glow');
+        }
         playerEl.appendChild(avatarImg);
     }
 };
