@@ -265,6 +265,9 @@ export const friendsListContainer = document.getElementById('friends-list-contai
 export const friendRequestsListContainer = document.getElementById('friend-requests-list-container');
 export const friendRequestBadge = document.getElementById('friend-request-badge');
 
+// Admin Tab
+export const profileAdminTabContent = document.getElementById('profile-admin-tab-content');
+
 // Invite Friends Modal
 export const inviteFriendsModal = document.getElementById('invite-friends-modal');
 export const inviteFriendsList = document.getElementById('invite-friends-list');

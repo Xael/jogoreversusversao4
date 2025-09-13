@@ -242,8 +242,7 @@ export function renderProfile(profileData) {
 }
 
 export function renderAdminPanel({ online, banned, pendingReports, totalConnections, dailyStats }) {
-    const adminTabContent = document.getElementById('profile-admin-tab-content');
-    if (!adminTabContent) return;
+    if (!dom.profileAdminTabContent) return;
 
     const lang = getCurrentLanguage().replace('_', '-');
 
@@ -318,7 +317,7 @@ export function renderAdminPanel({ online, banned, pendingReports, totalConnecti
         </div>
     `).join('') : `<p>${t('admin.no_banned_users')}</p>`;
 
-    adminTabContent.innerHTML = `
+    dom.profileAdminTabContent.innerHTML = `
         <div class="admin-section">
             <h3>${t('admin.server_status')}</h3>
             <p><strong>${t('admin.active_connections')}:</strong> ${totalConnections || 0}</p>
