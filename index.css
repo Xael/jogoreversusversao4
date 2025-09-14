@@ -1597,8 +1597,8 @@ body.screen-shaking {
 }
 
 .floating-card-wrapper .card {
-    width: 126px; /* Increased card size */
-    height: 180px;
+    width: 140px; /* Double opponent's card size */
+    height: 200px;
     cursor: pointer;
     transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
 }

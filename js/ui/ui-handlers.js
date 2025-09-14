@@ -27,7 +27,7 @@ let currentEventData = null;
 let infiniteChallengeIntroHandler = null;
 let introImageInterval = null;
 
-// --- NEW FLOATING HAND HELPER FUNCTIONS ---
+// --- FLOATING HAND HELPER FUNCTIONS ---
 
 /**
  * Gets the ID of the local human player.
@@ -85,6 +85,25 @@ function showFloatingHand() {
     dom.floatingHandOverlay.classList.remove('hiding', 'hidden');
     dom.floatingHandOverlay.classList.add('visible');
 }
+
+function cancelPlayerAction() {
+    const { gameState } = getState();
+    dom.targetModal.classList.add('hidden');
+    dom.reversusTargetModal.classList.add('hidden');
+    dom.reversusTotalChoiceModal.classList.add('hidden');
+    dom.reversusIndividualEffectChoiceModal.classList.add('hidden');
+    dom.pulaModal.classList.add('hidden');
+    if (gameState) {
+        gameState.gamePhase = 'playing';
+        gameState.selectedCard = null;
+        gameState.reversusTarget = null;
+        gameState.pulaTarget = null;
+        gameState.animationStartRect = null; // Clean up animation state
+        updateState('reversusTotalIndividualFlow', false);
+    }
+    renderAll();
+}
+
 
 /**
  * Initiates the sequence for playing a selected card (e.g., shows target modals).
@@ -264,23 +283,6 @@ function continueStory(nodeId) {
         dom.storyModeModalEl.classList.remove('hidden');
         renderStoryNode(nodeId);
     }, 1000);
-}
-
-function cancelPlayerAction() {
-    const { gameState } = getState();
-    dom.targetModal.classList.add('hidden');
-    dom.reversusTargetModal.classList.add('hidden');
-    dom.reversusTotalChoiceModal.classList.add('hidden');
-    dom.reversusIndividualEffectChoiceModal.classList.add('hidden');
-    dom.pulaModal.classList.add('hidden');
-    if (gameState) {
-        gameState.gamePhase = 'playing';
-        gameState.selectedCard = null;
-        gameState.reversusTarget = null;
-        gameState.pulaTarget = null;
-        updateState('reversusTotalIndividualFlow', false);
-    }
-    renderAll();
 }
 
 function handleCardClick(e) {
@@ -539,6 +541,8 @@ export function initializeUiHandlers() {
             const cardId = cardWrapper.dataset.cardId;
             const card = player.hand.find(c => String(c.id) === cardId);
             if (card) {
+                // Store the card's position right before initiating the play sequence.
+                gameState.animationStartRect = cardWrapper.getBoundingClientRect();
                 await initiatePlayCardSequence(player, card);
             }
             return;

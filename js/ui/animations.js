@@ -1,4 +1,5 @@
 
+
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
 import { getState, updateState } from '../core/state.js';
@@ -6,15 +7,16 @@ import { shuffle } from '../core/utils.js';
 import { playSoundEffect } from '../core/sound.js';
 
 /**
- * Animates a card moving from a starting element (in hand) to a target slot (in a play zone).
+ * Animates a card moving from a starting element (in hand) or position to a target slot (in a play zone).
  * @param {object} card - The card object being played.
- * @param {HTMLElement} startElement - The card element in the player's hand.
+ * @param {HTMLElement | null} startElement - The card element in the player's hand (can be null if override is used).
  * @param {string} targetPlayerId - The ID of the player whose play zone is the destination.
  * @param {string} targetSlotLabel - The data-label of the target slot (e.g., 'Valor 1').
  * @param {boolean} [forceHiddenAnimation=false] - If true, the animation will show the card back.
+ * @param {DOMRect | null} [startRectOverride=null] - An optional override for the starting position and size.
  * @returns {Promise<void>} A promise that resolves when the animation is complete.
  */
-export async function animateCardPlay(card, startElement, targetPlayerId, targetSlotLabel, forceHiddenAnimation = false) {
+export async function animateCardPlay(card, startElement, targetPlayerId, targetSlotLabel, forceHiddenAnimation = false, startRectOverride = null) {
      return new Promise(resolve => {
         const targetArea = document.getElementById(`player-area-${targetPlayerId}`);
         if (!targetArea) {
@@ -23,12 +25,13 @@ export async function animateCardPlay(card, startElement, targetPlayerId, target
         }
         
         const targetSlot = targetArea.querySelector(`.play-zone-slot[data-label="${targetSlotLabel}"]`);
-        if (!startElement || !targetSlot) {
+        const startRect = startRectOverride || (startElement ? startElement.getBoundingClientRect() : null);
+
+        if (!targetSlot || !startRect) {
             resolve();
             return;
         }
 
-        const startRect = startElement.getBoundingClientRect();
         const endRect = targetSlot.getBoundingClientRect();
 
         const clone = document.createElement('div');
@@ -38,7 +41,10 @@ export async function animateCardPlay(card, startElement, targetPlayerId, target
             const backImage = card.type === 'value' ? 'verso_valor.png' : 'verso_efeito.png';
             clone.style.backgroundImage = `url('./${backImage}')`;
         } else {
-            clone.style.backgroundImage = startElement.style.backgroundImage;
+            clone.style.backgroundImage = `url('./${card.image_url}')`;
+            if (startElement) { // Prefer the style from the element if it exists
+                 clone.style.backgroundImage = startElement.style.backgroundImage;
+            }
         }
         
         clone.style.width = `${startRect.width}px`;
@@ -47,7 +53,7 @@ export async function animateCardPlay(card, startElement, targetPlayerId, target
         clone.style.left = `${startRect.left}px`;
         
         document.body.appendChild(clone);
-        startElement.style.visibility = 'hidden';
+        if(startElement) startElement.style.visibility = 'hidden';
 
         requestAnimationFrame(() => {
             clone.style.top = `${endRect.top}px`;
