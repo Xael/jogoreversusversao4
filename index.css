@@ -1594,7 +1594,7 @@ body.screen-shaking {
 
 .floating-card-wrapper {
     position: relative;
-    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out, z-index 0s 0.3s;
     transform: translateY(100%);
     opacity: 0;
     animation: slide-in-up 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
@@ -1611,39 +1611,31 @@ body.screen-shaking {
     transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
 }
 
-.floating-card-wrapper:not(.selected-for-play):hover {
-    transform: translateY(-20px) scale(1.1); /* Lift and scale on hover for feedback */
-    z-index: 10;
-}
-
-/* Override hover for selected to prevent animation conflict */
-.floating-card-wrapper.selected-for-play:hover {
-    transform: translateY(-50px) scale(1.8);
-}
-
-/* New click-to-select state */
-.floating-card-wrapper.selected-for-play {
-    transform: translateY(-50px) scale(1.8); /* Enlarge and lift higher */
+.floating-card-wrapper:hover {
+    transform: translateY(-60px) scale(1.5); /* Enlarge and lift higher */
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
     z-index: 20; /* Ensure it's above other cards */
+    transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, z-index 0s;
 }
 
 .floating-card-actions {
     position: absolute;
-    bottom: 15px; /* Position inside the enlarged card */
+    bottom: 10px; /* Adjust position for new scale */
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    flex-direction: column; /* Stack buttons vertically */
+    flex-direction: column;
     gap: 8px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease-in-out 0.1s; /* Delay to appear after zoom */
+    transition: opacity 0.2s ease-in-out;
     width: 85%;
 }
 
-.floating-card-wrapper.selected-for-play .floating-card-actions {
+.floating-card-wrapper:hover .floating-card-actions {
     opacity: 1;
     pointer-events: all;
+    transition-delay: 0.1s; /* Small delay for actions to appear */
 }
 
 .floating-card-actions .control-button {
