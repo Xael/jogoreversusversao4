@@ -787,7 +787,7 @@ export async function startNextInfiniteChallengeDuel() {
     // 2. Set up the new opponent for the next duel.
     const nextOpponentData = infiniteChallengeOpponentQueue[0];
     const opponent = gameState.players['player-2'];
-    opponent.name = t(nextOpponentData.nameKey);
+    opponent.name = nextOpponentData.name || t(nextOpponentData.nameKey);
     opponent.aiType = nextOpponentData.aiType;
     opponent.avatar_url = nextOpponentData.avatar_url;
 

@@ -64,7 +64,11 @@ const MONTHLY_EVENTS_FOR_QUEUE = [
     { characterNameKey: 'event_chars.guardian_of_dawn', ai: 'guardiaodaaurora', image: 'guardiaodaaurora.png' }
 ];
 
-const AVATAR_CATALOG_FOR_QUEUE = {
+const AVATAR_CATALOG = {
+    'default_1': { name: 'Avatar 1', image_url: 'aleatorio1.png', cost: 1000, unlock_achievement_code: null },
+    'default_2': { name: 'Avatar 2', image_url: 'aleatorio2.png', cost: 1000, unlock_achievement_code: null },
+    'default_3': { name: 'Avatar 3', image_url: 'aleatorio3.png', cost: 1000, unlock_achievement_code: null },
+    'default_4': { name: 'Avatar 4', image_url: 'aleatorio4.png', cost: 1000, unlock_achievement_code: null },
     'graxa': { name: 'Graxa', image_url: 'graxa.png', cost: 2000, unlock_achievement_code: null },
     'jujuba': { name: 'Jujuba', image_url: 'jujuba.png', cost: 2000, unlock_achievement_code: null },
     'frank': { name: 'Frank', image_url: 'frank.png', cost: 2000, unlock_achievement_code: null },
@@ -77,6 +81,10 @@ const AVATAR_CATALOG_FOR_QUEUE = {
     'lorenzo': { name: 'Lorenzo', image_url: 'lorenzo.png', cost: 2000, unlock_achievement_code: null },
     'rodrigo': { name: 'Rodrigo', image_url: 'rodrigo.png', cost: 2000, unlock_achievement_code: null },
     'karol': { name: 'Karol', image_url: 'karol.png', cost: 2000, unlock_achievement_code: null },
+    'necroverso': { name: 'Necroverso', image_url: 'necroverso.png', cost: 15000, unlock_achievement_code: 'tutorial_win' },
+    'contravox': { name: 'Contravox', image_url: 'contravox.png', cost: 20000, unlock_achievement_code: 'contravox_win' },
+    'versatrix': { name: 'Versatrix', image_url: 'versatrix.png', cost: 25000, unlock_achievement_code: 'versatrix_win' },
+    'reversum': { name: 'Rei Reversum', image_url: 'reversum.png', cost: 30000, unlock_achievement_code: 'reversum_win' }
 };
 
 const INFINITE_CHALLENGE_OPPONENTS = [
@@ -89,8 +97,9 @@ const INFINITE_CHALLENGE_OPPONENTS = [
     { nameKey: 'player_names.xael', aiType: 'xael', avatar_url: 'xaeldesafio.png' },
     { nameKey: 'player_names.inversus', aiType: 'inversus', avatar_url: 'inversum1.png' },
     ...MONTHLY_EVENTS_FOR_QUEUE.map(event => ({ nameKey: event.characterNameKey, aiType: event.ai, avatar_url: event.image })),
-    ...Object.entries(AVATAR_CATALOG_FOR_QUEUE)
-        .map(([key, avatar]) => ({ nameKey: `avatars.${key}`, aiType: 'default', avatar_url: avatar.image_url }))
+    ...Object.entries(AVATAR_CATALOG)
+        .filter(([key]) => !['default_1', 'default_2', 'default_3', 'default_4', 'necroverso', 'contravox', 'versatrix', 'reversum'].includes(key))
+        .map(([key, avatar]) => ({ name: avatar.name, aiType: 'default', avatar_url: avatar.image_url }))
 ];
 
 

@@ -255,11 +255,11 @@ export function showBuffSelectionModal() {
 
             if (buff === 'auto_win') {
                 const { gameState, infiniteChallengeOpponentQueue } = getState();
-                opponentQueue.shift();
+                infiniteChallengeOpponentQueue.shift();
                 gameState.infiniteChallengeLevel++;
                 updateLog(`Vitória Automática! Pulando oponente e avançando para o nível ${gameState.infiniteChallengeLevel}.`);
                 
-                if (opponentQueue.length === 0) {
+                if (infiniteChallengeOpponentQueue.length === 0) {
                     document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
                 } else {
                     showBuffSelectionModal();
@@ -949,7 +949,7 @@ export function initializeUiHandlers() {
         await new Promise(res => setTimeout(res, 1500));
         dom.randomOpponentSpinnerModal.classList.add('hidden');
         
-        const overrides = { 'player-2': { name: selectedOpponent.name, aiType: selectedOpponent.aiType } };
+        const overrides = { 'player-2': { name: selectedOpponent.name, aiType: selectedOpponent.aiType, avatar_url: selectedOpponent.image.replace('./', '') } };
         initializeGame('solo', { numPlayers: 2, overrides });
     });
 
