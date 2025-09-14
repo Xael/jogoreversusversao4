@@ -198,7 +198,6 @@ export const AVATAR_CATALOG = {
 };
 
 export const INFINITE_CHALLENGE_OPPONENTS = [
-    { nameKey: 'player_names.player-2', aiType: 'default', avatar_url: 'aleatorio1.png' },
     { nameKey: 'player_names.contravox', aiType: 'contravox', avatar_url: 'contravox.png' },
     { nameKey: 'player_names.versatrix', aiType: 'versatrix', avatar_url: 'versatrix.png' },
     { nameKey: 'player_names.reversum', aiType: 'reversum', avatar_url: 'reversum.png' },
@@ -208,7 +207,7 @@ export const INFINITE_CHALLENGE_OPPONENTS = [
     { nameKey: 'player_names.inversus', aiType: 'inversus', avatar_url: 'inversum1.png' },
     ...MONTHLY_EVENTS.map(event => ({ nameKey: event.characterNameKey, aiType: event.ai, avatar_url: event.image })),
     ...Object.entries(AVATAR_CATALOG)
-        .filter(([key]) => !['default_1', 'default_2', 'default_3', 'default_4', 'necroverso', 'contravox', 'versatrix', 'reversum'].includes(key))
+        .filter(([key]) => !['necroverso', 'contravox', 'versatrix', 'reversum'].includes(key))
         .map(([key, avatar]) => ({ nameKey: avatar.nameKey, aiType: 'default', avatar_url: avatar.image_url }))
 ];
 
