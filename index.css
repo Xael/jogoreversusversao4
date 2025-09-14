@@ -1576,7 +1576,7 @@ body.screen-shaking {
 #floating-hand-overlay {
     background: rgba(0, 0, 0, 0.6);
     align-items: flex-end; /* Align to bottom */
-    padding-bottom: 3rem;
+    padding-bottom: 2rem; /* Adjusted for larger cards */
     backdrop-filter: blur(4px);
     pointer-events: none; /* Allows clicks to pass through */
 }
@@ -1587,14 +1587,15 @@ body.screen-shaking {
 #floating-hand-container {
     display: flex;
     justify-content: center;
-    align-items: center;
-    gap: 1rem;
+    align-items: flex-end; /* Align cards to the bottom of the container */
+    gap: 1.5rem; /* Increased gap for larger cards */
     padding: 0 2rem;
+    height: 450px; /* Give container a fixed height to contain the large cards */
 }
 
 .floating-card-wrapper {
     position: relative;
-    transition: transform 0.3s ease-out, opacity 0.3s ease-out, z-index 0s 0.3s;
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
     transform: translateY(100%);
     opacity: 0;
     animation: slide-in-up 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
@@ -1604,43 +1605,18 @@ body.screen-shaking {
     animation: slide-out-down 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
 }
 
+/* Make cards clickable directly */
 .floating-card-wrapper .card {
-    width: 140px; /* Double opponent's card size */
-    height: 200px;
+    width: 280px; /* Doubled size */
+    height: 400px; /* Doubled size */
     cursor: pointer;
     transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
 }
 
+/* Simple hover effect for feedback */
 .floating-card-wrapper:hover {
-    transform: translateY(-60px) scale(1.5); /* Enlarge and lift higher */
-    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-    z-index: 20; /* Ensure it's above other cards */
-    transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, z-index 0s;
-}
-
-.floating-card-actions {
-    position: absolute;
-    bottom: 10px; /* Adjust position for new scale */
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease-in-out;
-    width: 85%;
-}
-
-.floating-card-wrapper:hover .floating-card-actions {
-    opacity: 1;
-    pointer-events: all;
-    transition-delay: 0.1s; /* Small delay for actions to appear */
-}
-
-.floating-card-actions .control-button {
-    padding: 8px 12px;
-    font-size: 0.9rem;
+    transform: translateY(-20px);
+    z-index: 10;
 }
 
 

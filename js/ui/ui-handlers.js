@@ -71,12 +71,10 @@ function showFloatingHand() {
     dom.floatingHandContainer.innerHTML = player.hand.map(card => {
         const cardHTML = renderCard(card, 'floating-hand', player.id);
         
+        // Simplified wrapper, clicking the card itself is the action
         return `
             <div class="floating-card-wrapper" data-card-id="${card.id}">
                 ${cardHTML}
-                <div class="floating-card-actions">
-                    <button class="control-button floating-play-btn" data-i18n="game.play">${t('game.play')}</button>
-                </div>
             </div>
         `;
     }).join('');
@@ -528,40 +526,41 @@ export function initializeUiHandlers() {
         if (!gameState) return;
     
         const myPlayerId = getLocalPlayerId();
+        if (!myPlayerId) return;
         const player = gameState.players[myPlayerId];
         if (!player) return;
     
-        const playBtn = e.target.closest('.floating-play-btn');
+        // Listen for clicks on the card wrapper itself
+        const cardWrapper = e.target.closest('.floating-card-wrapper');
     
-        if (playBtn) {
-            const cardWrapper = playBtn.closest('.floating-card-wrapper');
+        if (cardWrapper) {
             const cardId = cardWrapper.dataset.cardId;
             const card = player.hand.find(c => String(c.id) === cardId);
             
             if (card) {
-                // Check if card is playable (moved from old click handler)
+                // Check if card is playable
                 let isCardDisabled = card.isBlocked || card.isFrozen || false;
-                if (card.type === 'value') {
-                    const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length;
-                    if (valueCardsInHandCount <= 1 || player.playedValueCardThisTurn) {
-                        isCardDisabled = true;
-                    }
+                const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length;
+                if (card.type === 'value' && (valueCardsInHandCount <= 1 || player.playedValueCardThisTurn)) {
+                    isCardDisabled = true;
                 }
                 if(card.name === 'Carta da Versatrix' && card.cooldown > 0) {
                     isCardDisabled = true;
                 }
-                if (isCardDisabled) return;
-
+                if (isCardDisabled) {
+                    return; // Do nothing if card is disabled
+                }
+    
+                // Store start position for animation and initiate play sequence
                 gameState.animationStartRect = cardWrapper.getBoundingClientRect();
                 await initiatePlayCardSequence(player, card);
             }
             return;
         }
     
-        // If click is on the overlay itself (not a card or button), hide it.
+        // If click is on the overlay background (not a card wrapper), hide it.
         if (e.target === dom.floatingHandOverlay) {
             hideFloatingHand();
-            return;
         }
     });
 
