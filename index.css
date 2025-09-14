@@ -3850,3 +3850,49 @@ body.screen-shaking {
     font-size: 0.9rem;
     line-height: 1.4;
 }
+
+/* --- Mobile Responsiveness --- */
+@media screen and (max-width: 800px) {
+    /* Splash Screen Adjustments for Mobile */
+    #splash-animation-container {
+        display: none; /* Remove floating card background */
+    }
+
+    #splash-logo {
+        animation: none; /* Stop logo from spinning */
+        width: 200px;
+        margin-bottom: 1.5rem;
+    }
+
+    .splash-button-container {
+        padding: 1.5rem;
+        width: 90%;
+        max-width: 300px;
+    }
+
+    .splash-button-container .control-button {
+        font-size: 0.9rem;
+        padding: 10px 20px;
+    }
+    
+    #infinite-challenge-pot-display {
+        font-size: 0.8rem;
+    }
+
+    .info-button {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+        bottom: 5px;
+        left: 5px;
+    }
+
+    .language-switcher {
+        bottom: 5px;
+        right: 5px;
+    }
+
+    .lang-button {
+        padding: 4px 6px;
+        font-size: 1rem;
+    }
+}
