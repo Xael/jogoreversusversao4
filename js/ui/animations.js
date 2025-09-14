@@ -1,10 +1,10 @@
-
-
+// js/ui/animations.js
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
 import { getState, updateState } from '../core/state.js';
 import { shuffle } from '../core/utils.js';
 import { playSoundEffect } from '../core/sound.js';
+import { getCardImageUrl } from './card-renderer.js';
 
 /**
  * Animates a card moving from a starting element (in hand) or position to a target slot (in a play zone).
@@ -37,15 +37,9 @@ export async function animateCardPlay(card, startElement, targetPlayerId, target
         const clone = document.createElement('div');
         clone.className = 'card card-animation-clone';
 
-        if (forceHiddenAnimation) {
-            const backImage = card.type === 'value' ? 'verso_valor.png' : 'verso_efeito.png';
-            clone.style.backgroundImage = `url('./${backImage}')`;
-        } else {
-            clone.style.backgroundImage = `url('./${card.image_url}')`;
-            if (startElement) { // Prefer the style from the element if it exists
-                 clone.style.backgroundImage = startElement.style.backgroundImage;
-            }
-        }
+        // Correctly get the card image URL using the helper function. This handles all card types and visibility states.
+        const imageUrl = getCardImageUrl(card, forceHiddenAnimation);
+        clone.style.backgroundImage = `url('./${imageUrl}')`;
         
         clone.style.width = `${startRect.width}px`;
         clone.style.height = `${startRect.height}px`;
