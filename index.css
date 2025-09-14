@@ -1825,6 +1825,12 @@ body.screen-shaking {
     box-shadow: 0 0 15px var(--accent-purple);
 }
 
+#infinite-challenge-button span[data-i18n="splash.infinite_challenge"] {
+    color: var(--accent-yellow);
+    animation: golden-text-glow 2.5s infinite ease-in-out;
+    font-weight: 700;
+}
+
 #infinite-challenge-pot-display {
     font-size: 0.9rem;
     font-weight: bold;
