@@ -529,6 +529,12 @@ export function initializeUiHandlers() {
         if (!myPlayerId) return;
         const player = gameState.players[myPlayerId];
         if (!player) return;
+
+        // If the maximize button was clicked, do nothing here.
+        // The body's click listener will handle showing the card viewer.
+        if (e.target.classList.contains('card-maximize-button')) {
+            return;
+        }
     
         // Listen for clicks on the card wrapper itself
         const cardWrapper = e.target.closest('.floating-card-wrapper');

@@ -1713,7 +1713,7 @@ body.screen-shaking {
     position: absolute;
     bottom: 10px;
     left: 10px;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: var(--bg-main);
     background-color: var(--accent-yellow);
@@ -1721,7 +1721,7 @@ body.screen-shaking {
     cursor: pointer;
     font-family: var(--font-family);
     transition: all 0.3s ease;
-    padding: 8px 12px;
+    padding: 10px 16px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     animation: yellow-button-glow 3s infinite ease-in-out;
 }
@@ -1741,8 +1741,8 @@ body.screen-shaking {
     background: rgba(255,255,255,0.1);
     border: 1px solid var(--text-secondary);
     border-radius: 5px;
-    padding: 5px 8px;
-    font-size: 1.2rem;
+    padding: 8px 12px;
+    font-size: 1.5rem;
     cursor: pointer;
     opacity: 0.7;
     transition: all 0.2s ease-in-out;
@@ -1759,7 +1759,7 @@ body.screen-shaking {
 
 
 .splash-logo {
-    width: 300px;
+    width: 450px;
     margin-bottom: 2rem;
     animation: splash-logo-spin 16s linear infinite;
     cursor: pointer;
@@ -1802,12 +1802,18 @@ body.screen-shaking {
 
 .splash-button-container {
     background: rgba(11, 19, 26, 0.6);
-    padding: 2rem;
+    padding: 2.5rem;
     border-radius: 15px;
     border: 1px solid rgba(168, 218, 220, 0.2);
     backdrop-filter: blur(5px);
     width: 100%;
-    max-width: 350px;
+    max-width: 450px;
+}
+
+.splash-button-container .control-button {
+    width: 100%;
+    font-size: 1.3rem;
+    padding: 16px 24px;
 }
 
 #infinite-challenge-button {
@@ -1819,17 +1825,12 @@ body.screen-shaking {
 }
 
 #infinite-challenge-pot-display {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     font-weight: bold;
     color: var(--accent-yellow);
     text-shadow: 0 0 5px rgba(0,0,0,0.5);
     animation: golden-text-glow 2.5s infinite;
-    margin-top: 4px;
-}
-
-
-.splash-button-container .control-button {
-    width: 100%;
+    margin-top: 6px;
 }
 
 
