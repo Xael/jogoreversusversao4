@@ -3852,47 +3852,47 @@ body.screen-shaking {
 }
 
 /* --- Mobile Responsiveness --- */
-@media screen and (max-width: 800px) {
-    /* Splash Screen Adjustments for Mobile */
-    #splash-animation-container {
-        display: none; /* Remove floating card background */
-    }
+/* A 'mobile-view' class is added to the body via JS to bypass scaling issues */
 
-    #splash-logo {
-        animation: none; /* Stop logo from spinning */
-        width: 200px;
-        margin-bottom: 1.5rem;
-    }
+/* Splash Screen Adjustments for Mobile */
+body.mobile-view #splash-animation-container {
+    display: none; /* Remove floating card background */
+}
 
-    .splash-button-container {
-        padding: 1.5rem;
-        width: 90%;
-        max-width: 300px;
-    }
+body.mobile-view #splash-logo {
+    animation: none; /* Stop logo from spinning */
+    width: 200px;
+    margin-bottom: 1.5rem;
+}
 
-    .splash-button-container .control-button {
-        font-size: 0.9rem;
-        padding: 10px 20px;
-    }
-    
-    #infinite-challenge-pot-display {
-        font-size: 0.8rem;
-    }
+body.mobile-view .splash-button-container {
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 300px;
+}
 
-    .info-button {
-        font-size: 0.8rem;
-        padding: 6px 10px;
-        bottom: 5px;
-        left: 5px;
-    }
+body.mobile-view .splash-button-container .control-button {
+    font-size: 0.9rem;
+    padding: 10px 20px;
+}
 
-    .language-switcher {
-        bottom: 5px;
-        right: 5px;
-    }
+body.mobile-view #infinite-challenge-pot-display {
+    font-size: 0.8rem;
+}
 
-    .lang-button {
-        padding: 4px 6px;
-        font-size: 1rem;
-    }
+body.mobile-view .info-button {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    bottom: 5px;
+    left: 5px;
+}
+
+body.mobile-view .language-switcher {
+    bottom: 5px;
+    right: 5px;
+}
+
+body.mobile-view .lang-button {
+    padding: 4px 6px;
+    font-size: 1rem;
 }
