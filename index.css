@@ -181,7 +181,7 @@
         transform: translateY(0) rotate(0deg);
     }
     to {
-        transform: translateY(-1400px) rotate(360deg);
+        transform: translateY(-110vh) rotate(360deg);
     }
 }
 
@@ -190,7 +190,7 @@
         transform: translateY(0);
     }
     to {
-        transform: translateY(1400px);
+        transform: translateY(calc(100vh + 300px)); /* Fall completely off screen, 300px buffer for large cards */
     }
 }
 
@@ -1852,7 +1852,7 @@ body.screen-shaking {
         transform: translateY(0) rotate(0deg);
     }
     100% {
-        transform: translateY(-1400px) rotate(360deg);
+        transform: translateY(-110vh) rotate(360deg);
     }
 }
 .animated-item.card-shape {
