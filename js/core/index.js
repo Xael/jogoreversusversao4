@@ -33,16 +33,6 @@ function resizeAndCenterApp() {
 }
 
 
-/**
- * Adds a 'mobile-view' class to the body if the window width is below a threshold.
- * This allows for responsive styling that circumvents the app's scaling mechanism.
- */
-function setMobileView() {
-    const isMobile = window.innerWidth <= 800;
-    document.body.classList.toggle('mobile-view', isMobile);
-}
-
-
 // This is the main entry point of the application.
 document.addEventListener('DOMContentLoaded', async () => {
     // Initialize internationalization first
@@ -69,12 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initializes Google Sign-In functionality
     initializeGoogleSignIn();
 
-    // Combined handler for resize events
-    const handleResize = () => {
-        resizeAndCenterApp();
-        setMobileView();
-    };
-
-    handleResize(); // Call once on load
-    window.addEventListener('resize', handleResize);
+    // --- Add new resize logic ---
+    resizeAndCenterApp();
+    window.addEventListener('resize', resizeAndCenterApp);
 });

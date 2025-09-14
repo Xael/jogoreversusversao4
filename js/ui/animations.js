@@ -186,7 +186,7 @@ const startVersatrixCardAnimation = () => {
         
         const card = document.createElement('div');
         card.id = 'secret-versatrix-card';
-        card.style.left = `${Math.random() * 80 + 10}vw`; // Avoid edges
+        card.style.left = `${Math.random() * 80 + 10}%`; // Avoid edges, use percentage
 
         // Add variable size logic, similar to other floating cards
         const size = Math.random() * 60 + 70; // size from 70px to 130px
@@ -292,7 +292,7 @@ export const initializeFloatingItemsAnimation = (containerEl, customImagePool = 
             }
         }
 
-        item.style.left = `${Math.random() * 100}vw`;
+        item.style.left = `${Math.random() * 100}%`;
         const duration = Math.random() * 25 + 15; // 15-40 seconds
         item.style.animationDuration = `${duration}s`;
         item.style.animationDelay = `-${Math.random() * duration}s`;
@@ -441,7 +441,7 @@ export function showInversusVictoryAnimation() {
             item.classList.add('reversus-total'); // Use a nice glow effect
         }
 
-        item.style.left = `${Math.random() * 100}vw`;
+        item.style.left = `${Math.random() * 100}%`;
         const duration = Math.random() * 20 + 10; // 10-30 seconds
         item.style.animationDuration = `${duration}s`;
         item.style.animationDelay = `-${Math.random() * duration}s`;
