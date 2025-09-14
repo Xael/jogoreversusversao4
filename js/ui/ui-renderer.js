@@ -139,14 +139,12 @@ export const updateActionButtons = () => {
     if (!gameState) return;
     
     const currentPlayer = gameState.players[gameState.currentPlayer];
-    // FIX: Use the correct player ID for PvP perspective and add a defensive guard
     const myPlayer = gameState.isPvp ? gameState.players[playerId] : gameState.players['player-1'];
     if (!myPlayer || !currentPlayer) return; 
 
     const isMyTurn = currentPlayer.id === myPlayer.id && gameState.gamePhase === 'playing';
-    const hasSelectedCard = !!gameState.selectedCard;
 
-    dom.playButton.disabled = !isMyTurn || !hasSelectedCard;
+    dom.cardsButton.disabled = !isMyTurn;
     dom.endTurnButton.disabled = !isMyTurn;
 };
 

@@ -2,8 +2,6 @@ export const appContainerEl = document.getElementById('app-container');
 export const boardEl = document.getElementById('game-board');
 export const cardsButton = document.getElementById('cards-button');
 export const endTurnButton = document.getElementById('end-turn-button');
-// FIX: Added missing 'playButton' constant.
-export const playButton = document.getElementById('play-button');
 export const logEl = document.getElementById('game-log');
 export const teamScoresContainer = document.getElementById('team-scores-container');
 export const reversusTotalIndicatorEl = document.getElementById('reversus-total-indicator');

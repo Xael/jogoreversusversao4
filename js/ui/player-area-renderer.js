@@ -44,10 +44,14 @@ export const renderPlayerArea = (player) => {
         playerEl.classList.add('xael-portrait-bg');
     }
 
-    const isMyHand = (gameState.isPvp && player.id === myPlayerId) || (!gameState.isPvp && player.isHuman);
-    const context = isMyHand ? 'player-hand' : 'opponent-hand';
+    const isMyArea = (gameState.isPvp && player.id === myPlayerId) || (!gameState.isPvp && player.isHuman);
     
-    const handHTML = `<div class="player-hand" id="hand-${player.id}">${player.hand.map(card => renderCard(card, context, player.id)).join('')}</div>`;
+    let handHTML = '';
+    // Only render the hand area for opponents. The main player's hand is now in the floating overlay.
+    if (!isMyArea) {
+        const context = 'opponent-hand';
+        handHTML = `<div class="player-hand" id="hand-${player.id}">${player.hand.map(card => renderCard(card, context, player.id)).join('')}</div>`;
+    }
 
     const playZoneSlots = [
         { label: 'Valor 1', card: player.playedCards.value[0] },

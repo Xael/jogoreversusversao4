@@ -21,19 +21,144 @@ import { showSplashScreen } from './splash-screen.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from './profile-renderer.js';
 import { openChatWindow, initializeChatHandlers } from './chat-handler.js';
 import { renderShopAvatars } from './shop-renderer.js';
+import { renderCard } from './card-renderer.js';
 
 let currentEventData = null;
 let infiniteChallengeIntroHandler = null;
 let introImageInterval = null;
 
+// --- NEW FLOATING HAND HELPER FUNCTIONS ---
+
 /**
- * Shows the buff selection modal for the Infinite Challenge.
+ * Gets the ID of the local human player.
+ * @returns {string | null} The player ID or null if not found.
  */
+function getLocalPlayerId() {
+    const { gameState, playerId } = getState();
+    if (!gameState) return null;
+    if (gameState.isPvp) return playerId;
+    const humanPlayer = Object.values(gameState.players).find(p => p.isHuman);
+    return humanPlayer ? humanPlayer.id : null;
+}
+
+/**
+ * Hides the floating hand overlay with an animation.
+ */
+function hideFloatingHand() {
+    if (dom.floatingHandOverlay.classList.contains('hidden')) return;
+
+    dom.floatingHandOverlay.classList.remove('visible');
+    dom.floatingHandOverlay.classList.add('hiding');
+    
+    setTimeout(() => {
+        dom.floatingHandOverlay.classList.add('hidden');
+        dom.floatingHandContainer.innerHTML = '';
+    }, 400); 
+}
+
+/**
+ * Renders the local player's hand and shows the floating overlay.
+ */
+function showFloatingHand() {
+    const { gameState } = getState();
+    const myPlayerId = getLocalPlayerId();
+    if (!myPlayerId) return;
+
+    const player = gameState.players[myPlayerId];
+    if (!player) return;
+
+    dom.floatingHandContainer.innerHTML = player.hand.map(card => {
+        let isCardDisabled = card.isBlocked || card.isFrozen || false;
+        
+        if (card.type === 'value') {
+            const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length;
+            if (valueCardsInHandCount <= 1 || player.playedValueCardThisTurn) {
+                isCardDisabled = true;
+            }
+        }
+        
+        const cardHTML = renderCard(card, 'floating-hand', player.id);
+        
+        return `
+            <div class="floating-card-wrapper" data-card-id="${card.id}" ${isCardDisabled ? 'aria-disabled="true"' : ''}>
+                ${cardHTML}
+                ${!isCardDisabled ? `
+                    <div class="floating-card-actions">
+                        <button class="control-button floating-play-btn">${t('game.play')}</button>
+                        <button class="control-button cancel floating-back-btn">${t('common.back')}</button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+
+    dom.floatingHandOverlay.classList.remove('hiding', 'hidden');
+    dom.floatingHandOverlay.classList.add('visible');
+}
+
+/**
+ * Initiates the sequence for playing a selected card (e.g., shows target modals).
+ * @param {object} player - The player object playing the card.
+ * @param {object} card - The card object being played.
+ */
+async function initiatePlayCardSequence(player, card) {
+    const { gameState } = getState();
+
+    hideFloatingHand();
+    await new Promise(res => setTimeout(res, 400));
+
+    gameState.selectedCard = card;
+
+    if (!gameState.isPvp) {
+        gameState.gamePhase = 'paused';
+    }
+    
+    if (card.type === 'value') {
+        if (gameState.isPvp) {
+            network.emitPlayCard({ cardId: card.id, targetId: player.id });
+        } else {
+            await playCard(player, card, player.id);
+            gameState.gamePhase = 'playing';
+            renderAll();
+        }
+        return;
+    }
+
+    const targetableCards = ['Mais', 'Menos', 'Sobe', 'Desce', 'Pula', 'Reversus'];
+
+    if (targetableCards.includes(card.name)) {
+        const allPlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
+        if (allPlayers.length === 0) {
+            updateLog(`Não há jogadores para usar a carta '${card.name}'.`);
+            cancelPlayerAction();
+            return;
+        }
+        dom.targetModalCardName.textContent = card.name;
+        dom.targetPlayerButtonsEl.innerHTML = allPlayers.map(id => `<button class="control-button target-player-${id.split('-')[1]}" data-player-id="${id}">${gameState.players[id].name}</button>`).join('');
+        dom.targetModal.classList.remove('hidden');
+    } else if (card.name === 'Reversus Total') {
+        dom.reversusTotalChoiceModal.classList.remove('hidden');
+    } else if (card.name === 'Carta da Versatrix') {
+        if (gameState.isPvp) {
+             network.emitPlayCard({ cardId: card.id, targetId: player.id });
+        } else {
+             await playCard(player, card, player.id);
+             gameState.gamePhase = 'playing';
+             renderAll();
+        }
+    } else {
+        console.warn(`Unhandled effect card in initiatePlayCardSequence: ${card.name}`);
+        cancelPlayerAction();
+    }
+}
+
+
+// --- END FLOATING HAND HELPERS ---
+
 export function showBuffSelectionModal() {
     const { gameState, achievements } = getState();
     if (!gameState || !gameState.isInfiniteChallenge) return;
 
-    // Define ultra-rare buffs and their requirements
     const ultraBuffs = {
         'versatrix_card': { achievements: ['versatrix_win'], image: 'cartaversatrix.png' },
         'contravox_card': { achievements: ['contravox_win'], image: 'cartacontravox.png' },
@@ -41,19 +166,16 @@ export function showBuffSelectionModal() {
         'rei_reversum_card': { achievements: ['reversum_win'], image: 'cartarei.png' }
     };
 
-    // Filter which very rare buffs are available based on achievements
     const availableVeryRare = config.INFINITE_CHALLENGE_BUFFS.very_rare.filter(buffCode => {
         if (ultraBuffs[buffCode]) {
             return ultraBuffs[buffCode].achievements.every(ach => achievements.has(ach));
         }
-        return true; // It's a default very rare buff
+        return true;
     });
 
-    // Determine buff rarities based on level
     const buffs = [];
     const level = gameState.infiniteChallengeLevel;
 
-    // Guarantee one rare buff every 3 levels, and one very rare every 5.
     if (level % 5 === 0 && availableVeryRare.length > 0) {
         buffs.push(...shuffle(availableVeryRare).slice(0, 1));
     }
@@ -63,25 +185,22 @@ export function showBuffSelectionModal() {
         if (buffToAdd) buffs.push(buffToAdd);
     }
 
-    // Fill the rest with common buffs
     const needed = 3 - buffs.length;
     if (needed > 0 && config.INFINITE_CHALLENGE_BUFFS.common.length > 0) {
         const commonBuffs = shuffle([...config.INFINITE_CHALLENGE_BUFFS.common]);
         buffs.push(...commonBuffs.slice(0, needed));
     }
 
-    // Ensure we have exactly 3 buffs by filling with common if needed
     while (buffs.length < 3 && config.INFINITE_CHALLENGE_BUFFS.common.length > 0) {
         const commonBuffs = shuffle([...config.INFINITE_CHALLENGE_BUFFS.common]);
         const buffToAdd = commonBuffs.find(b => !buffs.includes(b));
         if (buffToAdd) {
             buffs.push(buffToAdd);
         } else {
-            break; // No more unique common buffs to add
+            break;
         }
     }
     
-    // Final shuffle to randomize order
     shuffle(buffs);
     
     const valueBuffs = new Set(['resto_10', 'discard_low_draw_value', 'draw_two_value', 'draw_10_discard_one']);
@@ -142,17 +261,13 @@ export function showBuffSelectionModal() {
             } else {
                 await startNextInfiniteChallengeDuel();
             }
-        }, 2000); // Wait 2s to show the card before continuing
+        }, 2000);
     };
     
     dom.infiniteChallengeBuffCards.addEventListener('click', buffClickHandler);
     dom.infiniteChallengeBuffModal.classList.remove('hidden');
 }
 
-/**
- * Hides the game UI, shows the story modal, and renders the next story node.
- * @param {string} nodeId - The ID of the story node to render.
- */
 function continueStory(nodeId) {
     setTimeout(() => {
         dom.appContainerEl.classList.add('hidden');
@@ -161,21 +276,6 @@ function continueStory(nodeId) {
     }, 1000);
 }
 
-/**
- * Gets the ID of the local human player.
- * @returns {string | null} The player ID or null if not found.
- */
-function getLocalPlayerId() {
-    const { gameState, playerId } = getState();
-    if (!gameState) return null;
-    if (gameState.isPvp) return playerId;
-    const humanPlayer = Object.values(gameState.players).find(p => p.isHuman);
-    return humanPlayer ? humanPlayer.id : null;
-}
-
-/**
- * Resets the game state after a player cancels an action modal.
- */
 function cancelPlayerAction() {
     const { gameState } = getState();
     dom.targetModal.classList.add('hidden');
@@ -193,10 +293,6 @@ function cancelPlayerAction() {
     renderAll();
 }
 
-/**
- * Handles clicks on cards, either selecting them or showing a viewer.
- * @param {Event} e - The click event.
- */
 function handleCardClick(e) {
     const cardEl = e.target.closest('.card');
     if (!cardEl) return;
@@ -205,15 +301,6 @@ function handleCardClick(e) {
     const { gameState } = getState();
     if (!gameState) return;
     
-    const myPlayerId = getLocalPlayerId();
-    if (!myPlayerId) return;
-
-    const player = gameState.players[myPlayerId];
-    if (!player) return;
-
-    const card = player.hand.find(c => String(c.id) === cardId);
-    if (!card) return;
-
     if (e.target.classList.contains('card-maximize-button')) {
         const isHidden = cardEl.style.backgroundImage.includes('verso');
         if (isHidden) return;
@@ -221,89 +308,8 @@ function handleCardClick(e) {
         dom.cardViewerModalEl.classList.remove('hidden');
         return;
     }
-
-    if (gameState.currentPlayer !== myPlayerId || cardEl.classList.contains('disabled')) {
-        return;
-    }
-
-    if (gameState.selectedCard?.id === card.id) {
-        gameState.selectedCard = null;
-    } else {
-        gameState.selectedCard = card;
-    }
-    
-    renderAll();
 }
 
-/**
- * Handles the logic when the "Jogar Carta" button is clicked.
- */
-async function handlePlayButtonClick() {
-    const { gameState } = getState();
-    if (!gameState) return;
-    
-    const myPlayerId = getLocalPlayerId();
-    if (!myPlayerId) return;
-
-    const player = gameState.players[myPlayerId];
-    const card = gameState.selectedCard;
-
-    if (!player || !card) return;
-
-    // Immediately disable buttons for better UX
-    dom.playButton.disabled = true;
-    dom.endTurnButton.disabled = true;
-
-    if (gameState.isPvp) {
-        // In PvP, we just send the event and wait for the server's gameStateUpdate
-        // The modal logic for complex cards is handled below before sending the event
-    } else {
-        gameState.gamePhase = 'paused';
-    }
-    
-    if (card.type === 'value') {
-        if (gameState.isPvp) {
-            network.emitPlayCard({ cardId: card.id, targetId: player.id });
-        } else {
-            await playCard(player, card, player.id);
-            gameState.gamePhase = 'playing';
-            renderAll();
-        }
-        return;
-    }
-
-    const targetableCards = ['Mais', 'Menos', 'Sobe', 'Desce', 'Pula', 'Reversus'];
-
-    if (targetableCards.includes(card.name)) {
-        const allPlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
-        if (allPlayers.length === 0) {
-            updateLog(`Não há jogadores para usar a carta '${card.name}'.`);
-            cancelPlayerAction();
-            return;
-        }
-        dom.targetModalCardName.textContent = card.name;
-        dom.targetPlayerButtonsEl.innerHTML = allPlayers.map(id => `<button class="control-button target-player-${id.split('-')[1]}" data-player-id="${id}">${gameState.players[id].name}</button>`).join('');
-        dom.targetModal.classList.remove('hidden');
-    } else if (card.name === 'Reversus Total') {
-        dom.reversusTotalChoiceModal.classList.remove('hidden');
-    } else if (card.name === 'Carta da Versatrix') {
-        if (gameState.isPvp) {
-             network.emitPlayCard({ cardId: card.id, targetId: player.id });
-        } else {
-             await playCard(player, card, player.id);
-             gameState.gamePhase = 'playing';
-             renderAll();
-        }
-    } else {
-        console.warn(`Unhandled effect card in handlePlayButtonClick: ${card.name}`);
-        cancelPlayerAction();
-    }
-}
-
-
-/**
- * Handles the logic for ending a player's turn.
- */
 function handleEndTurnButtonClick() {
     const { gameState } = getState();
     const myPlayerId = getLocalPlayerId();
@@ -319,8 +325,6 @@ function handleEndTurnButtonClick() {
         return;
     }
     
-    // Immediately disable buttons for better UX
-    dom.playButton.disabled = true;
     dom.endTurnButton.disabled = true;
 
     if (gameState.isPvp) {
@@ -332,10 +336,6 @@ function handleEndTurnButtonClick() {
     }
 }
 
-/**
- * Shows an info modal for a field effect when its indicator is clicked.
- * @param {Event} e The click event from the indicator.
- */
 function handleFieldEffectIndicatorClick(e) {
     const indicator = e.target.closest('.field-effect-indicator');
     if (!indicator) return;
@@ -350,7 +350,6 @@ function handleFieldEffectIndicatorClick(e) {
         dom.fieldEffectInfoModal.querySelector('.field-effect-card').className = `field-effect-card ${isPositive ? 'positive' : 'negative'}`;
         dom.fieldEffectInfoName.textContent = activeEffect.name;
         
-        // Correctly get and translate the description
         const effectConfig = isPositive ? config.POSITIVE_EFFECTS[activeEffect.name] : config.NEGATIVE_EFFECTS[activeEffect.name];
         dom.fieldEffectInfoDescription.textContent = effectConfig ? t(effectConfig.descriptionKey) : 'Descrição não encontrada.';
         
@@ -358,9 +357,6 @@ function handleFieldEffectIndicatorClick(e) {
     }
 }
 
-/**
- * Cleans up all UI elements and state related to the Infinite Challenge intro.
- */
 function cleanupInfiniteChallengeIntro() {
     if (introImageInterval) {
         clearInterval(introImageInterval);
@@ -375,10 +371,6 @@ function cleanupInfiniteChallengeIntro() {
     sound.stopStoryMusic();
 }
 
-
-/**
- * Manages the multi-step introduction for the Infinite Challenge.
- */
 async function startInfiniteChallengeIntro() {
     const { isLoggedIn } = getState();
     if (!isLoggedIn) {
@@ -432,7 +424,6 @@ async function startInfiniteChallengeIntro() {
         if (!button) return;
 
         if (button.id === 'start-infinite-challenge-yes') {
-            // Provide immediate feedback while waiting for the server
             dom.infiniteChallengeIntroText.textContent = t('infinite_challenge.validating_entry');
             dom.infiniteChallengeIntroOptions.innerHTML = `<div class="spinner"></div>`;
             network.emitStartInfiniteChallenge();
@@ -456,13 +447,11 @@ async function startInfiniteChallengeIntro() {
     });
 }
 
-
 export function initializeUiHandlers() {
     document.addEventListener('aiTurnEnded', advanceToNextPlayer);
     
     initializeChatHandlers();
 
-    // Listener for server success response to start the challenge
     document.addEventListener('initiateInfiniteChallengeGame', () => {
         cleanupInfiniteChallengeIntro();
         const { infiniteChallengeOpponentQueue } = getState();
@@ -477,15 +466,12 @@ export function initializeUiHandlers() {
         });
     });
 
-    // Listener for server error response or user cancellation
     document.addEventListener('cleanupInfiniteChallengeUI', () => {
         cleanupInfiniteChallengeIntro();
     });
 
-    // Listener to show the buff selection modal
     document.addEventListener('showBuffSelection', showBuffSelectionModal);
 
-    // Listener for the end of an infinite challenge run
     document.addEventListener('infiniteChallengeEnd', (e) => {
         const { reason } = e.detail;
         const { gameState } = getState();
@@ -498,14 +484,13 @@ export function initializeUiHandlers() {
         let message;
         if (reason === 'win') {
             achievements.grantAchievement('infinite_challenge_win');
-            // The final win message with the pot is shown by the server's response
         } else if (reason === 'time') {
             message = t('game_over.infinite_challenge_timeout', { level, time: timeFormatted });
-        } else { // reason === 'loss'
+        } else {
             const player1 = gameState.players['player-1'];
             if (player1 && player1.isImmuneToDefeat) {
                 updateLog("Segunda Chance ativada! Você evitou a derrota e continuará para a próxima rodada.");
-                player1.isImmuneToDefeat = false; // Consume the buff
+                player1.isImmuneToDefeat = false;
                 showBuffSelectionModal();
                 return;
             }
@@ -526,7 +511,7 @@ export function initializeUiHandlers() {
 
 
     document.body.addEventListener('click', (e) => {
-        if (e.target.closest('.player-hand')) handleCardClick(e);
+        handleCardClick(e);
         if (e.target.closest('.field-effect-indicator')) handleFieldEffectIndicatorClick(e);
         if (e.target.matches('.report-button')) {
             const button = e.target;
@@ -539,11 +524,43 @@ export function initializeUiHandlers() {
         }
     });
 
-    dom.playButton.addEventListener('click', handlePlayButtonClick);
+    dom.cardsButton.addEventListener('click', () => {
+        if (dom.floatingHandOverlay.classList.contains('visible')) {
+            hideFloatingHand();
+        } else {
+            showFloatingHand();
+        }
+    });
+
+    dom.floatingHandOverlay.addEventListener('click', async (e) => {
+        const { gameState } = getState();
+        if (!gameState) return;
+    
+        const playBtn = e.target.closest('.floating-play-btn');
+        const backBtn = e.target.closest('.floating-back-btn');
+    
+        if (backBtn || e.target === dom.floatingHandOverlay) {
+            hideFloatingHand();
+            return;
+        }
+    
+        if (playBtn) {
+            const cardWrapper = playBtn.closest('.floating-card-wrapper');
+            const cardId = cardWrapper.dataset.cardId;
+            
+            const myPlayerId = getLocalPlayerId();
+            const player = gameState.players[myPlayerId];
+            const card = player.hand.find(c => String(c.id) === cardId);
+            
+            if (card) {
+                await initiatePlayCardSequence(player, card);
+            }
+        }
+    });
+
     dom.endTurnButton.addEventListener('click', handleEndTurnButtonClick);
     dom.cardViewerCloseButton.addEventListener('click', () => dom.cardViewerModalEl.classList.add('hidden'));
     
-    // --- NEW LOGIN & QUICK START FLOW ---
     dom.loginButton.addEventListener('click', () => {
         sound.initializeMusic();
         if (typeof google !== 'undefined' && google.accounts) {
@@ -585,7 +602,7 @@ export function initializeUiHandlers() {
         if (!button) return;
 
         const mode = button.dataset.mode;
-        network.emitJoinMatchmaking({ mode });
+        network.emitJoinMatchmaking(mode);
         dom.pvpMatchmakingModal.classList.add('hidden');
         dom.matchmakingStatusModal.classList.remove('hidden');
         dom.matchmakingStatusText.textContent = t('matchmaking.searching_text');
@@ -599,8 +616,6 @@ export function initializeUiHandlers() {
     dom.matchmakingCancelButton.addEventListener('click', () => {
         network.emitCancelMatchmaking();
     });
-
-    // --- END NEW QUICK START FLOW ---
     
     dom.storyModeButton.addEventListener('click', () => {
         sound.initializeMusic();
@@ -639,15 +654,14 @@ export function initializeUiHandlers() {
             const hasAttemptedToday = lastAttemptDate === today;
     
             if (wins >= 3) {
-                dom.challengeEventButton.disabled = false; // Can re-challenge for fun
+                dom.challengeEventButton.disabled = false;
                 dom.eventStatusText.textContent = t('event.status_completed');
             } else {
                 dom.challengeEventButton.disabled = hasAttemptedToday;
                 dom.eventStatusText.textContent = hasAttemptedToday ? t('event.status_wait') : '';
             }
     
-            // Render progress markers
-            dom.eventProgressMarkers.innerHTML = ''; // Clear previous markers
+            dom.eventProgressMarkers.innerHTML = '';
             for (let i = 0; i < 3; i++) {
                 const marker = document.createElement('div');
                 marker.className = 'progress-marker';
@@ -697,11 +711,9 @@ export function initializeUiHandlers() {
     });
 
     dom.rankingButton.addEventListener('click', () => {
-        // Automatically request the first page of the default (PVP) ranking
         network.emitGetRanking(1);
         dom.rankingModal.classList.remove('hidden');
     
-        // Reset tabs to default state
         dom.rankingModal.querySelectorAll('.info-tab-button').forEach(btn => btn.classList.remove('active'));
         dom.rankingModal.querySelectorAll('.info-tab-content').forEach(content => content.classList.remove('active'));
         dom.rankingModal.querySelector('[data-tab="ranking-pvp"]').classList.add('active');
@@ -709,7 +721,6 @@ export function initializeUiHandlers() {
     });
     
     dom.rankingModal.addEventListener('click', (e) => {
-        // Tab switching
         const tabButton = e.target.closest('.info-tab-button');
         if (tabButton && !tabButton.classList.contains('active')) {
             const tabId = tabButton.dataset.tab;
@@ -718,7 +729,6 @@ export function initializeUiHandlers() {
             tabButton.classList.add('active');
             document.getElementById(`${tabId}-tab-content`).classList.add('active');
     
-            // Fetch data for the newly activated tab
             if (tabId === 'ranking-pvp') {
                 network.emitGetRanking(1);
             } else if (tabId === 'ranking-infinite') {
@@ -726,7 +736,6 @@ export function initializeUiHandlers() {
             }
         }
     
-        // PVP Pagination
         const pvpPrevBtn = e.target.closest('#rank-prev-btn');
         const pvpNextBtn = e.target.closest('#rank-next-btn');
         if (pvpPrevBtn || pvpNextBtn) {
@@ -735,7 +744,6 @@ export function initializeUiHandlers() {
             network.emitGetRanking(newPage);
         }
     
-        // Infinite Challenge Pagination
         const infinitePrevBtn = e.target.closest('#infinite-rank-prev-btn');
         const infiniteNextBtn = e.target.closest('#infinite-rank-next-btn');
         if (infinitePrevBtn || infiniteNextBtn) {
@@ -1073,7 +1081,7 @@ export function initializeUiHandlers() {
         if (gameState.isPvp) {
             network.emitPlayCard({ cardId: card.id, targetId: player.id, options: { isGlobal: true } });
         } else {
-            await playCard(player, card, player.id);
+            await playCard(player, card, player.id, null, { isGlobal: true });
             gameState.gamePhase = 'playing';
             renderAll();
         }
@@ -1413,7 +1421,6 @@ export function initializeUiHandlers() {
         }
     };
     
-    // This button does not exist in the in-game chat, but is used in the lobby. No need to remove.
     if(dom.chatSendButton) dom.chatSendButton.addEventListener('click', sendChatMessage);
     
     dom.chatInput.addEventListener('keypress', (e) => { 
@@ -1439,17 +1446,16 @@ export function initializeUiHandlers() {
         };
         const nextFilter = filterCycle[currentFilter] || 'all';
         updateState('chatFilter', nextFilter);
-        updateLog(); // Re-render the log with the new filter
-        updateChatControls(); // Update button text
+        updateLog();
+        updateChatControls();
     });
 
 
-    // --- Lobby and Invite Handlers ---
     if (dom.pvpLobbyModal) {
         dom.pvpLobbyModal.addEventListener('click', (e) => {
             const inviteButton = e.target.closest('.invite-friend-slot-btn');
             if (inviteButton) {
-                network.emitGetOnlineFriends(); // Server responds by opening the modal
+                network.emitGetOnlineFriends();
             }
 
             const kickButton = e.target.closest('.kick-player-button');
@@ -1493,7 +1499,7 @@ export function initializeUiHandlers() {
 
     if (dom.lobbyInviteDeclineButton) {
         dom.lobbyInviteDeclineButton.addEventListener('click', (e) => {
-            const roomId = dom.lobbyInviteAcceptButton.dataset.roomId; // Get room from accept button
+            const roomId = dom.lobbyInviteAcceptButton.dataset.roomId;
             if (roomId) {
                  network.emitDeclineInvite({ roomId });
             }
@@ -1598,7 +1604,7 @@ export function initializeUiHandlers() {
             if (button.id !== 'field-effect-target-cancel-button') {
                 targetId = button.dataset.playerId;
             }
-            fieldEffectTargetResolver(targetId); // Resolve with null on cancel
+            fieldEffectTargetResolver(targetId);
             updateState('fieldEffectTargetResolver', null);
             dom.fieldEffectTargetModal.classList.add('hidden');
         }
@@ -1700,7 +1706,6 @@ export function initializeUiHandlers() {
         });
     }
 
-    // Delegated event listener for all admin actions
     if (dom.profileAdminTabContent) {
         dom.profileAdminTabContent.addEventListener('click', (e) => {
             const button = e.target.closest('button');
@@ -1728,8 +1733,6 @@ export function initializeUiHandlers() {
         });
     }
 
-
-    // --- Shop Handlers ---
     dom.shopButton.addEventListener('click', () => {
         const { isLoggedIn } = getState();
         if (!isLoggedIn) {
@@ -1737,7 +1740,7 @@ export function initializeUiHandlers() {
             return;
         }
         dom.shopModal.classList.remove('hidden');
-        renderShopAvatars(); // Initial render
+        renderShopAvatars();
     });
 
     dom.closeShopButton.addEventListener('click', () => {

@@ -33,7 +33,7 @@ export const renderCard = (card, context, playerId) => {
     const player = gameState.players[playerId];
 
     let isHidden;
-    if (context === 'play-zone' || context === 'modal') {
+    if (context === 'play-zone' || context === 'modal' || context === 'floating-hand') {
         isHidden = false;
     } else if (gameState.isPvp) {
         const isMyCard = playerId === myPlayerId;
@@ -60,7 +60,9 @@ export const renderCard = (card, context, playerId) => {
         }
     }
     
-    if (isMyTurnToSeeObscured && context === 'player-hand' && gameState.selectedCard?.id === card.id) classList.push('selected');
+    if (isMyTurnToSeeObscured && context === 'player-hand' && gameState.selectedCard?.id === card.id) {
+        classList.push('selected');
+    }
     if (isCardDisabled) classList.push('disabled');
     if (context === 'modal') classList.push('modal-card');
     
