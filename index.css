@@ -1603,8 +1603,8 @@ body.screen-shaking {
     transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
 }
 
-.floating-card-wrapper:hover {
-    transform: translateY(-20px); /* Lift on hover for feedback */
+.floating-card-wrapper:not(.selected-for-play):hover {
+    transform: translateY(-20px) scale(1.1); /* Lift and scale on hover for feedback */
     z-index: 10;
 }
 

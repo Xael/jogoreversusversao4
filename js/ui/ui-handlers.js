@@ -74,6 +74,10 @@ function showFloatingHand() {
         return `
             <div class="floating-card-wrapper" data-card-id="${card.id}">
                 ${cardHTML}
+                <div class="floating-card-actions">
+                    <button class="control-button floating-play-btn" data-i18n="game.play">${t('game.play')}</button>
+                    <button class="control-button cancel floating-back-btn" data-i18n="common.back">${t('common.back')}</button>
+                </div>
             </div>
         `;
     }).join('');
