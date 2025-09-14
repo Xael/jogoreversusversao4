@@ -1,3 +1,5 @@
+// js/game-controller.js
+
 import * as config from './core/config.js';
 import * as dom from './core/dom.js';
 import { getState, updateState } from './core/state.js';
@@ -129,7 +131,8 @@ export const initializeGame = async (mode, options) => {
         modeText = 'Desafio Infinito';
         await playStoryMusic('oprofetasombrio.ogg');
         const nextOpponent = infiniteChallengeOpponentQueue[0];
-        options.overrides = { 'player-2': { name: t(nextOpponent.nameKey), aiType: nextOpponent.aiType, avatar_url: nextOpponent.avatar_url } };
+        const opponentName = nextOpponent.name || (nextOpponent.nameKey ? t(nextOpponent.nameKey) : 'Opponent');
+        options.overrides = { 'player-2': { name: opponentName, aiType: nextOpponent.aiType, avatar_url: nextOpponent.avatar_url } };
     }
     else if (options.story) { // Covers both Story Mode and Events
         isStoryMode = true; // We use the story mode flag to handle shared logic like win/loss events.
