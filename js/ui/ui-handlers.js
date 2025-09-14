@@ -530,13 +530,10 @@ export function initializeUiHandlers() {
         const player = gameState.players[myPlayerId];
         if (!player) return;
 
-        // If the maximize button was clicked, do nothing here.
-        // The body's click listener will handle showing the card viewer.
         if (e.target.classList.contains('card-maximize-button')) {
             return;
         }
     
-        // Listen for clicks on the card wrapper itself
         const cardWrapper = e.target.closest('.floating-card-wrapper');
     
         if (cardWrapper) {
@@ -544,7 +541,6 @@ export function initializeUiHandlers() {
             const card = player.hand.find(c => String(c.id) === cardId);
             
             if (card) {
-                // Check if card is playable
                 let isCardDisabled = card.isBlocked || card.isFrozen || false;
                 const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length;
                 if (card.type === 'value' && (valueCardsInHandCount <= 1 || player.playedValueCardThisTurn)) {
@@ -554,17 +550,15 @@ export function initializeUiHandlers() {
                     isCardDisabled = true;
                 }
                 if (isCardDisabled) {
-                    return; // Do nothing if card is disabled
+                    return;
                 }
     
-                // Store start position for animation and initiate play sequence
                 gameState.animationStartRect = cardWrapper.getBoundingClientRect();
                 await initiatePlayCardSequence(player, card);
             }
             return;
         }
     
-        // If click is on the overlay background (not a card wrapper), hide it.
         if (e.target === dom.floatingHandOverlay) {
             hideFloatingHand();
         }
@@ -845,16 +839,29 @@ export function initializeUiHandlers() {
     });
 
     dom.profileModal.addEventListener('click', (e) => {
-        const button = e.target.closest('.profile-tab-button');
-        if (button) {
-            const tabId = button.dataset.tab;
-            if (tabId === 'profile-admin') {
-                network.emitAdminGetData();
-            }
+        const tabButton = e.target.closest('.profile-tab-button');
+        if (tabButton) {
+            const tabId = tabButton.dataset.tab;
             dom.profileModal.querySelectorAll('.profile-tab-button').forEach(btn => btn.classList.remove('active'));
             dom.profileModal.querySelectorAll('.info-tab-content').forEach(content => content.classList.remove('active'));
-            button.classList.add('active');
+            tabButton.classList.add('active');
             document.getElementById(`${tabId}-tab-content`).classList.add('active');
+
+            if (tabId === 'profile-admin') {
+                network.emitAdminGetData();
+            } else if (tabId === 'profile-shop') {
+                renderShopAvatars();
+            }
+        }
+        
+        const buyButton = e.target.closest('.buy-avatar-btn');
+        if (buyButton) {
+            const avatarCode = buyButton.dataset.avatarCode;
+            if (confirm(t('shop.confirm_purchase', { avatarName: t(`avatars.${avatarCode}`) }))) {
+                buyButton.disabled = true;
+                buyButton.textContent = t('shop.buying');
+                network.emitBuyAvatar({ avatarCode });
+            }
         }
     });
 
@@ -1744,30 +1751,4 @@ export function initializeUiHandlers() {
             }
         });
     }
-
-    dom.shopButton.addEventListener('click', () => {
-        const { isLoggedIn } = getState();
-        if (!isLoggedIn) {
-            alert(t('common.login_required', { feature: t('splash.shop') }));
-            return;
-        }
-        dom.shopModal.classList.remove('hidden');
-        renderShopAvatars();
-    });
-
-    dom.closeShopButton.addEventListener('click', () => {
-        dom.shopModal.classList.add('hidden');
-    });
-
-    dom.shopAvatarsGrid.addEventListener('click', (e) => {
-        const button = e.target.closest('.buy-avatar-btn');
-        if (button) {
-            const avatarCode = button.dataset.avatarCode;
-            if (confirm(t('shop.confirm_purchase', { avatarName: t(`avatars.${avatarCode}`) }))) {
-                button.disabled = true;
-                button.textContent = t('shop.buying');
-                network.emitBuyAvatar({ avatarCode });
-            }
-        }
-    });
 }

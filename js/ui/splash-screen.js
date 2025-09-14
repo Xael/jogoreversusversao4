@@ -39,6 +39,8 @@ export const showSplashScreen = () => {
     
     // Show/hide event button based on login status
     dom.eventButton.classList.toggle('hidden', !isLoggedIn);
+    dom.pvpModeButton.classList.toggle('hidden', !isLoggedIn);
+    dom.infiniteChallengeButton.classList.toggle('hidden', !isLoggedIn);
     
     checkAndShowSpecialFeatures();
 };

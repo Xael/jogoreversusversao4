@@ -1816,6 +1816,13 @@ body.screen-shaking {
     align-items: center;
     justify-content: center;
     line-height: 1.2;
+    background-color: black;
+    border: 2px solid var(--accent-purple);
+}
+
+#infinite-challenge-button:hover:not(:disabled) {
+    background-color: #222;
+    box-shadow: 0 0 15px var(--accent-purple);
 }
 
 #infinite-challenge-pot-display {
@@ -3406,15 +3413,23 @@ body.screen-shaking {
 }
 
 /* --- FRIENDS TAB --- */
-#profile-friends-tab-content {
+#profile-friends-tab-content,
+#profile-shop-tab-content {
     display: none;
-    grid-template-columns: 300px 1fr;
-    gap: 2rem;
-    align-items: start;
 }
 #profile-friends-tab-content.active {
     display: grid;
 }
+#profile-shop-tab-content.active {
+    display: block;
+}
+
+#profile-friends-tab-content {
+    grid-template-columns: 300px 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
 .friends-management-area {
     display: flex;
     flex-direction: column;

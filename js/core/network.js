@@ -67,6 +67,9 @@ export function connectToServer() {
         renderProfile(userProfile);
         dom.rankingButton.classList.remove('hidden'); 
         dom.eventButton.classList.remove('hidden');
+        dom.pvpModeButton.classList.remove('hidden');
+        dom.infiniteChallengeButton.classList.remove('hidden');
+
         emitGetFriendsList(); // Carrega a lista de amigos após o login
         emitGetPendingRequests(); // Carrega pedidos pendentes
         emitClaimDailyLoginReward(); // Solicita a recompensa diária
