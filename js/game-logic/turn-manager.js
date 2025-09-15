@@ -351,6 +351,7 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
     gameState.reversumAbilityUsedThisRound = false;
     gameState.necroXUsedThisRound = false;
     gameState.eventBossAbilityUsedThisRound = false;
+    gameState.versatrixSwapActive = false;
     
     toggleReversusTotalBackground(false);
     dom.appContainerEl.classList.remove('reversus-total-active');

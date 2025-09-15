@@ -1233,11 +1233,12 @@ export function initializeUiHandlers() {
         const { battle, won, reason } = e.detail;
         const { gameState } = getState();
         
-        if(gameState) {
+        if (gameState) {
              updateState('lastStoryGameOptions', { mode: gameState.gameMode, options: gameState.gameOptions });
         }
         
         if (battle.startsWith('event_')) {
+            // ... (event logic remains unchanged)
             const currentMonth = new Date().getMonth();
             const eventConfig = config.MONTHLY_EVENTS.find(evt => evt.month === currentMonth);
             
@@ -1272,10 +1273,22 @@ export function initializeUiHandlers() {
             return;
         }
 
+        const bossesToShatter = ['contravox', 'versatrix', 'reversum', 'necroverso_king'];
+        if (won && bossesToShatter.includes(battle)) {
+            const bossPlayer = Object.values(gameState.players).find(p => p.aiType === battle);
+            if (bossPlayer) {
+                const bossArea = document.getElementById(`player-area-${bossPlayer.id}`);
+                const bossImage = bossArea?.querySelector('.player-area-character-portrait');
+                if (bossImage) {
+                    await shatterImage(bossImage);
+                }
+            }
+        }
+    
         let title = won ? t('game_over.story_victory_title') : t('game_over.story_defeat_title');
         let message;
         let buttonAction = 'restart';
-
+    
         switch (battle) {
             case 'tutorial_necroverso':
                 if (won) {

@@ -22,7 +22,27 @@ export async function executeAiTurn(player) {
     let specialAbilityUsed = false;
 
     try {
-        // --- Part 1: Event Boss Special Abilities ---
+        // --- Part 1: Story & Event Boss Special Abilities ---
+        if (player.aiType === 'versatrix' && gameState.currentStoryBattle === 'versatrix' && !gameState.versatrixSwapActive) {
+            const player1 = gameState.players['player-1'];
+            const player1IsLeading = player1.position > player.position + 3; // Condition: player is winning by a lot
+            if (player1IsLeading) {
+                const availablePaths = gameState.boardPaths.filter(p => !Object.values(gameState.players).some(pl => pl.pathId === p.id && !pl.isEliminated));
+                if (availablePaths.length > 0) {
+                    const originalPath = player1.pathId + 1;
+                    const newPath = availablePaths[0].id + 1;
+                    player1.pathId = availablePaths[0].id;
+                    gameState.versatrixSwapActive = true;
+                    specialAbilityUsed = true;
+                    updateLog({ type: 'dialogue', speaker: 'versatrix', message: 'Versatrix: "O campo é meu para moldar! Tente me alcançar agora."' });
+                    updateLog(`Versatrix usou 'Campo Versátil'! Você foi movido do caminho ${originalPath} para o caminho ${newPath}.`);
+                    playSoundEffect('campoinverso');
+                    renderAll();
+                    await new Promise(res => setTimeout(res, 1500));
+                }
+            }
+        }
+
         if (player.isEventBoss) {
             const player1 = gameState.players['player-1'];
             switch(player.aiType) {

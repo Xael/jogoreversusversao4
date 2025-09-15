@@ -7,6 +7,7 @@ import { storyDialogue } from './story-dialogue.js';
 import { initializeGame } from '../game-controller.js';
 import { updateLog } from '../core/utils.js';
 import { t } from '../core/i18n.js';
+import { showSplashScreen } from '../ui/splash-screen.js';
 
 const typewriter = (element, text, onComplete) => {
     let { typewriterTimeout } = getState();
@@ -84,6 +85,9 @@ export const renderStoryNode = (nodeId) => {
         let gameOptions, mode = 'solo';
         
         switch(node.startGame.battle) {
+            case 'return_to_menu':
+                showSplashScreen();
+                return;
             case 'tutorial_necroverso':
                 gameOptions = { 
                     story: { 

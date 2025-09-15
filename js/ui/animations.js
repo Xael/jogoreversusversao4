@@ -169,11 +169,24 @@ export const animateNecroX = () => {
 
 /**
  * Creates and starts the falling animation for the secret Versatrix card on the splash screen.
- * This now uses a chained timeout to create a more reliable loop.
+ * This is now exported and contains the logic to check if it should run.
  */
-const startVersatrixCardAnimation = () => {
+export const startVersatrixCardAnimation = () => {
+    const { achievements } = getState();
+
+    // Only start the animation if the condition is met.
+    if (!achievements.has('versatrix_win') || achievements.has('versatrix_card_collected')) {
+        // If the condition is not met, also ensure any old interval is cleared.
+        const { versatrixCardInterval } = getState();
+        if (versatrixCardInterval) {
+            clearInterval(versatrixCardInterval);
+            updateState('versatrixCardInterval', null);
+        }
+        return; 
+    }
+
     const { versatrixCardInterval } = getState();
-    // Clear any previously running interval to prevent duplicates
+    // Clear any previously running interval to prevent duplicates, just in case.
     if (versatrixCardInterval) clearInterval(versatrixCardInterval);
 
     const fallDuration = 20000; // 20 second fall time, matches new CSS
@@ -220,10 +233,7 @@ export const initializeFloatingItemsAnimation = (containerEl, customImagePool = 
     containerEl.innerHTML = '';
     const { achievements } = getState();
     
-    // Check for secret card unlock condition, but only on the splash screen
-    if (containerEl.id === 'splash-animation-container' && achievements.has('versatrix_win') && !achievements.has('versatrix_card_collected')) {
-        startVersatrixCardAnimation();
-    }
+    // The check for the secret card is now removed from here and called from splash-screen.js
 
     // Pool of card images
     let imagePool;

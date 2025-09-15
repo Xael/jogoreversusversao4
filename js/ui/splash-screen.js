@@ -3,7 +3,7 @@ import { getState, updateState } from '../core/state.js';
 import { playStoryMusic, stopStoryMusic, updateMusic } from '../core/sound.js';
 import { checkForSavedGame } from '../core/save-load.js';
 import { checkAndShowSpecialFeatures } from '../core/achievements.js';
-import { initializeFloatingItemsAnimation, resetGameEffects } from './animations.js';
+import { initializeFloatingItemsAnimation, resetGameEffects, startVersatrixCardAnimation } from './animations.js';
 
 export const showSplashScreen = () => {
     // Stop any ongoing game logic
@@ -36,6 +36,7 @@ export const showSplashScreen = () => {
     // Show splash screen
     dom.splashScreenEl.classList.remove('hidden');
     initializeFloatingItemsAnimation(dom.splashAnimationContainerEl);
+    startVersatrixCardAnimation();
     
     // Show/hide event button based on login status
     dom.eventButton.classList.toggle('hidden', !isLoggedIn);

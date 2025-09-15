@@ -1,3 +1,4 @@
+// js/ui/card-renderer.js
 import { getState } from '../core/state.js';
 
 /**
@@ -49,10 +50,10 @@ export const renderCard = (card, context, playerId) => {
     }
 
     const isMyTurnToSeeObscured = gameState.isPvp ? (playerId === myPlayerId) : (gameState.players[playerId]?.isHuman);
-    const isCardObscuredByContravox = isMyTurnToSeeObscured && context === 'player-hand' && gameState.player1CardsObscured;
+    const isCardObscuredByContravox = isMyTurnToSeeObscured && (context === 'player-hand' || context === 'floating-hand') && gameState.player1CardsObscured;
 
     let isCardDisabled = card.isBlocked || card.isFrozen || false;
-    if (isMyTurnToSeeObscured && context === 'player-hand') {
+    if (isMyTurnToSeeObscured && (context === 'player-hand' || context === 'floating-hand')) {
         const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length;
         
         if (card.type === 'value' && (valueCardsInHandCount <= 1 || player.playedValueCardThisTurn)) {
@@ -60,7 +61,7 @@ export const renderCard = (card, context, playerId) => {
         }
     }
     
-    if (isMyTurnToSeeObscured && context === 'player-hand' && gameState.selectedCard?.id === card.id) {
+    if (isMyTurnToSeeObscured && (context === 'player-hand' || context === 'floating-hand') && gameState.selectedCard?.id === card.id) {
         classList.push('selected');
     }
     if (isCardDisabled) classList.push('disabled');
