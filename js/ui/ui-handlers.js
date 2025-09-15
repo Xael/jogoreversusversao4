@@ -1397,7 +1397,9 @@ export function initializeUiHandlers() {
         }, 800);
     });
 
-    dom.splashAnimationContainerEl.addEventListener('click', (e) => {
+    // FIX: Changed event listener target from splashAnimationContainerEl to splashScreenEl
+    // to correctly capture clicks on the secret Versatrix card, which is now appended to the splash screen.
+    dom.splashScreenEl.addEventListener('click', (e) => {
         if (e.target.id === 'secret-versatrix-card') {
             const { achievements: unlockedAchievements } = getState();
             if (unlockedAchievements.has('versatrix_win') && !unlockedAchievements.has('versatrix_card_collected')) {

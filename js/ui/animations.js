@@ -206,7 +206,8 @@ export const startVersatrixCardAnimation = () => {
         card.style.width = `${size}px`;
         card.style.height = `${size * 1.4}px`; // Maintain aspect ratio
         
-        dom.splashAnimationContainerEl.appendChild(card);
+        // FIX: Append to splash screen itself, not the background animation container, to ensure it's on top and clickable.
+        dom.splashScreenEl.appendChild(card);
         
         // Remove the card after its animation finishes
         setTimeout(() => {
