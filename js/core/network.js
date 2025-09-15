@@ -80,8 +80,18 @@ export function connectToServer() {
     });
     
     socket.on('challengeRewardSuccess', ({ amount, titleCode }) => {
-        const titleName = t(`titles.${titleCode}`);
-        showCoinRewardNotification(t('rewards.infinite_challenge_toast', { amount, titleName }));
+        let message;
+        if (titleCode) {
+            const titleName = t(`titles.${titleCode}`);
+            if (titleCode === 'eternal_reversus') {
+                message = t('rewards.infinite_challenge_toast', { amount, titleName });
+            } else {
+                message = t('rewards.challenge_complete_toast_with_title', { amount, titleName });
+            }
+        } else {
+            message = t('rewards.challenge_complete_toast', { amount });
+        }
+        showCoinRewardNotification(message);
     });
 
     socket.on('loginError', (message) => {
@@ -560,14 +570,4 @@ export function emitAdminUnbanUser(userId) {
 export function emitAdminResolveReport(reportId) {
     const { socket } = getState();
     if (socket) socket.emit('admin:resolveReport', { reportId });
-}
-
-export function emitAdminRollbackUser(userId) {
-    const { socket } = getState();
-    if (socket) socket.emit('admin:rollbackUser', { userId });
-}
-
-export function emitAdminResetDatabase() {
-    const { socket } = getState();
-    if (socket) socket.emit('admin:resetDatabase');
 }

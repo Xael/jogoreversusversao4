@@ -1281,6 +1281,7 @@ export function initializeUiHandlers() {
                 const bossImage = bossArea?.querySelector('.player-area-character-portrait');
                 if (bossImage) {
                     await shatterImage(bossImage);
+                    await new Promise(res => setTimeout(res, 1500)); // Added delay for visibility
                 }
             }
         }
@@ -1743,13 +1744,6 @@ export function initializeUiHandlers() {
             const button = e.target.closest('button');
             if (!button) return;
     
-            if (button.id === 'admin-reset-db-btn') {
-                if (confirm(t('confirm.reset_db'))) {
-                    network.emitAdminResetDatabase();
-                }
-                return;
-            }
-
             const userId = parseInt(button.dataset.userId, 10);
             const username = button.dataset.username;
 
@@ -1760,10 +1754,6 @@ export function initializeUiHandlers() {
             } else if (button.matches('.admin-unban-btn')) {
                 if (confirm(t('confirm.unban_player', { username }))) {
                     network.emitAdminUnbanUser(userId);
-                }
-            } else if (button.matches('.admin-rollback-btn')) {
-                if (confirm(t('confirm.rollback_player', { username }))) {
-                    network.emitAdminRollbackUser(userId);
                 }
             } else if (button.matches('.admin-dismiss-report-btn')) {
                 const reportId = parseInt(button.dataset.reportId, 10);

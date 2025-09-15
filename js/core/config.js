@@ -110,6 +110,7 @@ export const ACHIEVEMENT_HINTS = {
 };
 
 export const TITLE_CONFIG = {
+    'master_of_inversus': { name: 'Mestre do Inversus', line: 'Conquista' },
     'eternal_reversus': { name: 'ETERNAMENTE REVERSUS', line: 'Desafio' },
     'pvp_rank_1': { rank: 1 },
     'pvp_rank_2': { rank: 2 },

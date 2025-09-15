@@ -115,10 +115,14 @@ export function grantAchievement(id) {
         // Concede CoinVersus para desafios especiais de história
         if (['xael_win', 'inversus_win', '120%_unlocked'].includes(id)) {
             let amount = 1000;
-            if (id === 'inversus_win') amount = 2500;
+            let titleCode = null; // Default to no title
+            if (id === 'inversus_win') {
+                amount = 2500;
+                titleCode = 'master_of_inversus'; // Assign title code for this win
+            }
             if (id === '120%_unlocked') amount = 5000;
             if (isLoggedIn) {
-                network.emitClaimChallengeReward({ challengeId: id, amount: amount });
+                network.emitClaimChallengeReward({ challengeId: id, amount: amount, titleCode: titleCode });
             }
         }
 

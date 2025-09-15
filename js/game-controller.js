@@ -281,9 +281,13 @@ export const initializeGame = async (mode, options) => {
                 playerObject.isEventBoss = true;
                 playerObject.eventAbilityUsedThisMatch = false;
             }
-            if (isInversusMode || isInfiniteChallenge) {
+             // Correct heart logic
+            if (isInfiniteChallenge) {
                 playerObject.hearts = 1;
                 playerObject.maxHearts = 1;
+            } else if (isInversusMode) {
+                playerObject.hearts = 10;
+                playerObject.maxHearts = 10;
             }
             if (isKingNecroBattle) {
                 playerObject.hearts = 6;
