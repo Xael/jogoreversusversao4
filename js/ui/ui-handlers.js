@@ -1743,6 +1743,13 @@ export function initializeUiHandlers() {
             const button = e.target.closest('button');
             if (!button) return;
     
+            if (button.id === 'admin-reset-db-btn') {
+                if (confirm(t('confirm.reset_db'))) {
+                    network.emitAdminResetDatabase();
+                }
+                return;
+            }
+
             const userId = parseInt(button.dataset.userId, 10);
             const username = button.dataset.username;
 

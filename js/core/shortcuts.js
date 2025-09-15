@@ -4,14 +4,13 @@ import { renderAll, showGameOver } from '../ui/ui-renderer.js';
 import { updateLog } from './utils.js';
 
 document.addEventListener('keydown', (event) => {
-    // DEBUG SHORTCUT DISABLED FOR FINAL VERSION
-    /*
-    if (event.key === '1') {
+    // Atalho de auto-win reativado para testes
+    if (event.key === '4') {
         const { gameState } = getState();
 
         // Ensure there is an active game running
         if (!gameState || gameState.gamePhase === 'game_over') {
-            console.log('Shortcut "1" ignored: No active game.');
+            console.log('Shortcut "4" ignored: No active game.');
             return;
         }
 
@@ -36,7 +35,6 @@ document.addEventListener('keydown', (event) => {
         // Update the UI to reflect the changes
         renderAll();
     }
-    */
 });
 
 export {}; // Keep as module

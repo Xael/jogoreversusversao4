@@ -566,3 +566,8 @@ export function emitAdminRollbackUser(userId) {
     const { socket } = getState();
     if (socket) socket.emit('admin:rollbackUser', { userId });
 }
+
+export function emitAdminResetDatabase() {
+    const { socket } = getState();
+    if (socket) socket.emit('admin:resetDatabase');
+}

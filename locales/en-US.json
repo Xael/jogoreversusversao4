@@ -413,7 +413,8 @@
         "ban_player": "Are you sure you want to ban {username}? This action is permanent.",
         "unban_player": "Are you sure you want to remove the ban for {username}?",
         "kick_player": "Are you sure you want to kick {username} from the room?",
-        "rollback_player": "Are you sure you want to completely reset the account of {username}? All progress, coins, titles, and achievements will be deleted. This action is irreversible."
+        "rollback_player": "Are you sure you want to completely reset the account of {username}? All progress, coins, titles, and achievements will be deleted. This action is irreversible.",
+        "reset_db": "ARE YOU ABSOLUTELY SURE? This action will permanently delete ALL data for ALL players, including achievements, coins, avatars, and history. This action is irreversible."
     },
     "achievements": {
         "title": "Achievements",
@@ -500,7 +501,10 @@
         "no_reports": "No pending reports.",
         "report_from": "Reported by: {username}",
         "dismiss_report": "Dismiss",
-        "rollback_button": "Reset Account"
+        "rollback_button": "Reset Account",
+        "danger_zone": "Danger Zone",
+        "danger_zone_desc": "Actions in this section are dangerous and irreversible.",
+        "reset_db_button": "Reset Database"
     },
     "rewards": {
         "daily_login_toast": "Daily Reward! You earned +{amount} CoinVersus.",

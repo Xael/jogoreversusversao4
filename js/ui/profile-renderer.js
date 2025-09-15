@@ -337,6 +337,11 @@ export function renderAdminPanel({ online, banned, pendingReports, totalConnecti
             <h3>${t('admin.banned_users')}</h3>
             <div class="admin-user-list">${bannedUsersHTML}</div>
         </div>
+        <div class="admin-section">
+            <h3 style="color: var(--accent-red); border-bottom-color: var(--accent-red);">${t('admin.danger_zone')}</h3>
+            <p>${t('admin.danger_zone_desc')}</p>
+            <button class="control-button cancel" id="admin-reset-db-btn" style="margin-top: 1rem;">${t('admin.reset_db_button')}</button>
+        </div>
     `;
 }
 

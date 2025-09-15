@@ -413,7 +413,8 @@
         "ban_player": "Tem certeza de que deseja banir {username}? Esta ação é permanente.",
         "unban_player": "Tem certeza de que deseja remover o banimento de {username}?",
         "kick_player": "Tem certeza de que deseja expulsar {username} da sala?",
-        "rollback_player": "Tem certeza que deseja resetar completamente a conta de {username}? Todo o progresso, moedas, títulos e conquistas serão apagados. Esta ação é irreversível."
+        "rollback_player": "Tem certeza que deseja resetar completamente a conta de {username}? Todo o progresso, moedas, títulos e conquistas serão apagados. Esta ação é irreversível.",
+        "reset_db": "TEM CERTEZA ABSOLUTA? Esta ação irá apagar TODOS os dados de TODOS os jogadores, incluindo conquistas, moedas, avatares e histórico. Esta ação é irreversível."
     },
     "achievements": {
         "title": "Conquistas",
@@ -500,7 +501,10 @@
         "no_reports": "Nenhuma denúncia pendente.",
         "report_from": "Denunciado por: {username}",
         "dismiss_report": "Dispensar",
-        "rollback_button": "Resetar Conta"
+        "rollback_button": "Resetar Conta",
+        "danger_zone": "Zona de Perigo",
+        "danger_zone_desc": "Ações nesta seção são perigosas e irreversíveis.",
+        "reset_db_button": "Resetar Banco de Dados"
     },
     "rewards": {
         "daily_login_toast": "Recompensa Diária! Você ganhou +{amount} CoinVersus.",
@@ -814,7 +818,7 @@
         "freezer_of_fates": "Congelador de Destinos",
         "year_end_light": "Luz do Fim de Ano"
     },
-     "event_abilities": {
+    "event_abilities": {
         "january_new": "Pode fazer um caminho vermelho surgir à sua frente no início de cada rodada (50% de chance).",
         "february_new": "Troca as cartas de 'Resto' com o oponente no início de cada rodada, se for favorável.",
         "march_new": "No início do seu turno, compra 2 cartas de valor e descarta 2, priorizando manter as de maior valor.",
@@ -829,18 +833,18 @@
         "december_new": "No início de cada rodada, ele pode trocar de mãos com você (50% de chance)."
     },
     "event": {
-        "title": "Evento Mensal",
-        "challenge_title": "Desafio do Mês",
-        "description": "Vença o oponente do evento 3 vezes para ganhar uma recompensa exclusiva. Você só pode tentar uma vez por dia!",
-        "ability_title": "Habilidade Especial",
-        "progress_title": "Progresso",
-        "reward_title": "Recompensa Exclusiva",
-        "reward_text_placeholder": "Título: \"{rewardName}\"",
-        "challenge_button": "Desafiar!",
-        "status_wait": "Você já tentou o desafio hoje. Volte amanhã!",
-        "status_completed": "Desafio completo! Jogue novamente quando quiser este mês.",
-        "victory_progress_message": "Você venceu! Progresso do evento: {wins}/3. Volte amanhã para continuar.",
-        "victory_completed_message": "Desafio completo! Você desbloqueou o título: \"{rewardName}\"!",
-        "defeat_message": "Você foi derrotado. Volte amanhã para uma nova tentativa."
+        "title": "Monthly Event",
+        "challenge_title": "Challenge of the Month",
+        "description": "Defeat the event opponent 3 times to earn an exclusive reward. You can only try once per day!",
+        "ability_title": "Special Ability",
+        "progress_title": "Progress",
+        "reward_title": "Exclusive Reward",
+        "reward_text_placeholder": "Title: \"{rewardName}\"",
+        "challenge_button": "Challenge!",
+        "status_wait": "You have already attempted the challenge today. Come back tomorrow!",
+        "status_completed": "Challenge complete! Play again whenever you want this month.",
+        "victory_progress_message": "You won! Event progress: {wins}/3. Come back tomorrow to continue.",
+        "victory_completed_message": "Challenge complete! You unlocked the title: \"{rewardName}\"!",
+        "defeat_message": "You were defeated. Come back tomorrow for a new attempt."
     }
 }
