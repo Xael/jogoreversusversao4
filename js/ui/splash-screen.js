@@ -35,7 +35,7 @@ export const showSplashScreen = () => {
 
     // Show splash screen
     dom.splashScreenEl.classList.remove('hidden');
-    initializeFloatingItemsAnimation(dom.splashAnimationContainerEl);
+    initializeFloatingItemsAnimation(dom.splashAnimationContainerEl, 'splash');
     startVersatrixCardAnimation();
     
     // Show/hide event button based on login status

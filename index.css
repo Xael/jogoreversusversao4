@@ -185,6 +185,16 @@
     }
 }
 
+@keyframes drift-down {
+    from {
+        transform: translateY(0) rotate(0deg);
+    }
+    to {
+        transform: translateY(110vh) rotate(-360deg);
+    }
+}
+
+
 @keyframes secret-fall {
     from {
         transform: translateY(0);
@@ -272,6 +282,16 @@
         transform: translateY(-100%);
     }
 }
+
+@keyframes float-up {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-110vh);
+    }
+}
+
 
 @keyframes screen-shake {
     10%, 90% {
@@ -1860,6 +1880,13 @@ body.screen-shaking {
     pointer-events: none;
     opacity: 0.7;
 }
+
+.animated-item.drift-down {
+    top: -150px;
+    bottom: auto;
+    animation-name: drift-down;
+}
+
 @keyframes drift {
     0% {
         transform: translateY(0) rotate(0deg);
@@ -1901,7 +1928,7 @@ body.screen-shaking {
     background-size: cover;
     border: 2px solid var(--accent-yellow);
     border-radius: 8px;
-    animation: secret-fall 20s linear, versatrix-pulse-glow 2s infinite ease-in-out;
+    animation: secret-fall 10s linear, versatrix-pulse-glow 2s infinite ease-in-out;
 }
 
 
@@ -3023,15 +3050,18 @@ body.screen-shaking {
     overflow: hidden;
 }
 
-#credits-animation-container {
+#credits-animation-container, #credits-video-container {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     overflow: hidden;
-    z-index: 0; /* Behind text */
+    pointer-events: none;
 }
+#credits-animation-container { z-index: 0; }
+#credits-video-container { z-index: 2; }
+
 
 #credits-content {
     position: absolute;
@@ -3041,7 +3071,7 @@ body.screen-shaking {
     color: var(--text-secondary);
     font-size: 1.5rem;
     line-height: 2;
-    animation: scroll-credits 60s linear forwards;
+    animation: scroll-credits 176s linear forwards;
     z-index: 1; /* Above animation */
 }
 
@@ -3078,6 +3108,43 @@ body.screen-shaking {
     margin-top: 3rem;
     font-size: 1.2rem;
 }
+
+.floating-video-wrapper {
+    position: absolute;
+    bottom: -400px; /* start off-screen */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    animation: float-up linear forwards;
+    z-index: 5;
+    pointer-events: all;
+}
+.floating-video-name {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--accent-yellow);
+    text-shadow: 2px 2px 5px black;
+}
+.floating-video-player {
+    width: 320px;
+    height: 180px;
+    border: 3px solid var(--accent-yellow);
+    border-radius: 10px;
+    box-shadow: 0 0 15px var(--accent-yellow);
+    object-fit: cover;
+}
+
+#final-video-modal {
+    background: black;
+    z-index: 1200;
+}
+#final-video-player {
+    max-width: 90vw;
+    max-height: 90vh;
+    border: 2px solid white;
+}
+
 
 /* --- GOOGLE SIGN IN & USER PROFILE --- */
 #user-profile-display {

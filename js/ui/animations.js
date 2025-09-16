@@ -169,99 +169,111 @@ export const animateNecroX = () => {
 
 /**
  * Creates and starts the falling animation for the secret Versatrix card on the splash screen.
- * This is now exported and contains the logic to check if it should run.
  */
 export const startVersatrixCardAnimation = () => {
     const { achievements } = getState();
 
-    // Only start the animation if the condition is met.
     if (!achievements.has('versatrix_win') || achievements.has('versatrix_card_collected')) {
-        // If the condition is not met, also ensure any old interval is cleared.
         const { versatrixCardInterval } = getState();
         if (versatrixCardInterval) {
-            clearInterval(versatrixCardInterval);
+            clearTimeout(versatrixCardInterval);
             updateState('versatrixCardInterval', null);
         }
-        return; 
+        const existingCard = document.getElementById('secret-versatrix-card');
+        if (existingCard) existingCard.remove();
+        return;
     }
 
     const { versatrixCardInterval } = getState();
-    // Clear any previously running interval to prevent duplicates, just in case.
-    if (versatrixCardInterval) clearInterval(versatrixCardInterval);
+    if (versatrixCardInterval) clearTimeout(versatrixCardInterval);
 
-    const fallDuration = 20000; // 20 second fall time, matches new CSS
-    const pauseDuration = 10000; // 10 second pause
-    const totalCycle = fallDuration + pauseDuration; // Total 30 seconds as requested
+    const fallDuration = 10000;
+    const pauseDuration = 5000;
 
     const createCard = () => {
-        // Prevent creating a new card if one is already falling
         if (document.getElementById('secret-versatrix-card')) return;
         
         const card = document.createElement('div');
         card.id = 'secret-versatrix-card';
-        card.style.left = `${Math.random() * 80 + 10}vw`; // Avoid edges
-
-        // Add variable size logic, similar to other floating cards
-        const size = Math.random() * 60 + 70; // size from 70px to 130px
-        card.style.width = `${size}px`;
-        card.style.height = `${size * 1.4}px`; // Maintain aspect ratio
+        card.style.left = `${Math.random() * 80 + 10}vw`;
         
-        // FIX: Append to splash screen itself, not the background animation container, to ensure it's on top and clickable.
+        const size = 150;
+        card.style.width = `${size}px`;
+        card.style.height = `${size * 1.4}px`;
+        card.style.animationDuration = `${fallDuration / 1000}s, 2s`;
+        
         dom.splashScreenEl.appendChild(card);
         
-        // Remove the card after its animation finishes
         setTimeout(() => {
-            if (card && card.parentElement) {
-                 card.remove();
-            }
+            if (card.parentElement) card.remove();
         }, fallDuration);
     };
 
-    // Create the first card immediately, then set an interval for subsequent cycles
-    createCard();
-    const interval = setInterval(createCard, totalCycle);
-    updateState('versatrixCardInterval', interval);
-};
+    function cardCycle() {
+        createCard();
+        const timeoutId = setTimeout(cardCycle, fallDuration + pauseDuration);
+        updateState('versatrixCardInterval', timeoutId);
+    }
 
+    cardCycle();
+};
 
 /**
  * Creates and starts the floating items animation for the splash screen or other effects.
  * @param {HTMLElement} containerEl - The container element to fill with animated items.
- * @param {Array<string>|null} [customImagePool=null] - An optional array of image filenames to use instead of the default.
+ * @param {string} [context='splash'] - The context ('splash' or 'credits').
  */
-export const initializeFloatingItemsAnimation = (containerEl, customImagePool = null) => {
+export const initializeFloatingItemsAnimation = (containerEl, context = 'splash') => {
     if (!containerEl) return;
     containerEl.innerHTML = '';
     const { achievements } = getState();
     
-    // The check for the secret card is now removed from here and called from splash-screen.js
+    let imagePool = [];
+    let bossPool = [];
 
-    // Pool of card images
-    let imagePool;
-    if (customImagePool) {
-        imagePool = [...customImagePool];
-    } else {
+    if (context === 'credits') {
+        imagePool = [...config.BASE_CARD_IMAGES, ...config.BOSS_CARD_IMAGES, ...config.AVATAR_IMAGES];
+    } else { // 'splash' context
         imagePool = [...config.BASE_CARD_IMAGES];
-        if (achievements.has('true_end_beta')) {
-            imagePool.push(...config.BOSS_CARD_IMAGES);
-        }
+        if (achievements.has('contravox_win')) bossPool.push({ image: 'cartacontravox.png', direction: 'up' });
+        if (achievements.has('versatrix_win')) bossPool.push({ image: 'cartaversatrix.png', direction: 'up' });
+        if (achievements.has('reversum_win')) bossPool.push({ image: 'cartarei.png', direction: 'up' });
+        if (achievements.has('true_end_final')) bossPool.push({ image: 'cartanecroverso.png', direction: 'down' });
     }
-
-
-    // Pool of effect names
+    
     const effectNamePool = config.EFFECT_DECK_CONFIG.map(item => item.name);
-
     const itemsToCreate = [];
-    const totalItems = 30;
-    // For credits, use only images. For splash screen, use a mix.
-    const numCards = customImagePool ? totalItems : 15;
+    const totalItems = context === 'credits' ? 50 : 30;
+    const numCards = context === 'credits' ? totalItems : 15;
 
     for (let i = 0; i < totalItems; i++) {
         itemsToCreate.push({ type: i < numCards ? 'card' : 'text' });
     }
-
     shuffle(itemsToCreate);
 
+    const createItem = (config) => {
+        const item = document.createElement('div');
+        item.classList.add('animated-item');
+        item.classList.add(config.direction === 'down' ? 'drift-down' : 'drift'); // default to 'drift' (up)
+
+        item.classList.add('card-shape');
+        item.style.backgroundImage = `url('./${config.image}')`;
+        const size = Math.random() * 60 + 70;
+        item.style.width = `${size}px`;
+        item.style.height = `${size * 1.4}px`;
+        
+        item.style.left = `${Math.random() * 100}vw`;
+        const duration = Math.random() * 25 + 15;
+        item.style.animationDuration = `${duration}s`;
+        item.style.animationDelay = `-${Math.random() * duration}s`;
+        
+        containerEl.appendChild(item);
+    };
+
+    // Create boss card animations
+    bossPool.forEach(boss => createItem(boss));
+
+    // Create regular floating items
     for (const itemConfig of itemsToCreate) {
         const item = document.createElement('div');
         item.classList.add('animated-item');
@@ -270,44 +282,27 @@ export const initializeFloatingItemsAnimation = (containerEl, customImagePool = 
             item.classList.add('card-shape');
             const imageUrl = imagePool[Math.floor(Math.random() * imagePool.length)];
             item.style.backgroundImage = `url('./${imageUrl}')`;
-            const size = Math.random() * 60 + 50; // 50px to 110px width
+            const size = Math.random() * 60 + 50;
             item.style.width = `${size}px`;
             item.style.height = `${size * 1.4}px`;
-        } else { // type === 'text'
+        } else {
             item.classList.add('text-shape');
             const effectName = effectNamePool[Math.floor(Math.random() * effectNamePool.length)];
             item.textContent = effectName;
-            const fontSize = Math.random() * 1.5 + 1; // 1rem to 2.5rem
+            const fontSize = Math.random() * 1.5 + 1;
             item.style.fontSize = `${fontSize}rem`;
-
-
-            // Add color classes based on effect name from CSS
             switch (effectName) {
-                case 'Mais':
-                case 'Sobe':
-                    item.classList.add('positive');
-                    break;
-                case 'Menos':
-                case 'Desce':
-                    item.classList.add('negative');
-                    break;
-                case 'Pula':
-                    item.classList.add('pula');
-                    break;
-                case 'Reversus':
-                    item.classList.add('reversus');
-                    break;
-                case 'Reversus Total':
-                    item.classList.add('reversus-total');
-                    break;
+                case 'Mais': case 'Sobe': item.classList.add('positive'); break;
+                case 'Menos': case 'Desce': item.classList.add('negative'); break;
+                case 'Pula': item.classList.add('pula'); break;
+                case 'Reversus': item.classList.add('reversus'); break;
+                case 'Reversus Total': item.classList.add('reversus-total'); break;
             }
         }
-
         item.style.left = `${Math.random() * 100}vw`;
-        const duration = Math.random() * 25 + 15; // 15-40 seconds
+        const duration = Math.random() * 25 + 15;
         item.style.animationDuration = `${duration}s`;
         item.style.animationDelay = `-${Math.random() * duration}s`;
-
         containerEl.appendChild(item);
     }
 };
@@ -334,24 +329,19 @@ export const toggleReversusTotalBackground = (isActive) => {
 export async function shatterImage(imageEl) {
     if (!imageEl || !imageEl.parentNode) return;
     
-    // Play sound immediately
     playSoundEffect('destruido');
 
-    // Wait for the next frame to ensure dimensions are available.
     return new Promise(resolve => {
         requestAnimationFrame(() => {
             const parent = imageEl.parentNode;
             const rect = imageEl.getBoundingClientRect();
 
-            // If the image isn't visible or has no size, we can't shatter it.
-            // Just resolve the promise after the sound has had time to play.
             if (rect.width === 0 || rect.height === 0) {
                 console.warn('Shatter animation skipped: image has no dimensions.', imageEl);
-                setTimeout(resolve, 500); // Give sound time to play
+                setTimeout(resolve, 500);
                 return;
             }
 
-            // Create a container for the particles at the same position as the image
             const container = document.createElement('div');
             container.className = 'shatter-container';
             container.style.position = 'absolute';
@@ -362,7 +352,7 @@ export async function shatterImage(imageEl) {
             container.style.height = `${rect.height}px`;
 
             parent.appendChild(container);
-            imageEl.style.opacity = '0'; // Hide the original image
+            imageEl.style.opacity = '0';
 
             const particles = [];
             const rows = 10, cols = 10;
@@ -378,7 +368,6 @@ export async function shatterImage(imageEl) {
                 }
             }
 
-            // Animate particles flying out in the next frame for performance
             requestAnimationFrame(() => {
                 particles.forEach(p => {
                     const x = (Math.random() - 0.5) * window.innerWidth * 1.5;
@@ -389,13 +378,12 @@ export async function shatterImage(imageEl) {
                 });
             });
 
-            // Wait for animation to finish then clean up
             setTimeout(() => {
                 if (container.parentNode) {
                     container.remove();
                 }
                 resolve();
-            }, 1500); // Corresponds to the animation duration in CSS
+            }, 1500);
         });
     });
 }
@@ -405,23 +393,19 @@ export async function shatterImage(imageEl) {
  * Shows a special victory animation for defeating Inversus.
  */
 export function showInversusVictoryAnimation() {
-    // Hide game elements
     dom.appContainerEl.classList.add('hidden');
     dom.debugButton.classList.add('hidden');
     dom.gameOverModal.classList.add('hidden');
 
-    // Reuse splash screen elements for the animation
     const containerEl = dom.splashAnimationContainerEl;
     dom.splashScreenEl.classList.remove('hidden');
-    containerEl.innerHTML = ''; // Clear previous animations
+    containerEl.innerHTML = '';
     
     const splashContent = dom.splashScreenEl.querySelector('.splash-content');
-    if(splashContent) splashContent.classList.add('hidden'); // Hide buttons/logo
+    if(splashContent) splashContent.classList.add('hidden');
     
-    // Create the background
     createStarryBackground(containerEl, '#FFFFFF', 150);
 
-    // Define items for the victory animation
     const victoryCards = config.BOSS_CARD_IMAGES;
     const victoryText = ['OÃSUFNOC', 'CAMPO VERSÁTIL', 'REVERSUS TOTAL', 'NECRO X'];
     const itemsToCreate = [];
@@ -432,7 +416,6 @@ export function showInversusVictoryAnimation() {
     }
     shuffle(itemsToCreate);
 
-    // Create and animate the items
     for (const itemConfig of itemsToCreate) {
         const item = document.createElement('div');
         item.classList.add('animated-item');
@@ -441,29 +424,28 @@ export function showInversusVictoryAnimation() {
             item.classList.add('card-shape');
             const imageUrl = victoryCards[Math.floor(Math.random() * victoryCards.length)];
             item.style.backgroundImage = `url('./${imageUrl}')`;
-            const size = Math.random() * 80 + 70; // 70px to 150px
+            const size = Math.random() * 80 + 70;
             item.style.width = `${size}px`;
             item.style.height = `${size * 1.4}px`;
         } else {
             item.classList.add('text-shape');
             const effectName = victoryText[Math.floor(Math.random() * victoryText.length)];
             item.textContent = effectName;
-            item.style.fontSize = `${Math.random() * 2 + 1.5}rem`; // 1.5rem to 3.5rem
-            item.classList.add('reversus-total'); // Use a nice glow effect
+            item.style.fontSize = `${Math.random() * 2 + 1.5}rem`;
+            item.classList.add('reversus-total');
         }
 
         item.style.left = `${Math.random() * 100}vw`;
-        const duration = Math.random() * 20 + 10; // 10-30 seconds
+        const duration = Math.random() * 20 + 10;
         item.style.animationDuration = `${duration}s`;
         item.style.animationDelay = `-${Math.random() * duration}s`;
         containerEl.appendChild(item);
     }
 
-    // Return to main menu after a delay
     setTimeout(() => {
         if(splashContent) splashContent.classList.remove('hidden');
         document.dispatchEvent(new Event('showSplashScreen'));
-    }, 15000); // Show animation for 15 seconds
+    }, 15000);
 }
 
 /**

@@ -26,7 +26,8 @@ export const EFFECT_DECK_CONFIG = [{ name: 'Mais', count: 4 }, { name: 'Menos', 
 
 export const MUSIC_TRACKS = [
     'jogo.ogg', 'jogo2.ogg', 'jogo3.ogg', 'contravox.ogg', 'versatrix.ogg', 'reversum.ogg', 'necroverso.ogg', 'necroversofinal.ogg', 'inversus.ogg', 'tela.ogg', 'narrador.ogg', 'xaeldesafio.ogg',
-    'oprofetasombrio.ogg', 'cupidodocaos.ogg', 'goblindafortuna.ogg', 'dragaodourado.ogg', 'oespectro.ogg', 'salamandra.ogg', 'capitaobarbacurta.ogg', 'astronomoperdido.ogg', 'detetivemisterioso.ogg', 'abruxadoresto.ogg', 'yeti.ogg', 'guardiaodaaurora.ogg'
+    'oprofetasombrio.ogg', 'cupidodocaos.ogg', 'goblindafortuna.ogg', 'dragaodourado.ogg', 'oespectro.ogg', 'salamandra.ogg', 'capitaobarbacurta.ogg', 'astronomoperdido.ogg', 'detetivemisterioso.ogg', 'abruxadoresto.ogg', 'yeti.ogg', 'guardiaodaaurora.ogg',
+    'creditos.ogg'
 ];
 
 export const BASE_CARD_IMAGES = [
@@ -39,6 +40,7 @@ export const BASE_CARD_IMAGES = [
 export const BOSS_CARD_IMAGES = [
     'cartacontravox.png', 
     'cartaversatrix.png', 
+    'cartarei.png',
     'cartanecroverso.png',
     'xael.png',
     'xaeldesafio.png'
@@ -197,6 +199,8 @@ export const AVATAR_CATALOG = {
     'versatrix': { nameKey: 'avatars.versatrix', image_url: 'versatrix.png', cost: 25000, unlock_achievement_code: 'versatrix_win' },
     'reversum': { nameKey: 'avatars.reversum', image_url: 'reversum.png', cost: 30000, unlock_achievement_code: 'reversum_win' }
 };
+
+export const AVATAR_IMAGES = Object.values(AVATAR_CATALOG).map(avatar => avatar.image_url);
 
 export const INFINITE_CHALLENGE_OPPONENTS = [
     { nameKey: 'player_names.contravox', aiType: 'contravox', avatar_url: 'contravox.png' },

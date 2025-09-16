@@ -271,13 +271,50 @@ export async function playEndgameSequence() {
 }
 
 function showCreditsRoll() {
-    dom.creditsRollModal.classList.remove('hidden');
-    playStoryMusic('tela.ogg'); // Play credits theme music
-    
-    // Start animated background
+    const creditsRollModal = document.getElementById('credits-roll-modal');
     const creditsAnimationContainer = document.getElementById('credits-animation-container');
-    const creditsImagePool = [...config.BASE_CARD_IMAGES, ...config.BOSS_CARD_IMAGES, ...config.CHARACTER_PORTRAIT_IMAGES];
-    initializeFloatingItemsAnimation(creditsAnimationContainer, creditsImagePool);
+    const creditsVideoContainer = document.getElementById('credits-video-container');
+    const finalVideoModal = document.getElementById('final-video-modal');
+    const finalVideoPlayer = document.getElementById('final-video-player');
+
+    creditsRollModal.classList.remove('hidden');
+    playStoryMusic('creditos.ogg', false);
+
+    initializeFloatingItemsAnimation(creditsAnimationContainer, 'credits');
+
+    const videos = [
+        { name: 'Contravox', file: 'video3.mp4', time: 15000 },
+        { name: 'Versatrix', file: 'video2.mp4', time: 50000 },
+        { name: 'Rei Reversum', file: 'video4.mp4', time: 85000 },
+        { name: 'Necroverso', file: 'video1.mp4', time: 120000 }
+    ];
+
+    const totalDuration = 176000; // 2:56 in milliseconds
+
+    videos.forEach(video => {
+        setTimeout(() => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'floating-video-wrapper';
+            wrapper.style.left = `${10 + Math.random() * 60}%`;
+            wrapper.style.animationDuration = `${(totalDuration - video.time) / 1000}s`;
+
+            const nameEl = document.createElement('p');
+            nameEl.className = 'floating-video-name';
+            nameEl.textContent = video.name;
+
+            const videoEl = document.createElement('video');
+            videoEl.className = 'floating-video-player';
+            videoEl.src = `./${video.file}`;
+            videoEl.autoplay = true;
+            videoEl.loop = true;
+            videoEl.muted = true;
+            videoEl.playsInline = true;
+
+            wrapper.appendChild(nameEl);
+            wrapper.appendChild(videoEl);
+            creditsVideoContainer.appendChild(wrapper);
+        }, video.time);
+    });
 
     const creditsHtml = `
         <h2>${t('credits.title')}</h2>
@@ -307,10 +344,18 @@ function showCreditsRoll() {
     `;
     dom.creditsContent.innerHTML = creditsHtml;
 
-    // After credits finish rolling, go back to splash screen
     setTimeout(() => {
-        dom.creditsRollModal.classList.add('hidden');
-        if (creditsAnimationContainer) creditsAnimationContainer.innerHTML = ''; // Clean up animation
-        document.dispatchEvent(new Event('showSplashScreen'));
-    }, 60000); // Match CSS animation duration
+        creditsRollModal.classList.add('hidden');
+        creditsAnimationContainer.innerHTML = '';
+        creditsVideoContainer.innerHTML = '';
+
+        finalVideoModal.classList.remove('hidden');
+        finalVideoPlayer.src = './video5.mp4';
+        finalVideoPlayer.play();
+
+        finalVideoPlayer.onended = () => {
+            finalVideoModal.classList.add('hidden');
+            document.dispatchEvent(new Event('showSplashScreen'));
+        };
+    }, totalDuration);
 }

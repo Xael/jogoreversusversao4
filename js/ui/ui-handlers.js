@@ -1238,7 +1238,6 @@ export function initializeUiHandlers() {
         }
         
         if (battle.startsWith('event_')) {
-            // ... (event logic remains unchanged)
             const currentMonth = new Date().getMonth();
             const eventConfig = config.MONTHLY_EVENTS.find(evt => evt.month === currentMonth);
             
@@ -1281,7 +1280,7 @@ export function initializeUiHandlers() {
                 const bossImage = bossArea?.querySelector('.player-area-character-portrait');
                 if (bossImage) {
                     await shatterImage(bossImage);
-                    await new Promise(res => setTimeout(res, 1500)); // Added delay for visibility
+                    await new Promise(res => setTimeout(res, 1500));
                 }
             }
         }
@@ -1397,16 +1396,16 @@ export function initializeUiHandlers() {
         }, 800);
     });
 
-    // FIX: Changed event listener target from splashAnimationContainerEl to splashScreenEl
-    // to correctly capture clicks on the secret Versatrix card, which is now appended to the splash screen.
     dom.splashScreenEl.addEventListener('click', (e) => {
         if (e.target.id === 'secret-versatrix-card') {
             const { achievements: unlockedAchievements } = getState();
             if (unlockedAchievements.has('versatrix_win') && !unlockedAchievements.has('versatrix_card_collected')) {
-                sound.playSoundEffect('conquista');
                 achievements.grantAchievement('versatrix_card_collected');
                 const { versatrixCardInterval } = getState();
-                if (versatrixCardInterval) clearInterval(versatrixCardInterval);
+                if (versatrixCardInterval) {
+                    clearTimeout(versatrixCardInterval);
+                    updateState('versatrixCardInterval', null);
+                }
                 e.target.remove();
             }
         }
