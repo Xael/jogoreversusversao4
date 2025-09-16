@@ -200,7 +200,7 @@
         transform: translateY(0);
     }
     to {
-        transform: translateY(1500px); /* Fall completely off screen */
+        transform: translateY(1500px);
     }
 }
 
@@ -1836,27 +1836,28 @@ body.screen-shaking {
     align-items: center;
     justify-content: center;
     line-height: 1.2;
-    background-color: black;
-    border: 2px solid var(--accent-purple);
+    background-color: var(--accent-yellow);
+    border: none;
+    color: black;
 }
 
 #infinite-challenge-button:hover:not(:disabled) {
-    background-color: #222;
-    box-shadow: 0 0 15px var(--accent-purple);
+    background-color: #FFD700;
+    box-shadow: 0 0 15px var(--accent-yellow);
 }
 
 #infinite-challenge-button span[data-i18n="splash.infinite_challenge"] {
-    color: var(--accent-yellow);
-    animation: golden-text-glow 2.5s infinite ease-in-out;
+    color: black;
+    animation: none;
     font-weight: 700;
 }
 
 #infinite-challenge-pot-display {
     font-size: 0.9rem;
     font-weight: bold;
-    color: var(--accent-yellow);
-    text-shadow: 0 0 5px rgba(0,0,0,0.5);
-    animation: golden-text-glow 2.5s infinite;
+    color: black;
+    text-shadow: none;
+    animation: none;
     margin-top: 4px;
 }
 
@@ -1911,7 +1912,7 @@ body.screen-shaking {
 }
 #secret-versatrix-card {
     position: absolute;
-    top: -300px; /* Start further off-screen top, buffer for large cards */
+    top: -300px;
     pointer-events: all !important;
     cursor: pointer;
     z-index: 1001;
@@ -2587,12 +2588,35 @@ body.screen-shaking {
 .btn-p4-color { background: var(--player-4-color); }
 .btn-neutral-color { background-color: var(--text-primary); color: var(--bg-main); }
 .btn-neutral-color:hover:not(:disabled) { background-color: var(--text-secondary); }
+
+/* --- MENU BUTTON COLOR OVERRIDES --- */
 .control-button.btn-inversus-color {
     background: var(--accent-purple);
     color: var(--text-primary);
     text-shadow: 0 0 5px var(--text-primary);
     box-shadow: 0 0 10px var(--accent-purple);
 }
+
+#ranking-button {
+    background: #FFA500;
+    color: black;
+    text-shadow: none;
+    box-shadow: none;
+}
+#ranking-button:hover:not(:disabled) {
+    background-color: #FFC04D;
+}
+
+#inversus-mode-button {
+    background: #A9A9A9;
+    color: black;
+    text-shadow: none;
+    box-shadow: none;
+}
+#inversus-mode-button:hover:not(:disabled) {
+    background-color: #C0C0C0;
+}
+/* --- END MENU BUTTON COLOR OVERRIDES --- */
 
 
 .target-player-1 { background: var(--player-1-color); }
