@@ -283,10 +283,10 @@ function showCreditsRoll() {
     initializeFloatingItemsAnimation(creditsAnimationContainer, 'credits');
 
     const videos = [
-        { name: 'Contravox', file: 'video3.mp4', time: 15000 },
-        { name: 'Versatrix', file: 'video2.mp4', time: 50000 },
-        { name: 'Rei Reversum', file: 'video4.mp4', time: 85000 },
-        { name: 'Necroverso', file: 'video1.mp4', time: 120000 }
+        { name: 'Contravox', file: 'video3.mp4', time: 15000, side: 'left' },
+        { name: 'Versatrix', file: 'video2.mp4', time: 50000, side: 'right' },
+        { name: 'Rei Reversum', file: 'video4.mp4', time: 85000, side: 'left' },
+        { name: 'Necroverso', file: 'video1.mp4', time: 120000, side: 'right' }
     ];
 
     const totalDuration = 176000; // 2:56 in milliseconds
@@ -295,8 +295,14 @@ function showCreditsRoll() {
         setTimeout(() => {
             const wrapper = document.createElement('div');
             wrapper.className = 'floating-video-wrapper';
-            wrapper.style.left = `${10 + Math.random() * 60}%`;
-            wrapper.style.animationDuration = `30s`; // Faster, fixed speed
+            
+            if (video.side === 'left') {
+                wrapper.style.left = '15%';
+            } else {
+                wrapper.style.left = '65%';
+            }
+            
+            wrapper.style.animationDuration = `30s`;
 
             const nameEl = document.createElement('p');
             nameEl.className = 'floating-video-name';

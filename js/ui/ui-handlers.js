@@ -1343,7 +1343,7 @@ export function initializeUiHandlers() {
                     message = "O Rei Reversum é muito poderoso. Tentar novamente?";
                 }
                 break;
-            case 'necroverso_king':
+             case 'necroverso_king':
                 if (won) {
                     achievements.grantAchievement('true_end_beta');
                     continueStory('post_necroverso_king_victory');
@@ -1411,6 +1411,8 @@ export function initializeUiHandlers() {
         }, 800);
     });
 
+    // FIX: Changed event listener target from splashAnimationContainerEl to splashScreenEl
+    // to correctly capture clicks on the secret Versatrix card, which is now appended to the splash screen.
     dom.splashScreenEl.addEventListener('click', (e) => {
         if (e.target.id === 'secret-versatrix-card') {
             const { achievements: unlockedAchievements } = getState();

@@ -181,7 +181,7 @@
         transform: translateY(0) rotate(0deg);
     }
     to {
-        transform: translateY(-110vh) rotate(360deg);
+        transform: translateY(-1200px) rotate(360deg);
     }
 }
 
@@ -190,7 +190,7 @@
         transform: translateY(0) rotate(0deg);
     }
     to {
-        transform: translateY(110vh) rotate(-360deg);
+        transform: translateY(1200px) rotate(-360deg);
     }
 }
 
@@ -200,7 +200,7 @@
         transform: translateY(0);
     }
     to {
-        transform: translateY(calc(100vh + 300px)); /* Fall completely off screen, 300px buffer for large cards */
+        transform: translateY(1500px); /* Fall completely off screen */
     }
 }
 
@@ -288,7 +288,7 @@
         transform: translateY(0);
     }
     to {
-        transform: translateY(-110vh);
+        transform: translateY(-1200px);
     }
 }
 
@@ -1887,14 +1887,6 @@ body.screen-shaking {
     animation-name: drift-down;
 }
 
-@keyframes drift {
-    0% {
-        transform: translateY(0) rotate(0deg);
-    }
-    100% {
-        transform: translateY(-110vh) rotate(360deg);
-    }
-}
 .animated-item.card-shape {
     background-size: cover;
     background-position: center;
@@ -1923,7 +1915,6 @@ body.screen-shaking {
     pointer-events: all !important;
     cursor: pointer;
     z-index: 1001;
-    /* width and height are now set by JS for variability */
     background-image: url('./cartaversatrix.png');
     background-size: cover;
     border: 2px solid var(--accent-yellow);

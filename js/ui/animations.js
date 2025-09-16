@@ -205,14 +205,16 @@ export const startVersatrixCardAnimation = () => {
         
         const card = document.createElement('div');
         card.id = 'secret-versatrix-card';
-        card.style.left = `${Math.random() * 80 + 10}vw`;
+        // Position based on the fixed 1920px width of the scalable container
+        card.style.left = `${Math.floor(Math.random() * (1920 * 0.7) + (1920 * 0.15))}px`;
         
         const size = 150;
         card.style.width = `${size}px`;
         card.style.height = `${size * 1.4}px`;
         card.style.animationDuration = `${fallDuration / 1000}s, 2s`;
         
-        dom.splashScreenEl.appendChild(card);
+        // Append to the main scalable container to avoid z-index/clipping issues
+        dom.scalableContainer.appendChild(card);
         
         // Use a separate timeout to remove the card after it falls
         setTimeout(() => {
