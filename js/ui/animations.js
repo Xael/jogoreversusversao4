@@ -171,26 +171,36 @@ export const animateNecroX = () => {
  * Creates and starts the falling animation for the secret Versatrix card on the splash screen.
  */
 export const startVersatrixCardAnimation = () => {
-    const { achievements } = getState();
-
-    if (!achievements.has('versatrix_win') || achievements.has('versatrix_card_collected')) {
-        const { versatrixCardInterval } = getState();
-        if (versatrixCardInterval) {
-            clearTimeout(versatrixCardInterval);
-            updateState('versatrixCardInterval', null);
-        }
-        const existingCard = document.getElementById('secret-versatrix-card');
-        if (existingCard) existingCard.remove();
-        return;
+    const { achievements, versatrixCardInterval } = getState();
+    
+    // Always clear previous timer and card element to ensure a clean state
+    if (versatrixCardInterval) {
+        clearInterval(versatrixCardInterval);
+        updateState('versatrixCardInterval', null);
+    }
+    const existingCard = document.getElementById('secret-versatrix-card');
+    if (existingCard) {
+        existingCard.remove();
     }
 
-    const { versatrixCardInterval } = getState();
-    if (versatrixCardInterval) clearTimeout(versatrixCardInterval);
+    // Check conditions to see if the animation should run
+    if (!achievements.has('versatrix_win') || achievements.has('versatrix_card_collected')) {
+        return; // Stop if conditions are not met
+    }
 
     const fallDuration = 10000;
     const pauseDuration = 5000;
+    const intervalTime = fallDuration + pauseDuration;
 
-    const createCard = () => {
+    const createAndAnimateCard = () => {
+        // Double-check conditions before creating a new card
+        if (!getState().achievements.has('versatrix_win') || getState().achievements.has('versatrix_card_collected')) {
+            const { versatrixCardInterval: currentInterval } = getState();
+            if(currentInterval) clearInterval(currentInterval);
+            updateState('versatrixCardInterval', null);
+            return;
+        }
+
         if (document.getElementById('secret-versatrix-card')) return;
         
         const card = document.createElement('div');
@@ -204,19 +214,18 @@ export const startVersatrixCardAnimation = () => {
         
         dom.splashScreenEl.appendChild(card);
         
+        // Use a separate timeout to remove the card after it falls
         setTimeout(() => {
             if (card.parentElement) card.remove();
         }, fallDuration);
     };
 
-    function cardCycle() {
-        createCard();
-        const timeoutId = setTimeout(cardCycle, fallDuration + pauseDuration);
-        updateState('versatrixCardInterval', timeoutId);
-    }
-
-    cardCycle();
+    // Create the first card immediately, then set up the interval
+    createAndAnimateCard();
+    const intervalId = setInterval(createAndAnimateCard, intervalTime);
+    updateState('versatrixCardInterval', intervalId);
 };
+
 
 /**
  * Creates and starts the floating items animation for the splash screen or other effects.
@@ -243,7 +252,7 @@ export const initializeFloatingItemsAnimation = (containerEl, context = 'splash'
     
     const effectNamePool = config.EFFECT_DECK_CONFIG.map(item => item.name);
     const itemsToCreate = [];
-    const totalItems = context === 'credits' ? 50 : 30;
+    const totalItems = context === 'credits' ? 12 : 30; // Reduced for credits
     const numCards = context === 'credits' ? totalItems : 15;
 
     for (let i = 0; i < totalItems; i++) {

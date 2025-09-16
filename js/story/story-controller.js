@@ -296,10 +296,11 @@ function showCreditsRoll() {
             const wrapper = document.createElement('div');
             wrapper.className = 'floating-video-wrapper';
             wrapper.style.left = `${10 + Math.random() * 60}%`;
-            wrapper.style.animationDuration = `${(totalDuration - video.time) / 1000}s`;
+            wrapper.style.animationDuration = `30s`; // Faster, fixed speed
 
             const nameEl = document.createElement('p');
             nameEl.className = 'floating-video-name';
+            nameEl.classList.add(`name-${video.name.toLowerCase().replace(/\s/g, '-')}`);
             nameEl.textContent = video.name;
 
             const videoEl = document.createElement('video');

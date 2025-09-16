@@ -1274,15 +1274,30 @@ export function initializeUiHandlers() {
 
         const bossesToShatter = ['contravox', 'versatrix', 'reversum', 'necroverso_king'];
         if (won && bossesToShatter.includes(battle)) {
-            const bossPlayer = Object.values(gameState.players).find(p => p.aiType === battle);
-            if (bossPlayer) {
-                const bossArea = document.getElementById(`player-area-${bossPlayer.id}`);
-                const bossImage = bossArea?.querySelector('.player-area-character-portrait');
-                if (bossImage) {
-                    await shatterImage(bossImage);
-                    await new Promise(res => setTimeout(res, 1500));
+            if (battle === 'necroverso_king') {
+                const kingAIs = Object.values(gameState.players).filter(p => 
+                    p.aiType === 'reversum' || p.aiType === 'contravox' || p.aiType === 'versatrix'
+                );
+                const shatterPromises = kingAIs.map(boss => {
+                    const bossArea = document.getElementById(`player-area-${boss.id}`);
+                    const bossImage = bossArea?.querySelector('.player-area-character-portrait');
+                    if (bossImage) {
+                        return shatterImage(bossImage);
+                    }
+                    return Promise.resolve();
+                });
+                await Promise.all(shatterPromises);
+            } else {
+                const bossPlayer = Object.values(gameState.players).find(p => p.aiType === battle);
+                if (bossPlayer) {
+                    const bossArea = document.getElementById(`player-area-${bossPlayer.id}`);
+                    const bossImage = bossArea?.querySelector('.player-area-character-portrait');
+                    if (bossImage) {
+                        await shatterImage(bossImage);
+                    }
                 }
             }
+            await new Promise(res => setTimeout(res, 3000));
         }
     
         let title = won ? t('game_over.story_victory_title') : t('game_over.story_defeat_title');
@@ -1400,12 +1415,10 @@ export function initializeUiHandlers() {
         if (e.target.id === 'secret-versatrix-card') {
             const { achievements: unlockedAchievements } = getState();
             if (unlockedAchievements.has('versatrix_win') && !unlockedAchievements.has('versatrix_card_collected')) {
+                sound.playSoundEffect('conquista');
                 achievements.grantAchievement('versatrix_card_collected');
                 const { versatrixCardInterval } = getState();
-                if (versatrixCardInterval) {
-                    clearTimeout(versatrixCardInterval);
-                    updateState('versatrixCardInterval', null);
-                }
+                if (versatrixCardInterval) clearInterval(versatrixCardInterval);
                 e.target.remove();
             }
         }

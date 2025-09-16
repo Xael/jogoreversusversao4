@@ -200,7 +200,8 @@ export const AVATAR_CATALOG = {
     'reversum': { nameKey: 'avatars.reversum', image_url: 'reversum.png', cost: 30000, unlock_achievement_code: 'reversum_win' }
 };
 
-export const AVATAR_IMAGES = Object.values(AVATAR_CATALOG).map(avatar => avatar.image_url);
+const baseAvatarUrls = Object.values(AVATAR_CATALOG).map(avatar => avatar.image_url);
+export const AVATAR_IMAGES = [...baseAvatarUrls, 'xael.png'];
 
 export const INFINITE_CHALLENGE_OPPONENTS = [
     { nameKey: 'player_names.contravox', aiType: 'contravox', avatar_url: 'contravox.png' },
