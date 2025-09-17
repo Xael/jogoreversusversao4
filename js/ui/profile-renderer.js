@@ -244,6 +244,8 @@ export function renderProfile(profileData) {
 export function renderAdminPanel({ online, banned, pendingReports, totalConnections, dailyStats }) {
     if (!dom.profileAdminTabContent) return;
 
+    const { userProfile } = getState();
+    const adminGoogleId = userProfile?.google_id;
     const lang = getCurrentLanguage().replace('_', '-');
 
     const dailyStatsHTML = dailyStats && dailyStats.length > 0 ? `
@@ -285,7 +287,11 @@ export function renderAdminPanel({ online, banned, pendingReports, totalConnecti
         </div>
     `).join('') : `<p>${t('admin.no_reports')}</p>`;
 
-    const onlineUsersHTML = online.length > 0 ? online.map(user => `
+    const onlineUsersHTML = online.length > 0 ? online.map(user => {
+        const isSelf = user.google_id === adminGoogleId;
+        const banButtonHTML = !isSelf ? `<button class="control-button cancel admin-ban-btn" data-user-id="${user.id}" data-username="${user.username}">${t('admin.ban_button')}</button>` : '';
+        
+        return `
         <div class="admin-user-item">
             <div class="admin-user-info">
                 <img src="${user.avatar_url}" alt="Avatar" class="friend-avatar">
@@ -294,12 +300,11 @@ export function renderAdminPanel({ online, banned, pendingReports, totalConnecti
                     <span class="friend-title">ID: ${user.id}</span>
                 </div>
             </div>
-            <div class="admin-actions" style="flex-direction: column; align-items: flex-end; gap: 0.5rem;">
-                <button class="control-button cancel admin-rollback-btn" data-user-id="${user.id}" data-username="${user.username}" title="${t('admin.rollback_button')}">${t('admin.rollback_button')}</button>
-                <button class="control-button cancel admin-ban-btn" data-user-id="${user.id}" data-username="${user.username}">${t('admin.ban_button')}</button>
+            <div class="admin-actions">
+                ${banButtonHTML}
             </div>
         </div>
-    `).join('') : `<p>${t('admin.no_online_users')}</p>`;
+    `}).join('') : `<p>${t('admin.no_online_users')}</p>`;
 
     const bannedUsersHTML = banned.length > 0 ? banned.map(user => `
          <div class="admin-user-item">
@@ -310,8 +315,7 @@ export function renderAdminPanel({ online, banned, pendingReports, totalConnecti
                      <span class="friend-title">ID: ${user.id}</span>
                 </div>
             </div>
-            <div class="admin-actions" style="flex-direction: column; align-items: flex-end; gap: 0.5rem;">
-                 <button class="control-button cancel admin-rollback-btn" data-user-id="${user.id}" data-username="${user.username}" title="${t('admin.rollback_button')}">${t('admin.rollback_button')}</button>
+            <div class="admin-actions">
                 <button class="control-button btn-p3-color admin-unban-btn" data-user-id="${user.id}" data-username="${user.username}">${t('admin.unban_button')}</button>
             </div>
         </div>
@@ -336,11 +340,6 @@ export function renderAdminPanel({ online, banned, pendingReports, totalConnecti
         <div class="admin-section">
             <h3>${t('admin.banned_users')}</h3>
             <div class="admin-user-list">${bannedUsersHTML}</div>
-        </div>
-        <div class="admin-section">
-            <h3 style="color: var(--accent-red); border-bottom-color: var(--accent-red);">${t('admin.danger_zone')}</h3>
-            <p>${t('admin.danger_zone_desc')}</p>
-            <button class="control-button cancel" id="admin-reset-db-btn" style="margin-top: 1rem;">${t('admin.reset_db_button')}</button>
         </div>
     `;
 }

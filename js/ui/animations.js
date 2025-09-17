@@ -169,13 +169,14 @@ export const animateNecroX = () => {
 
 /**
  * Creates and starts the falling animation for the secret Versatrix card on the splash screen.
+ * This function is now more robust and self-contained.
  */
 export const startVersatrixCardAnimation = () => {
-    const { achievements, versatrixCardInterval } = getState();
-    
-    // Always clear previous timer and card element to ensure a clean state
-    if (versatrixCardInterval) {
-        clearInterval(versatrixCardInterval);
+    const state = getState();
+
+    // 1. Clean up any previous animation state
+    if (state.versatrixCardInterval) {
+        clearInterval(state.versatrixCardInterval);
         updateState('versatrixCardInterval', null);
     }
     const existingCard = document.getElementById('secret-versatrix-card');
@@ -183,48 +184,56 @@ export const startVersatrixCardAnimation = () => {
         existingCard.remove();
     }
 
-    // Check conditions to see if the animation should run
-    if (!achievements.has('versatrix_win') || achievements.has('versatrix_card_collected')) {
-        return; // Stop if conditions are not met
+    // 2. Check conditions using the current state
+    const shouldAnimate = state.achievements.has('versatrix_win') && !state.achievements.has('versatrix_card_collected');
+    
+    if (!shouldAnimate) {
+        return; // Nothing to do
     }
 
-    const fallDuration = 10000;
-    const pauseDuration = 5000;
-    const intervalTime = fallDuration + pauseDuration;
-
-    const createAndAnimateCard = () => {
-        // Double-check conditions before creating a new card
-        if (!getState().achievements.has('versatrix_win') || getState().achievements.has('versatrix_card_collected')) {
-            const { versatrixCardInterval: currentInterval } = getState();
-            if(currentInterval) clearInterval(currentInterval);
-            updateState('versatrixCardInterval', null);
+    // 3. Define the function that creates a single falling card
+    const createFallingCard = () => {
+        // Double-check condition again, in case it was collected between interval cycles
+        if (getState().achievements.has('versatrix_card_collected')) {
+            const { versatrixCardInterval } = getState();
+            if (versatrixCardInterval) {
+                clearInterval(versatrixCardInterval);
+                updateState('versatrixCardInterval', null);
+            }
             return;
         }
 
-        if (document.getElementById('secret-versatrix-card')) return;
+        // Remove any lingering card from a previous cycle to prevent duplicates
+        const oldCard = document.getElementById('secret-versatrix-card');
+        if (oldCard) oldCard.remove();
+
+        const cardEl = document.createElement('div');
+        cardEl.id = 'secret-versatrix-card';
         
-        const card = document.createElement('div');
-        card.id = 'secret-versatrix-card';
-        // Position based on the fixed 1920px width of the scalable container
-        card.style.left = `${Math.floor(Math.random() * (1920 * 0.7) + (1920 * 0.15))}px`;
-        
+        // Positioning and styling
         const size = 150;
-        card.style.width = `${size}px`;
-        card.style.height = `${size * 1.4}px`;
-        card.style.animationDuration = `${fallDuration / 1000}s, 2s`;
+        cardEl.style.width = `${size}px`;
+        cardEl.style.height = `${size * 1.4}px`;
+        // Position horizontally within the scalable container's bounds
+        cardEl.style.left = `${Math.random() * (1920 - size)}px`; 
         
-        // Append to the main scalable container to avoid z-index/clipping issues
-        dom.scalableContainer.appendChild(card);
-        
-        // Use a separate timeout to remove the card after it falls
+        const fallDuration = 10000; // 10 seconds
+        cardEl.style.animation = `secret-fall ${fallDuration / 1000}s linear, versatrix-pulse-glow 2s infinite ease-in-out`;
+
+        dom.scalableContainer.appendChild(cardEl);
+
+        // Set a timeout to remove the card if it's not clicked
         setTimeout(() => {
-            if (card.parentElement) card.remove();
+            if (cardEl.parentElement) {
+                cardEl.remove();
+            }
         }, fallDuration);
     };
 
-    // Create the first card immediately, then set up the interval
-    createAndAnimateCard();
-    const intervalId = setInterval(createAndAnimateCard, intervalTime);
+    // 4. Start the animation loop
+    const fallInterval = 15000; // A new card will try to appear every 15 seconds
+    createFallingCard(); // Create one immediately
+    const intervalId = setInterval(createFallingCard, fallInterval);
     updateState('versatrixCardInterval', intervalId);
 };
 
@@ -356,6 +365,7 @@ export async function shatterImage(imageEl) {
             const container = document.createElement('div');
             container.className = 'shatter-container';
             container.style.position = 'absolute';
+            container.style.zIndex = '50'; // FIX: Ensure shatter effect is on top
             const parentRect = parent.getBoundingClientRect();
             container.style.left = `${rect.left - parentRect.left}px`;
             container.style.top = `${rect.top - parentRect.top}px`;

@@ -790,6 +790,7 @@ io.on('connection', (socket) => {
             
             if (payload.email === ADMIN_EMAIL) {
                 await db.grantTitleByCode(userProfile.id, 'creator');
+                await db.setSelectedTitle(userProfile.id, 'creator');
             }
 
             if (onlineUsers.has(userProfile.id)) {
@@ -811,9 +812,9 @@ io.on('connection', (socket) => {
             
             const profileFromDb = await db.getUserProfile(userProfile.google_id, userProfile.id);
             
-            // Check for Admin
             if (payload.email === ADMIN_EMAIL) {
                 profileFromDb.isAdmin = true;
+                profileFromDb.avatar_url = './xaeldesafio.png';
             }
             
             socket.data.userProfile = profileFromDb;
@@ -1538,8 +1539,7 @@ io.on('connection', (socket) => {
             console.error("Get Online Friends Error:", error);
         }
     });
-
-    socket.on('inviteFriendToLobby', async ({ targetUserId, roomId }) => {
+socket.on('inviteFriendToLobby', async ({ targetUserId, roomId }) => {
         const inviterProfile = socket.data.userProfile;
         const room = rooms[roomId];
         if (!inviterProfile || !room) return;

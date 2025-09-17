@@ -1423,16 +1423,21 @@ export function initializeUiHandlers() {
         }, 800);
     });
 
-    // FIX: Changed event listener target from splashScreenEl to scalableContainer
-    // to correctly capture clicks on the secret Versatrix card, which is now appended to the main container.
+    // Robust click handler for the secret Versatrix card
     dom.scalableContainer.addEventListener('click', (e) => {
         if (e.target.id === 'secret-versatrix-card') {
-            const { achievements: unlockedAchievements } = getState();
+            const { achievements: unlockedAchievements, versatrixCardInterval } = getState();
+            // Check conditions again just before granting to prevent race conditions
             if (unlockedAchievements.has('versatrix_win') && !unlockedAchievements.has('versatrix_card_collected')) {
+                // Stop the animation interval immediately
+                if (versatrixCardInterval) {
+                    clearInterval(versatrixCardInterval);
+                    updateState('versatrixCardInterval', null);
+                }
+                // Grant the achievement (this will save to localStorage)
                 sound.playSoundEffect('conquista');
                 achievements.grantAchievement('versatrix_card_collected');
-                const { versatrixCardInterval } = getState();
-                if (versatrixCardInterval) clearInterval(versatrixCardInterval);
+                // Remove the card element
                 e.target.remove();
             }
         }
