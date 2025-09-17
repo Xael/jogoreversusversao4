@@ -197,7 +197,8 @@ export const AVATAR_CATALOG = {
     'necroverso': { nameKey: 'avatars.necroverso', image_url: 'necroverso.png', cost: 15000, unlock_achievement_code: 'tutorial_win' },
     'contravox': { nameKey: 'avatars.contravox', image_url: 'contravox.png', cost: 20000, unlock_achievement_code: 'contravox_win' },
     'versatrix': { nameKey: 'avatars.versatrix', image_url: 'versatrix.png', cost: 25000, unlock_achievement_code: 'versatrix_win' },
-    'reversum': { nameKey: 'avatars.reversum', image_url: 'reversum.png', cost: 30000, unlock_achievement_code: 'reversum_win' }
+    'reversum': { nameKey: 'avatars.reversum', image_url: 'reversum.png', cost: 30000, unlock_achievement_code: 'reversum_win' },
+    'xael_desafio': { nameKey: 'avatars.xael_desafio', image_url: 'xaeldesafio.png', cost: 1000000, unlock_achievement_code: 'xael_win' }
 };
 
 const baseAvatarUrls = Object.values(AVATAR_CATALOG).map(avatar => avatar.image_url);

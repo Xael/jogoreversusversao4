@@ -365,7 +365,7 @@ export async function shatterImage(imageEl) {
             const container = document.createElement('div');
             container.className = 'shatter-container';
             container.style.position = 'absolute';
-            container.style.zIndex = '50'; // FIX: Ensure shatter effect is on top
+            container.style.zIndex = '3000'; // FIX: Ensure shatter effect is on top of everything
             const parentRect = parent.getBoundingClientRect();
             container.style.left = `${rect.left - parentRect.left}px`;
             container.style.top = `${rect.top - parentRect.top}px`;

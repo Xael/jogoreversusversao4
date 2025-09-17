@@ -197,10 +197,10 @@
 
 @keyframes secret-fall {
     from {
-        transform: translateY(0);
+        transform: translateY(-300px);
     }
     to {
-        transform: translateY(1500px);
+        transform: translateY(1200px);
     }
 }
 
@@ -1399,7 +1399,7 @@ body.screen-shaking {
     pointer-events: none;
     z-index: 1;
     filter: drop-shadow(-2px 2px 5px rgba(0,0,0,0.5));
-    opacity: 0.8;
+    opacity: 1;
 }
 
 .player-area.p1-bg .player-area-character-portrait { filter: drop-shadow(0 0 8px var(--player-1-color)); }
@@ -1891,7 +1891,7 @@ body.screen-shaking {
 }
 #secret-versatrix-card {
     position: absolute;
-    top: -300px;
+    top: -300px; /* Start off-screen */
     pointer-events: all !important;
     cursor: pointer;
     z-index: 1001;
@@ -1899,7 +1899,7 @@ body.screen-shaking {
     background-size: cover;
     border: 2px solid var(--accent-yellow);
     border-radius: 8px;
-    animation: secret-fall 10s linear, versatrix-pulse-glow 2s infinite ease-in-out;
+    animation: secret-fall 15s linear, versatrix-pulse-glow 1.5s infinite ease-in-out;
 }
 
 
@@ -3021,6 +3021,7 @@ body.screen-shaking {
     min-height: 3em;
 }
 
+/* Base Shatter Styles */
 .shatter-container {
     position: absolute;
     top: 0;
@@ -3028,15 +3029,33 @@ body.screen-shaking {
     width: 100%;
     height: 100%;
     display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    grid-template-rows: repeat(10, 1fr);
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: repeat(12, 1fr);
     pointer-events: none;
-    z-index: 50;
+    z-index: 3000;
 }
 .shatter-particle {
-    background-size: 1000% 1000%;
-    transition: transform 1.5s ease-out, opacity 1.5s ease-out;
+    background-size: 1200% 1200%;
+    will-change: transform, opacity;
+    transition-property: transform, opacity;
+    transition-timing-function: ease-out;
 }
+/* Unique Shatter Styles */
+.shatter-particle.glitchy {
+    transition-duration: 1s;
+    transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+}
+.shatter-particle.golden {
+    transition-duration: 1.5s;
+    box-shadow: 0 0 15px gold, inset 0 0 5px white;
+    border-radius: 50%;
+}
+.shatter-particle.reversum {
+    transition-duration: 1.2s;
+    transition-timing-function: cubic-bezier(0.6, -0.28, 0.735, 0.045); /* easeInBack */
+    box-shadow: 0 0 10px var(--accent-red);
+}
+
 
 #credits-roll-modal {
     background: black;

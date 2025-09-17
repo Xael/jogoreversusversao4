@@ -1,3 +1,5 @@
+// js/story/story-abilities.js
+
 
 
 import { getState, updateState } from '../core/state.js';
@@ -18,8 +20,10 @@ import { t } from '../core/i18n.js';
  */
 export function triggerXaelChallengePopup() {
     const { gameState } = getState();
-    if (gameState.isStoryMode && !gameState.xaelChallengeOffered && !gameState.xaelChallengeStarted && !gameState.isInversusMode) {
-        gameState.xaelChallengeOffered = true; // Mark as offered to prevent repeats
+    const state = getState();
+    // Use the more specific state flags to control the offer
+    if (gameState.isStoryMode && !state.xaelChallengeOffered && !state.xaelChallengeStarted && !gameState.isInversusMode) {
+        updateState('xaelChallengeOffered', true); // Mark as offered to prevent repeats
         setTimeout(() => {
             playSoundEffect('xael');
             dom.xaelPopup.classList.remove('hidden');

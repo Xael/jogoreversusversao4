@@ -137,6 +137,8 @@ export const initializeGame = async (mode, options) => {
     else if (options.story) { // Covers both Story Mode and Events
         isStoryMode = true; // We use the story mode flag to handle shared logic like win/loss events.
         storyBattle = options.story.battle;
+        updateState('xaelChallengeOffered', false); // Reset Xael challenge for new story game
+        updateState('xaelChallengeStarted', false);
 
         if (storyBattle.startsWith('event_')) {
             eventData = options.story.eventData;
