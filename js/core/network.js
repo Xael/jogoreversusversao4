@@ -2,7 +2,7 @@
 import { getState, updateState } from './state.js';
 import * as dom from './dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
-import { renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
+import { renderRoomList, renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
 import { showSplashScreen } from './splash-screen.js';
 import { updateLog } from './utils.js';
@@ -196,7 +196,7 @@ export function connectToServer() {
 
     // --- Room & Game Listeners ---
     socket.on('roomList', (rooms) => {
-        // renderRoomList(rooms);
+        renderRoomList(rooms);
     });
     
     socket.on('lobbyUpdate', async (roomData) => {
@@ -344,6 +344,7 @@ export function connectToServer() {
     socket.on('lobbyInvite', ({ inviterUsername, roomName, roomId }) => {
         dom.lobbyInviteNotificationText.textContent = t('pvp.invite_notification_text', { username: inviterUsername, roomName });
         dom.lobbyInviteAcceptButton.dataset.roomId = roomId;
+        dom.lobbyInviteDeclineButton.dataset.roomId = roomId;
         dom.lobbyInviteDeclineButton.dataset.inviterId = inviterUsername; // Not strictly needed but good practice
         dom.lobbyInviteNotificationModal.classList.remove('hidden');
     });
@@ -512,14 +513,17 @@ export function emitInviteFriendToLobby(targetUserId) {
         socket.emit('inviteFriendToLobby', { targetUserId, roomId: currentRoomId });
     }
 }
-export function emitAcceptInvite(roomId) {
+
+export function emitAcceptInvite({ roomId }) {
     const { socket } = getState();
-    if (socket) socket.emit('acceptInvite', { roomId });
+    if (socket) socket.emit('acceptInvite', roomId);
 }
-export function emitDeclineInvite(roomId) {
+
+export function emitDeclineInvite({ roomId }) {
     const { socket } = getState();
-    if (socket) socket.emit('declineInvite', { roomId });
+    if (socket) socket.emit('declineInvite', roomId);
 }
+
 export function emitKickPlayer(targetClientId) { 
     const { socket, currentRoomId } = getState(); 
     if (socket && currentRoomId) socket.emit('kickPlayer', { targetClientId, roomId: currentRoomId }); 

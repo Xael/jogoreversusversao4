@@ -589,8 +589,8 @@ export function initializeUiHandlers() {
     });
 
     dom.quickStartPvpButton.addEventListener('click', () => {
-        const { isLoggedIn } = getState();
-        if (!isLoggedIn) {
+        const { userProfile } = getState();
+        if (!userProfile || !userProfile.id) {
             alert(t('common.login_required', { feature: 'PVP Matchmaking' }));
             return;
         }
@@ -631,8 +631,8 @@ export function initializeUiHandlers() {
     });
 
     dom.pvpModeButton.addEventListener('click', () => {
-        const { isLoggedIn } = getState();
-        if (!isLoggedIn) {
+        const { userProfile } = getState();
+        if (!userProfile || !userProfile.id) {
             alert(t('common.login_required', { feature: 'PVP Online' }));
             return;
         }
@@ -787,6 +787,18 @@ export function initializeUiHandlers() {
         dom.pvpLobbyModal.addEventListener('click', (e) => {
             const target = e.target.closest('.lobby-player-grid .clickable');
             if(target) {
+                const googleId = target.dataset.googleId;
+                if (googleId) {
+                    network.emitViewProfile({ googleId });
+                }
+            }
+        });
+    }
+
+    if (dom.pvpRoomListModal) {
+        dom.pvpRoomListModal.addEventListener('click', (e) => {
+            const target = e.target.closest('.room-player-name.clickable');
+            if (target) {
                 const googleId = target.dataset.googleId;
                 if (googleId) {
                     network.emitViewProfile({ googleId });
@@ -1548,7 +1560,7 @@ export function initializeUiHandlers() {
 
     if (dom.lobbyInviteDeclineButton) {
         dom.lobbyInviteDeclineButton.addEventListener('click', (e) => {
-            const roomId = dom.lobbyInviteAcceptButton.dataset.roomId;
+            const roomId = e.target.dataset.roomId;
             if (roomId) {
                  network.emitDeclineInvite({ roomId });
             }

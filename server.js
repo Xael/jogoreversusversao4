@@ -1443,7 +1443,7 @@ io.on('connection', (socket) => {
         if (room.gameStarted && room.gameState) {
              if (room.gameState.turn < 3) {
                 io.to(roomId).emit('matchCancelled', 'Partida anulada por desistência no início.');
-                delete rooms[roomId];
+                delete rooms[room.id];
                 io.emit('roomList', getPublicRoomsList());
                 return;
             }
@@ -1564,7 +1564,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('acceptInvite', async ({ roomId }) => {
+    socket.on('acceptInvite', async (roomId) => {
         if (!socket.data.userProfile) { return socket.emit('error', 'Você precisa estar logado para entrar em uma sala.'); }
         const room = rooms[roomId];
         if (room && !room.gameStarted && room.players.length < 4) {
@@ -1600,7 +1600,7 @@ io.on('connection', (socket) => {
         }
     });
     
-    socket.on('declineInvite', ({ roomId }) => {
+    socket.on('declineInvite', (roomId) => {
         const room = rooms[roomId];
         if (room && rooms[roomId].hostId) {
             io.to(rooms[roomId].hostId).emit('inviteResponse', { status: 'declined', username: socket.data.userProfile.username });

@@ -3,6 +3,49 @@ import { getState } from '../core/state.js';
 import { t } from '../core/i18n.js';
 import * as network from '../core/network.js';
 
+export function renderRoomList(rooms) {
+    if (!dom.pvpRoomGridEl) return;
+
+    if (rooms.length === 0) {
+        dom.pvpRoomGridEl.innerHTML = `<p style="grid-column: 1 / -1; text-align: center;">${t('pvp.no_rooms')}</p>`;
+        return;
+    }
+
+    const roomColors = ['color-1', 'color-2', 'color-3', 'color-4'];
+    dom.pvpRoomGridEl.innerHTML = rooms.map((room, index) => {
+        const passwordIcon = room.hasPassword ? `<span class="password-icon" title="Sala com senha">🔒</span>` : '';
+        const betIcon = room.betAmount > 0 ? `<span class="bet-icon" title="${t('pvp.bet_title', { betAmount: room.betAmount })}">🪙x${room.betAmount}</span>` : '';
+        
+        let modeText = '';
+        switch(room.mode) {
+            case 'solo-2p': modeText = t('pvp.mode_2p'); break;
+            case 'solo-3p': modeText = t('pvp.mode_3p'); break;
+            case 'solo-4p': modeText = t('pvp.mode_4p'); break;
+            case 'duo': modeText = t('pvp.mode_duo'); break;
+            default: modeText = room.mode;
+        }
+
+        return `
+            <div class="room-card ${roomColors[index % roomColors.length]}">
+                <h3>
+                    <span>${room.name}</span>
+                    <span style="display: flex; gap: 0.5rem;">${betIcon}${passwordIcon}</span>
+                </h3>
+                <div class="room-card-players-list">
+                    ${room.players.map(p => `<span class="room-player-name clickable" data-google-id="${p.googleId}">${p.username}</span>`).join('')}
+                </div>
+                <div class="room-card-footer">
+                    <span>${t('pvp.room_card_mode', { mode: modeText })}</span>
+                    <span>${t('pvp.room_card_players', { count: room.playerCount })}</span>
+                    <button class="control-button join-room-button" data-room-id="${room.id}" data-has-password="${room.hasPassword}" ${room.playerCount >= 4 ? 'disabled' : ''}>
+                        ${t('pvp.enter')}
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
 export function renderPvpRanking(rankingData) {
     const { players, currentPage, totalPages } = rankingData;
 
@@ -178,4 +221,4 @@ export const addLobbyChatMessage = (speaker, message) => {
     messageEl.innerHTML = `<strong>${speaker}:</strong> ${sanitizedMessage}`;
     dom.lobbyChatHistoryEl.appendChild(messageEl);
     dom.lobbyChatHistoryEl.scrollTop = dom.lobbyChatHistoryEl.scrollHeight;
-};
+}
