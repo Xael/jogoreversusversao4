@@ -376,7 +376,7 @@ export const initializeGame = async (mode, options) => {
     }
     
     const isKingOrFinalNecro = gameState.currentStoryBattle === 'necroverso_king' || gameState.currentStoryBattle === 'necroverso_final';
-    if (isKingOrFinalNecro && getState().achievements.has('versatrix_card_collected')) {
+    if (isKingOrFinalNecro && getState().achievements.has('versatrix_win')) {
         const versatrixCard = { id: Date.now() + Math.random(), type: 'effect', name: 'Carta da Versatrix', cooldown: 0 };
         players['player-1'].hand.push(versatrixCard);
         updateLog("A bênção da Versatrix está com você. Uma carta especial foi adicionada à sua mão.");

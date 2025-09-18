@@ -95,21 +95,11 @@ export const storyDialogue = {
     },
     'start_versatrix_dialogue': {
         character: 'Versatrix', image: 'versatrix.png',
-        text: () => {
-            const { achievements } = getState();
-            return achievements.has('versatrix_card_collected') 
-                ? "story_dialogue.start_versatrix_dialogue_text_1"
-                : "story_dialogue.start_versatrix_dialogue_text_2";
-        },
-        options: () => {
-             const { achievements } = getState();
-             return achievements.has('versatrix_card_collected')
-                ? [{ text: "story_dialogue.start_versatrix_dialogue_option_1", next: 'versatrix_end_game' }]
-                : [
-                    { text: "story_dialogue.start_versatrix_dialogue_option_2", next: 'versatrix_sinto_muito' }, 
-                    { text: "story_dialogue.start_versatrix_dialogue_option_3", next: 'versatrix_solteira' }
-                  ];
-        }
+        text: "story_dialogue.start_versatrix_dialogue_text_2",
+        options: [
+            { text: "story_dialogue.start_versatrix_dialogue_option_2", next: 'versatrix_sinto_muito' }, 
+            { text: "story_dialogue.start_versatrix_dialogue_option_3", next: 'versatrix_solteira' }
+        ]
     },
     'versatrix_end_game': {
          isEndStory: true, startGame: { battle: 'versatrix' }
