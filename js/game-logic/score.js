@@ -12,11 +12,8 @@ export function updateLiveScoresAndWinningStatus() {
 
     // --- Part 1: Calculate live scores for all players ---
     const scores = {};
-    const playerIds = gameState.isAltarDefense ? ['player-1'] : gameState.playerIdsInGame;
-
-    playerIds.forEach(id => {
+    gameState.playerIdsInGame.forEach(id => {
         const player = gameState.players[id];
-        if (!player) return;
         let score = player.playedCards.value.reduce((sum, card) => sum + card.value, 0);
 
         // Apply temporary effects for live scoring
@@ -38,7 +35,7 @@ export function updateLiveScoresAndWinningStatus() {
 
     // --- Part 2: Determine winning/losing status for each player ---
     const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
-    if (activePlayers.length > 1 && !gameState.isAltarDefense) {
+    if (activePlayers.length > 1) {
         const playerScores = activePlayers.map(id => scores[id]);
         const highestScore = Math.max(...playerScores);
         const lowestScore = Math.min(...playerScores);
@@ -127,30 +124,6 @@ function updateSideScoreBoxes(scores) {
                 ${teamBHeartsHTML}
             </div>
         `;
-
-    } else if (gameState.isAltarDefense) {
-        const necroPlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isHuman);
-        const necroScore = necroPlayers.reduce((sum, id) => sum + (scores[id] || 0), 0);
-
-        dom.leftScoreBox.classList.remove('hidden');
-        dom.leftScoreBox.className = 'side-score-box player-1-score';
-        dom.leftScoreValue.textContent = scores['player-1'] || 0;
-
-        dom.rightScoreBox.classList.remove('hidden');
-        dom.rightScoreBox.className = 'side-score-box player-2-score'; // Necro team is red
-        dom.rightScoreValue.textContent = necroScore;
-
-        if ((scores['player-1'] || 0) > necroScore) {
-            dom.leftScoreStatus.textContent = 'Ganhando';
-            dom.leftScoreStatus.classList.add('winning');
-            dom.rightScoreStatus.textContent = 'Perdendo';
-            dom.rightScoreStatus.classList.add('losing');
-        } else if (necroScore > (scores['player-1'] || 0)) {
-            dom.rightScoreStatus.textContent = 'Ganhando';
-            dom.rightScoreStatus.classList.add('winning');
-            dom.leftScoreStatus.textContent = 'Perdendo';
-            dom.leftScoreStatus.classList.add('losing');
-        }
 
     } else { // Solo modes (1v1, 1v2, 1v3, etc.)
         // Always show and update the human player's score box (left)

@@ -797,19 +797,6 @@ body.screen-shaking {
     gap: 0.5rem;
 }
 
-.altar-wave-info {
-    text-align: center;
-    font-weight: bold;
-    font-size: 1.2rem;
-    color: var(--accent-red);
-    text-shadow: 0 0 5px var(--accent-red), 0 0 10px white;
-    animation: pulse-red 2s infinite ease-in-out;
-}
-.altar-wave-info span {
-    margin: 0 0.5rem;
-}
-
-
 .turn-countdown-timer {
     position: absolute;
     top: 50%;
@@ -1052,13 +1039,6 @@ body.screen-shaking {
     display: flex;
     justify-content: center;
     align-items: center;
-}
-
-.game-board.altar-defense::before {
-    content: 'A';
-    background-color: var(--accent-red);
-    box-shadow: 0 0 20px var(--accent-red);
-    animation: pulse-red 1.5s infinite;
 }
 
 .board-center-pawns {
@@ -2091,7 +2071,7 @@ body.screen-shaking {
     animation: star-spiral-in 3s ease-in forwards;
 }
 
-#story-stars-background, #altar-intro-bg {
+#story-stars-background {
     position: absolute;
     top: 0;
     left: 0;
@@ -2132,7 +2112,7 @@ body.screen-shaking {
     z-index: 3;
 }
 
-#story-dialogue-box, #altar-dialogue-box {
+#story-dialogue-box {
     position: absolute;
     bottom: 20px;
     left: 50%;
@@ -2148,7 +2128,7 @@ body.screen-shaking {
     z-index: 4;
 }
 
-#story-dialogue-text, #altar-dialogue-text {
+#story-dialogue-text {
     font-size: 1.25rem;
     line-height: 1.6;
     margin-bottom: 2rem;
@@ -3313,31 +3293,27 @@ body.screen-shaking {
 }
 
 #ranking-container table,
-#infinite-ranking-container table,
-#altar-ranking-container table {
+#infinite-ranking-container table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 1rem;
 }
 
 #ranking-container th, #ranking-container td,
-#infinite-ranking-container th, #infinite-ranking-container td,
-#altar-ranking-container th, #altar-ranking-container td {
+#infinite-ranking-container th, #infinite-ranking-container td {
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid rgba(168, 218, 220, 0.2);
 }
 
 #ranking-container th,
-#infinite-ranking-container th,
-#altar-ranking-container th {
+#infinite-ranking-container th {
     color: var(--accent-yellow);
     font-size: 1.1rem;
 }
 
 #ranking-container .rank-position,
-#infinite-ranking-container .rank-position,
-#altar-ranking-container .rank-position {
+#infinite-ranking-container .rank-position {
     font-weight: 700;
     font-size: 1.2rem;
     text-align: center;
@@ -3345,8 +3321,7 @@ body.screen-shaking {
 }
 
 #ranking-container .rank-avatar,
-#infinite-ranking-container .rank-avatar,
-#altar-ranking-container .rank-avatar {
+#infinite-ranking-container .rank-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -3354,8 +3329,7 @@ body.screen-shaking {
 }
 
 #ranking-container .rank-name,
-#infinite-ranking-container .rank-name,
-#altar-ranking-container .rank-name {
+#infinite-ranking-container .rank-name {
     font-weight: 600;
 }
 .rank-name.clickable {
@@ -3367,22 +3341,18 @@ body.screen-shaking {
 }
 
 #ranking-container .rank-player-title,
-#infinite-ranking-container .rank-player-title,
-#altar-ranking-container .rank-player-title {
+#infinite-ranking-container .rank-player-title {
     display: block;
     font-size: 0.8rem;
     color: var(--text-secondary);
 }
 
 #ranking-container tr.rank-1 .rank-position,
-#infinite-ranking-container tr.rank-1 .rank-position,
-#altar-ranking-container tr.rank-1 .rank-position { color: #FFD700; }
+#infinite-ranking-container tr.rank-1 .rank-position { color: #FFD700; }
 #ranking-container tr.rank-2 .rank-position,
-#infinite-ranking-container tr.rank-2 .rank-position,
-#altar-ranking-container tr.rank-2 .rank-position { color: #C0C0C0; }
+#infinite-ranking-container tr.rank-2 .rank-position { color: #C0C0C0; }
 #ranking-container tr.rank-3 .rank-position,
-#infinite-ranking-container tr.rank-3 .rank-position,
-#altar-ranking-container tr.rank-3 .rank-position { color: #CD7F32; }
+#infinite-ranking-container tr.rank-3 .rank-position { color: #CD7F32; }
 
 .ranking-pagination {
     display: flex;

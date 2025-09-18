@@ -25,7 +25,7 @@ export const VALUE_DECK_CONFIG = [{ value: 2, count: 12 }, { value: 4, count: 10
 export const EFFECT_DECK_CONFIG = [{ name: 'Mais', count: 4 }, { name: 'Menos', count: 4 }, { name: 'Sobe', count: 4 }, { name: 'Desce', count: 4 }, { name: 'Pula', count: 4 }, { name: 'Reversus', count: 4 }, { name: 'Reversus Total', count: 1 }];
 
 export const MUSIC_TRACKS = [
-    'jogo.ogg', 'jogo2.ogg', 'jogo3.ogg', 'contravox.ogg', 'versatrix.ogg', 'reversum.ogg', 'necroverso.ogg', 'necroversofinal.ogg', 'inversus.ogg', 'tela.ogg', 'narrador.ogg', 'xaeldesafio.ogg', 'altar.ogg',
+    'jogo.ogg', 'jogo2.ogg', 'jogo3.ogg', 'contravox.ogg', 'versatrix.ogg', 'reversum.ogg', 'necroverso.ogg', 'necroversofinal.ogg', 'inversus.ogg', 'tela.ogg', 'narrador.ogg', 'xaeldesafio.ogg',
     'oprofetasombrio.ogg', 'cupidodocaos.ogg', 'goblindafortuna.ogg', 'dragaodourado.ogg', 'oespectro.ogg', 'salamandra.ogg', 'capitaobarbacurta.ogg', 'astronomoperdido.ogg', 'detetivemisterioso.ogg', 'abruxadoresto.ogg', 'yeti.ogg', 'guardiaodaaurora.ogg',
     'creditos.ogg'
 ];
