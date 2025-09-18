@@ -1,7 +1,7 @@
 // js/ui/ui-handlers.js
 import * as dom from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
-import { initializeGame, restartLastDuel } from '../game-controller.js';
+import { initializeGame, initializeAltarDefenseGame, restartLastDuel } from '../game-controller.js';
 import { renderAchievementsModal } from './achievements-renderer.js';
 import { renderAll, showGameOver, updateChatControls } from './ui-renderer.js';
 import * as sound from '../core/sound.js';
@@ -22,6 +22,8 @@ import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMe
 import { openChatWindow, initializeChatHandlers } from './chat-handler.js';
 import { renderShopAvatars } from './shop-renderer.js';
 import { renderCard } from './card-renderer.js';
+import { altarDialogue } from '../story/altar-dialogue.js';
+
 
 let currentEventData = null;
 let infiniteChallengeIntroHandler = null;
@@ -436,6 +438,70 @@ async function startInfiniteChallengeIntro() {
     });
 }
 
+// --- Altar Defense Flow ---
+const typewriterAltar = (element, text, onComplete) => {
+    let { typewriterTimeout } = getState();
+    if (typewriterTimeout) clearTimeout(typewriterTimeout);
+    let i = 0;
+    element.innerHTML = '';
+    const speed = 30;
+
+    function type() {
+        if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+            typewriterTimeout = setTimeout(type, speed);
+            updateState('typewriterTimeout', typewriterTimeout);
+        } else {
+            if (onComplete) onComplete();
+        }
+    }
+    type();
+};
+
+const renderAltarNode = (nodeId) => {
+    const node = altarDialogue[nodeId];
+    if (!node) return;
+
+    if (node.isEndDialogue) {
+        dom.altarIntroModal.classList.add('hidden');
+        if (nodeId !== 'end_dialogue') {
+            dom.altarSetupModal.classList.remove('hidden');
+        }
+        return;
+    }
+    
+    const textContentKey = typeof node.text === 'function' ? node.text() : node.text;
+    const textContent = t(textContentKey);
+    const optionsSource = typeof node.options === 'function' ? node.options() : node.options;
+
+    const onTypewriterComplete = () => {
+        dom.altarDialogueOptions.innerHTML = '';
+        if (node.isContinue) {
+            const button = document.createElement('button');
+            button.textContent = t('common.continue') + '...';
+            button.className = 'control-button';
+            button.onclick = () => renderAltarNode(node.next);
+            dom.altarDialogueOptions.appendChild(button);
+        } else if (optionsSource) {
+            optionsSource.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = t(option.text);
+                button.className = 'control-button';
+                button.onclick = () => renderAltarNode(option.next);
+                dom.altarDialogueOptions.appendChild(button);
+            });
+        }
+        dom.altarDialogueOptions.style.opacity = 1;
+    };
+    
+    dom.altarDialogueOptions.style.opacity = 0;
+    typewriterAltar(dom.altarDialogueText, textContent, onTypewriterComplete);
+};
+
+// --- End Altar Defense Flow ---
+
+
 export function initializeUiHandlers() {
     document.addEventListener('aiTurnEnded', advanceToNextPlayer);
     
@@ -628,6 +694,30 @@ export function initializeUiHandlers() {
         const hasSave = saveLoad.checkForSavedGame();
         dom.storyContinueGameButton.disabled = !hasSave;
         dom.storyStartOptionsModal.classList.remove('hidden');
+    });
+    
+    // --- Altar Defense Mode Button ---
+    dom.altarModeButton.addEventListener('click', () => {
+        const { isLoggedIn } = getState();
+        if (!isLoggedIn) {
+            alert(t('common.login_required', { feature: t('splash.altar_defense') }));
+            return;
+        }
+        sound.initializeMusic();
+        dom.splashScreenEl.classList.add('hidden');
+        dom.altarIntroModal.classList.remove('hidden');
+        sound.playStoryMusic('necroversofinal.ogg');
+        renderAltarNode('start');
+    });
+
+    dom.altarSoloButton.addEventListener('click', () => {
+        dom.altarSetupModal.classList.add('hidden');
+        initializeAltarDefenseGame({ mode: 'solo' });
+    });
+    
+    dom.altarSetupCloseButton.addEventListener('click', () => {
+        dom.altarSetupModal.classList.add('hidden');
+        showSplashScreen();
     });
 
     dom.pvpModeButton.addEventListener('click', () => {

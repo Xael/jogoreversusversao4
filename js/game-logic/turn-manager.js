@@ -207,31 +207,30 @@ export async function advanceToNextPlayer() {
 
     const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
     
-    // New round end condition: 2 full rounds of passes
+    // Altar Defense: The AI "players" don't take turns, so after the human passes, the round ends.
+    if (gameState.isAltarDefense) {
+        await endRound();
+        return;
+    }
+    
     const endRoundPassCount = activePlayers.length * 2;
 
-    // The round ends if everyone has passed consecutively twice.
     if (activePlayers.length > 0 && gameState.consecutivePasses >= endRoundPassCount) {
         await endRound();
         return;
     }
     
-    // Announce the "last call" when one full round of passes is complete.
     if (activePlayers.length > 0 && gameState.consecutivePasses === activePlayers.length) {
         updateLog("ÚLTIMA CHAMADA! Todos os jogadores passaram. A rodada terminará se todos passarem novamente.");
     }
 
-    // --- Find next active player (robustly) ---
     let currentIndex = gameState.playerIdsInGame.indexOf(gameState.currentPlayer);
     let nextIndex = currentIndex;
     let attempts = 0;
     
-    // This loop will find the next player who is NOT eliminated.
-    // The attempts check prevents an infinite loop if all players are somehow eliminated.
     do {
         nextIndex = (nextIndex + 1) % gameState.playerIdsInGame.length;
-        if (++attempts > gameState.playerIdsInGame.length * 2) { // Increased safeguard
-            // This should not happen if game end is checked properly, but it's a fail-safe.
+        if (++attempts > gameState.playerIdsInGame.length * 2) { 
             updateLog("Nenhum jogador ativo encontrado. Forçando o fim da rodada.");
             await endRound();
             return;
@@ -239,13 +238,11 @@ export async function advanceToNextPlayer() {
     } while (gameState.players[gameState.playerIdsInGame[nextIndex]].isEliminated);
     
     gameState.currentPlayer = gameState.playerIdsInGame[nextIndex];
-    // --- End of finding next player ---
 
     const nextPlayer = gameState.players[gameState.currentPlayer];
-    nextPlayer.playedValueCardThisTurn = false; // Reset for the new turn
+    nextPlayer.playedValueCardThisTurn = false;
 
     if (nextPlayer.id === 'player-1' && nextPlayer.hasXaelStarPower) {
-        // Decrease Xael Star Power cooldown
         if (nextPlayer.xaelStarPowerCooldown > 0) {
             nextPlayer.xaelStarPowerCooldown--;
             if (nextPlayer.xaelStarPowerCooldown > 0) {
@@ -271,20 +268,25 @@ async function endRound() {
     if (gameState.gamePhase !== 'playing') return;
     
     gameState.gamePhase = 'resolution';
-    renderAll(); // Update UI to show "Fim da rodada!"
-    updateLog('Todos os jogadores passaram. Resolvendo a rodada...');
+    renderAll(); 
+    updateLog('Resolvendo a rodada...');
     await calculateScoresAndEndRound();
 }
 
 
 export async function startNewRound(isFirstRound = false, autoStartTurn = true) {
     const { gameState } = getState();
-    if (!isFirstRound) {
+    if (!isFirstRound && !gameState.isAltarDefense) {
         gameState.turn++;
     }
-    updateLog(`--- ${t('log.new_round', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn })} ---`);
-    if(autoStartTurn) {
-        announceEffect(t('log.new_round_announcement', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn }), 'default', 2000);
+
+    if (gameState.isAltarDefense) {
+        updateLog(`--- ONDA ${gameState.wave} - RODADA ${gameState.round} de ${gameState.targetRounds} ---`);
+    } else {
+        updateLog(`--- ${t('log.new_round', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn })} ---`);
+        if(autoStartTurn) {
+            announceEffect(t('log.new_round_announcement', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn }), 'default', 2000);
+        }
     }
 
 
@@ -293,18 +295,15 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
         const player = gameState.players[id];
         if (player.isEliminated) return;
         
-        // Discard played cards
         gameState.discardPiles.value.push(...player.playedCards.value);
         gameState.discardPiles.effect.push(...player.playedCards.effect);
         player.playedCards = { value: [], effect: [] };
 
-        // Update resto
         if (player.nextResto) {
             player.resto = player.nextResto;
             player.nextResto = null;
         }
         
-        // --- Habilidade de Evento: Guardião da Aurora ---
         if (player.isEventBoss && player.aiType === 'guardiaodaaurora' && player.resto) {
             const restoCardIndex = gameState.discardPiles.value.findIndex(c => c.id === player.resto.id);
             if (restoCardIndex > -1) {
@@ -314,12 +313,9 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
             }
         }
 
-        // Revert Necro X curse
         if (player.replacedCardByNecroX) {
             const curseCardIndex = player.hand.findIndex(c => c.name === 'NECRO_X_CURSE');
-            if (curseCardIndex > -1) {
-                player.hand.splice(curseCardIndex, 1);
-            }
+            if (curseCardIndex > -1) player.hand.splice(curseCardIndex, 1);
             player.hand.push(player.replacedCardByNecroX);
             updateLog(`A maldição de Necro X em ${player.name} se desfez.`);
             player.replacedCardByNecroX = null;
@@ -330,7 +326,6 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
         player.playedValueCardThisTurn = false;
         player.targetPathForPula = null;
 
-        // Decrease Versatrix Card cooldown per round
         const versatrixCard = player.hand.find(c => c.name === 'Carta da Versatrix');
         if (versatrixCard && versatrixCard.cooldown > 0) {
             versatrixCard.cooldown--;
@@ -342,7 +337,6 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
         }
     });
     
-    // Reset global round states
     gameState.selectedCard = null;
     gameState.reversusTotalActive = false;
     gameState.consecutivePasses = 0;
@@ -357,7 +351,6 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
     dom.appContainerEl.classList.remove('reversus-total-active');
     dom.reversusTotalIndicatorEl.classList.add('hidden');
 
-    // Draw cards to replenish hands
     gameState.playerIdsInGame.forEach(id => {
         const player = gameState.players[id];
         if (player.isEliminated) return;
@@ -365,21 +358,18 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
             const newCard = dealCard('value');
             if (newCard) player.hand.push(newCard); else break;
         }
-        // Versatrix card doesn't count towards the effect card limit
         while (player.hand.filter(c => c.type === 'effect' && c.name !== 'Carta da Versatrix').length < config.MAX_EFFECT_CARDS_IN_HAND) {
             const newCard = dealCard('effect');
             if (newCard) player.hand.push(newCard); else break;
         }
     });
 
-    // Special Logic for King Necro Battle
     if (gameState.isKingNecroBattle) {
         await rotateAndApplyKingNecroversoBoardEffects(!isFirstRound);
-        if (checkGameEnd()) return; // Stop if board effects ended the game
+        if (checkGameEnd()) return;
     }
 
-    if (!isFirstRound) {
-        // PvP check: The server now handles field effects for PvP.
+    if (!isFirstRound && !gameState.isAltarDefense) {
         if (!gameState.isPvp) {
             await triggerFieldEffects();
         }
@@ -388,7 +378,7 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
     
     gameState.gamePhase = 'playing';
     const currentPlayer = gameState.players[gameState.currentPlayer];
-    currentPlayer.playedValueCardThisTurn = false; // Reset for the first player of the round
+    currentPlayer.playedValueCardThisTurn = false;
 
     if (autoStartTurn) {
         updateLog(`É a vez de ${currentPlayer.name}.`);
@@ -404,15 +394,19 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
 
 function checkGameEnd() {
     const { gameState } = getState();
+    
+    if (gameState.isAltarDefense) {
+        // Altar defense has no standard game end, it's handled in its own logic
+        return false;
+    }
 
-    // Specific win/loss condition for heart-based battles
     if (gameState.currentStoryBattle === 'necroverso_final') {
-        if (gameState.teamB_hearts <= 0) { // Necro's team
+        if (gameState.teamB_hearts <= 0) {
             gameState.gamePhase = 'game_over';
             document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: 'necroverso_final', won: true } }));
             return true;
         }
-        if (gameState.teamA_hearts <= 0) { // Player's team
+        if (gameState.teamA_hearts <= 0) {
             gameState.gamePhase = 'game_over';
             document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: 'necroverso_final', won: false } }));
             return true;
@@ -430,12 +424,10 @@ function checkGameEnd() {
         }
     }
 
-    // CRITICAL FIX: In heart-based battles, the game should NOT end by reaching position 10.
     if (gameState.currentStoryBattle === 'necroverso_final' || gameState.isKingNecroBattle || gameState.isInversusMode) {
-        return false; // Only heart-based win/loss applies.
+        return false; 
     }
 
-    // Standard win condition for all other modes (reaching position 10)
     const gameWinners = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated && gameState.players[id].position >= config.WINNING_POSITION);
 
     if (gameWinners.length > 0) {
@@ -449,14 +441,13 @@ function checkGameEnd() {
             const xaelWon = gameWinners.includes('player-2');
 
             if (player1Won && xaelWon) {
-                // Tie-breaker: most stars. Xael wins ties.
                 actualWinners = (player1.stars > xael.stars) ? ['player-1'] : ['player-2'];
             } else if (player1Won) {
                 actualWinners = ['player-1'];
             } else if (xaelWon) {
                 actualWinners = ['player-2'];
             } else {
-                 actualWinners = []; // Should not happen if gameWinners has items
+                 actualWinners = [];
             }
         }
         
@@ -472,10 +463,10 @@ function checkGameEnd() {
                 showGameOver(`${winnerNames} venceu o jogo!`);
                 grantAchievement('first_win');
             }
-            return true; // Game has ended
+            return true;
         }
     }
-    return false; // Game continues
+    return false;
 }
 
 
@@ -484,13 +475,16 @@ function checkGameEnd() {
  */
 async function calculateScoresAndEndRound() {
     const { gameState } = getState();
+
+    // Special logic for Altar Defense mode
+    if (gameState.isAltarDefense) {
+        await handleAltarDefenseRoundEnd();
+        return;
+    }
     
     const finalScores = {};
-
-    // 0. Reset Contravox flag before checking for new triggers
     gameState.player1CardsObscured = false;
 
-    // 1. Calculate final scores including all effects
     gameState.playerIdsInGame.forEach(id => {
         const p = gameState.players[id];
         if (p.isEliminated) return;
@@ -498,14 +492,12 @@ async function calculateScoresAndEndRound() {
         let score = p.playedCards.value.reduce((sum, card) => sum + card.value, 0);
         let restoValue = p.resto?.value || 0;
 
-        // Check for field effects on resto
         if (gameState.activeFieldEffects.some(fe => fe.name === 'Resto Maior' && fe.appliesTo === id)) restoValue = 10;
         if (gameState.activeFieldEffects.some(fe => fe.name === 'Resto Menor' && fe.appliesTo === id)) restoValue = 2;
 
         if (p.effects.score === 'Mais') score += restoValue;
 
         let scoreModifier = 1;
-        // Check for Super Exposto before applying Menos
         if (gameState.activeFieldEffects.some(fe => fe.name === 'Super Exposto' && fe.appliesTo === id)) {
             scoreModifier = 2;
              updateLog(`Efeito 'Super Exposto' dobrou o efeito negativo em ${p.name}!`);
@@ -519,7 +511,6 @@ async function calculateScoresAndEndRound() {
         p.liveScore = score;
     });
 
-    // 2. Determine winner(s)
     let winners = [];
     if (gameState.playerIdsInGame.filter(pId => !gameState.players[pId].isEliminated).length > 0) {
         let highestScore = -Infinity;
@@ -535,26 +526,21 @@ async function calculateScoresAndEndRound() {
         });
     }
 
-    // 3. Handle tie logic
-    if (winners.length > 1) { // A tie exists
+    if (winners.length > 1) { 
         if (gameState.gameMode === 'duo') {
             const teamA_Ids = gameState.currentStoryBattle === 'necroverso_final' ? ['player-1', 'player-4'] : config.TEAM_A;
             const teamB_Ids = gameState.currentStoryBattle === 'necroverso_final' ? ['player-2', 'player-3'] : config.TEAM_B;
-
             const firstWinnerTeam = teamA_Ids.includes(winners[0]) ? 'A' : 'B';
             const allWinnersOnSameTeam = winners.every(id => 
                 (firstWinnerTeam === 'A' && teamA_Ids.includes(id)) || 
                 (firstWinnerTeam === 'B' && teamB_Ids.includes(id))
             );
-            if (!allWinnersOnSameTeam) {
-                winners = []; // Tie between teams
-            }
-        } else { // Solo mode tie
+            if (!allWinnersOnSameTeam) winners = [];
+        } else {
             winners = []; 
         }
     }
     
-    // 4. Log winner and show summary modal
     if (winners.length > 0) {
         const winnerNames = winners.map(id => gameState.players[id].name).join(' e ');
         updateLog(`Vencedor(es) da rodada: ${winnerNames}.`);
@@ -566,7 +552,6 @@ async function calculateScoresAndEndRound() {
         await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
     }
 
-    // Handle INVERSUS heart loss & Infinite Challenge duel end
     if (gameState.isInversusMode) {
         const player1Won = winners.includes('player-1');
         const opponentWon = winners.includes('player-2');
@@ -612,34 +597,26 @@ async function calculateScoresAndEndRound() {
         const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
         if (activePlayers.length > 1) {
             let lowestScore = Infinity;
-            activePlayers.forEach(id => {
-                if (finalScores[id] < lowestScore) {
-                    lowestScore = finalScores[id];
-                }
-            });
-            
+            activePlayers.forEach(id => { if (finalScores[id] < lowestScore) lowestScore = finalScores[id]; });
             const losers = activePlayers.filter(id => finalScores[id] === lowestScore);
-            
             if (losers.length > 0) {
                 const loserNames = losers.map(id => gameState.players[id].name).join(', ');
                 updateLog(`${loserNames} tiveram a menor pontuação e perdem 1 coração cada!`);
-                
                 for (const loserId of losers) {
                     const loserPlayer = gameState.players[loserId];
                     loserPlayer.hearts--;
                     playSoundEffect('coracao');
                     announceEffect('💔', 'heartbreak', 1500);
                     updateLog(`Corações de ${loserPlayer.name}: ${loserPlayer.hearts}`);
-                    
                     if (loserPlayer.hearts <= 0) {
-                        loserPlayer.hearts = 0; // Prevent negative hearts
+                        loserPlayer.hearts = 0;
                         loserPlayer.isEliminated = true;
                         updateLog(`${loserPlayer.name} foi eliminado da batalha!`);
                     }
                 }
             }
         }
-        if (checkGameEnd()) return; // Stop if game ended due to heart loss
+        if (checkGameEnd()) return;
     }
     
     if (gameState.currentStoryBattle === 'necroverso_final' && winners.length > 0) {
@@ -653,7 +630,7 @@ async function calculateScoresAndEndRound() {
         }
         playSoundEffect('coracao');
         announceEffect('💔', 'heartbreak', 1500);
-        if (checkGameEnd()) return; // Stop if game ended due to heart loss
+        if (checkGameEnd()) return;
     }
     
     if (!gameState.isInversusMode && !gameState.isKingNecroBattle) {
@@ -706,9 +683,7 @@ async function calculateScoresAndEndRound() {
         }
     }
     
-    if (checkGameEnd()) {
-        return;
-    }
+    if (checkGameEnd()) return;
 
     for (const id of gameState.playerIdsInGame) {
         if (!gameState.players[id].isEliminated) {
@@ -716,9 +691,7 @@ async function calculateScoresAndEndRound() {
         }
     }
     
-    if (checkGameEnd()) {
-        return;
-    }
+    if (checkGameEnd()) return;
 
     if (winners.length > 0) {
         const winnerTurnOrder = gameState.playerIdsInGame.filter(pId => winners.includes(pId));
@@ -730,6 +703,103 @@ async function calculateScoresAndEndRound() {
     await startNewRound();
 }
 
+/**
+ * Handles the end of a round in Altar Defense mode.
+ */
+async function handleAltarDefenseRoundEnd() {
+    const { gameState } = getState();
+    const player = gameState.players['player-1'];
+    const necroAIs = gameState.playerIdsInGame.filter(id => !gameState.players[id].isHuman);
+    
+    // 1. Calculate scores
+    const playerScore = player.liveScore;
+    const necroScore = necroAIs.reduce((sum, id) => sum + gameState.players[id].liveScore, 0);
+
+    // 2. Determine round winner and apply pushback
+    if (playerScore > necroScore) {
+        updateLog(`Você venceu a rodada (${playerScore} vs ${necroScore})! Escolha um Necro-peão para empurrar.`);
+        
+        // Let player choose which pawn to push
+        dom.altarPushButtons.innerHTML = gameState.necroPawns.map((pawn, index) => 
+            `<button class="control-button" data-necro-id="${pawn.id}">Necro-peão ${index + 1} (Caminho ${pawn.pathId + 1})</button>`
+        ).join('');
+        dom.altarPushModal.classList.remove('hidden');
+
+        const chosenPawnId = await new Promise(resolve => {
+            const handler = (e) => {
+                if (e.target.matches('.control-button')) {
+                    dom.altarPushButtons.removeEventListener('click', handler);
+                    resolve(e.target.dataset.necroId);
+                }
+            };
+            dom.altarPushButtons.addEventListener('click', handler);
+        });
+
+        dom.altarPushModal.classList.add('hidden');
+        const pawnToPush = gameState.necroPawns.find(p => p.id === chosenPawnId);
+        if (pawnToPush) {
+            pawnToPush.position = Math.max(1, pawnToPush.position - 1);
+            updateLog(`Você empurrou um Necro-peão para a casa ${pawnToPush.position}.`);
+        }
+    } else {
+        updateLog(`Você perdeu ou empatou a rodada (${playerScore} vs ${necroScore}). Nenhum peão foi empurrado.`);
+    }
+
+    // 3. Advance all necro pawns
+    updateLog("Os Necro-peões avançam!");
+    gameState.necroPawns.forEach(pawn => {
+        pawn.position++;
+    });
+    renderAll();
+    await new Promise(res => setTimeout(res, 1000));
+
+    // 4. Check for loss condition
+    const pawnAtAltar = gameState.necroPawns.find(pawn => pawn.position >= config.WINNING_POSITION);
+    if (pawnAtAltar) {
+        gameState.gamePhase = 'game_over';
+        showGameOver(
+            `Um Necro-peão alcançou o Altar! Você sobreviveu até a Onda ${gameState.wave}, Rodada ${gameState.round}.`,
+            'Derrota!',
+            { action: 'menu', text: t('game_over.back_to_menu') }
+        );
+        return;
+    }
+
+    // 5. Check for wave completion
+    gameState.round++;
+    if (gameState.round > gameState.targetRounds) {
+        gameState.wave++;
+        
+        // Define next wave targets
+        const waveTargets = { 2: 15, 3: 20 };
+
+        if (gameState.wave > 3) { // VICTORY!
+            gameState.gamePhase = 'game_over';
+            // TODO: Add reward logic (Title, CoinVersus)
+            showGameOver(
+                'Você defendeu o Altar com sucesso e repeliu a invasão do Necroverso!',
+                'VITÓRIA!',
+                 { action: 'menu', text: t('game_over.back_to_menu') }
+            );
+            return;
+        }
+
+        updateLog(`Onda ${gameState.wave - 1} completa! A próxima onda está começando.`);
+        gameState.round = 1;
+        gameState.targetRounds = waveTargets[gameState.wave];
+
+        // Reset necro pawns to the middle for the new wave
+        gameState.necroPawns.forEach(pawn => pawn.position = 5);
+        
+        // TODO: Add buff selection modal here for between waves
+        await new Promise(res => setTimeout(res, 2000));
+    }
+
+    // 6. Start the next round
+    await startNewRound();
+}
+
+
 
 export async function startNextInfiniteChallengeDuel() {
     const { gameState, infiniteChallengeOpponentQueue } = getState();
@@ -737,20 +807,16 @@ export async function startNextInfiniteChallengeDuel() {
         return;
     }
 
-    // Capture the final 'resto' from the previous duel for both players
     const player1 = gameState.players['player-1'];
     const previousOpponent = gameState.players['player-2'];
     const player1FinalResto = player1.nextResto || player1.resto;
     const opponentFinalResto = previousOpponent ? (previousOpponent.nextResto || previousOpponent.resto) : null;
 
 
-    // 1. Reset player states, preserving player 1's hand/resto and setting up the new opponent.
     Object.values(gameState.players).forEach(p => {
         if (p.id === 'player-1') {
-            // Player 1 (Human) Partial Reset
             p.position = 1;
-            p.resto = player1FinalResto; // Carry over the final resto
-            // hand is preserved
+            p.resto = player1FinalResto;
             p.nextResto = null;
             p.effects = { score: null, movement: null };
             p.playedCards = { value: [], effect: [] };
@@ -758,14 +824,13 @@ export async function startNextInfiniteChallengeDuel() {
             p.liveScore = 0;
             p.status = 'neutral';
             p.isEliminated = false; 
-            p.forceResto10 = false; // Buff-related flags should be reset unless re-applied
+            p.forceResto10 = false;
             p.isImmuneToNegativeEffects = false;
             p.isImmuneToDefeat = false;
         } else if (p.id === 'player-2') {
-            // Player 2 (New Opponent) Full Reset
             p.position = 1;
             p.hand = [];
-            p.resto = opponentFinalResto; // Inherit previous opponent's final resto
+            p.resto = opponentFinalResto;
             p.nextResto = null;
             p.effects = { score: null, movement: null };
             p.playedCards = { value: [], effect: [] };
@@ -774,7 +839,6 @@ export async function startNextInfiniteChallengeDuel() {
             p.status = 'neutral';
             p.hearts = 1;
             p.isEliminated = false;
-            // Clear any special AI properties
             p.isEventBoss = false;
             p.eventAbilityUsedThisMatch = false;
             p.narratorAbilities = undefined;
@@ -785,23 +849,18 @@ export async function startNextInfiniteChallengeDuel() {
         }
     });
 
-    // 2. Set up the new opponent for the next duel.
     const nextOpponentData = infiniteChallengeOpponentQueue[0];
     const opponent = gameState.players['player-2'];
     opponent.name = nextOpponentData.name || (nextOpponentData.nameKey ? t(nextOpponentData.nameKey) : 'Opponent');
     opponent.aiType = nextOpponentData.aiType;
     opponent.avatar_url = nextOpponentData.avatar_url;
 
-    // Reset decks for a fresh match BEFORE applying buffs that draw cards.
     gameState.decks.value = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
     gameState.decks.effect = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
     gameState.discardPiles = { value: [], effect: [] };
 
-    // 3. Replenish hand to base size, but don't start the turn yet.
     await startNewRound(true, false);
 
-    // 4. Apply the chosen buff for the human player.
-    // Re-fetch state because `await` allows other code to run.
     const { gameState: updatedGameState, activeBuff } = getState();
     const player1Updated = updatedGameState.players['player-1'];
     
@@ -911,11 +970,10 @@ export async function startNextInfiniteChallengeDuel() {
         updateState('activeBuff', null);
     }
     
-    // 5. Manually start the first turn now that buffs are applied.
     const currentPlayer = updatedGameState.players[updatedGameState.currentPlayer];
     announceEffect(t('log.new_round_announcement', { turn: updatedGameState.isInfiniteChallenge ? updatedGameState.infiniteChallengeLevel : updatedGameState.turn }), 'default', 2000);
     updateLog(`É a vez de ${currentPlayer.name}.`);
-    renderAll(); // Re-render to show buffed hand
+    renderAll();
 
     if (currentPlayer.isHuman) {
         await showTurnIndicator();

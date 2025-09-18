@@ -13,6 +13,26 @@ export async function applyEffect(card, targetId, casterName, effectTypeToRevers
     const target = gameState.players[targetId];
     if (!target) return;
 
+    // --- Altar Defense AoE Logic ---
+    const caster = Object.values(gameState.players).find(p => p.name === casterName);
+    if (gameState.isAltarDefense && gameState.gameMode === 'altar-solo' && caster?.isHuman && ['Menos', 'Desce'].includes(card.name)) {
+        const necroAIs = gameState.playerIdsInGame.filter(id => !gameState.players[id].isHuman);
+        updateLog(`${casterName} usou ${card.name} em todos os Necro-peões!`);
+        
+        necroAIs.forEach(necroId => {
+            const necroPlayer = gameState.players[necroId];
+            if (card.name === 'Menos') necroPlayer.effects.score = 'Menos';
+            if (card.name === 'Desce') necroPlayer.effects.movement = 'Desce';
+        });
+        
+        const soundToPlay = card.name.toLowerCase().replace(/\s/g, '');
+        setTimeout(() => playSoundEffect(soundToPlay), 100);
+        setTimeout(() => announceEffect(card.name), 150);
+        return; // Skip the rest of the single-target logic
+    }
+    // --- End Altar Defense Logic ---
+
+
     let effectName;
     // Correctly determine the effect name, especially for locked Reversus Total
     if (card.isLocked) {

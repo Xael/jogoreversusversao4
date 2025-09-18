@@ -22,6 +22,25 @@ export async function executeAiTurn(player) {
     let specialAbilityUsed = false;
 
     try {
+        // --- Altar Defense Necro X AI Logic ---
+        if (player.aiType === 'necroverso_final' && gameState.isAltarDefense) {
+            const player1 = gameState.players['player-1'];
+            const necroAIs = gameState.playerIdsInGame.filter(id => !gameState.players[id].isHuman);
+            const necroScore = necroAIs.reduce((sum, id) => sum + (gameState.players[id].liveScore || 0), 0);
+            
+            const playerHasAdvantage = player1.liveScore > necroScore;
+            // 50% chance to use Necro X if player is winning and has cards to curse
+            const shouldUseNecroX = !gameState.necroXUsedThisRound && playerHasAdvantage && player1.hand.length > 0 && Math.random() < 0.5;
+
+            if (shouldUseNecroX) {
+                await triggerNecroX(player, player1);
+                specialAbilityUsed = true;
+                await new Promise(res => setTimeout(res, 1500));
+            }
+        }
+        // --- End Altar Defense Logic ---
+
+
         // --- Part 1: Story & Event Boss Special Abilities ---
         if (player.aiType === 'versatrix' && gameState.currentStoryBattle === 'versatrix' && !gameState.versatrixSwapActive) {
             const player1 = gameState.players['player-1'];

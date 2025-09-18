@@ -91,6 +91,109 @@ const showFullscreenAnnounce = async (text, imageSrc) => {
 };
 
 /**
+ * Initializes a new Altar Defense game.
+ * @param {object} options - Options for the game setup (e.g., mode: 'solo' or 'duo').
+ */
+export const initializeAltarDefenseGame = async (options) => {
+    await playStoryMusic('altar.ogg');
+    
+    // UI Cleanup
+    dom.splashScreenEl.classList.add('hidden');
+    dom.appContainerEl.classList.remove('blurred', 'hidden');
+    dom.debugButton.classList.remove('hidden');
+    resetGameEffects();
+
+    const { userProfile } = getState();
+    const player1Name = userProfile?.username || t('player_names.player-1');
+
+    // Create decks
+    const valueDeck = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
+    const effectDeck = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
+
+    // Create players and necro pawns
+    const players = {
+        'player-1': {
+            ...config.PLAYER_CONFIG['player-1'],
+            name: player1Name,
+            id: 'player-1',
+            position: 10, // Start at the altar
+            pathId: -1, // No path initially
+            isHuman: true,
+             hand: [], resto: null, nextResto: null, effects: { score: null, movement: null },
+            playedCards: { value: [], effect: [] }, playedValueCardThisTurn: false, liveScore: 0,
+        }
+    };
+    
+    const necroPawns = [];
+    let playerIdsInGame = ['player-1'];
+
+    // Setup for Solo mode (1v3)
+    const necroPaths = shuffle([0, 1, 2, 3, 4, 5]).slice(0, 3);
+    for (let i = 0; i < 3; i++) {
+        const necroId = `necro-${i+1}`;
+        const playerId = `player-${i+2}`;
+        playerIdsInGame.push(playerId);
+
+        players[playerId] = {
+            ...config.PLAYER_CONFIG[playerId],
+            name: `Necroverso ${i + 1}`,
+            id: playerId,
+            aiType: 'necroverso_final',
+            isHuman: false,
+            position: 10, // They don't use the board, their score is just calculated
+            pathId: -1,
+            hand: [], resto: null, nextResto: null, effects: { score: null, movement: null },
+            playedCards: { value: [], effect: [] }, playedValueCardThisTurn: false, liveScore: 0,
+        };
+
+        necroPawns.push({
+            id: necroId,
+            position: 5, // Start in the middle of the board
+            pathId: necroPaths[i],
+        });
+    }
+
+    const gameState = {
+        players,
+        playerIdsInGame,
+        necroPawns,
+        isAltarDefense: true,
+        wave: 1,
+        round: 1,
+        targetRounds: 10,
+        decks: { value: valueDeck, effect: effectDeck },
+        discardPiles: { value: [], effect: [] },
+        boardPaths: generateBoardPaths(), // Normal board, no special effects needed for now
+        gamePhase: 'setup',
+        gameMode: 'altar-solo',
+        currentPlayer: 'player-1',
+        log: [],
+        consecutivePasses: 0,
+        // Altar mode doesn't need these
+        isPvp: false, gameOptions: options, isStoryMode: false, isInversusMode: false, isInfiniteChallenge: false,
+        isFinalBoss: false, isKingNecroBattle: false, isXaelChallenge: false,
+    };
+    
+    updateState('gameState', gameState);
+
+    // Setup UI containers
+    const player1Container = document.getElementById('player-1-area-container');
+    const opponentsContainer = document.getElementById('opponent-zones-container');
+    const createPlayerAreaHTML = (id) => `<div class="player-area" id="player-area-${id}"></div>`;
+    player1Container.innerHTML = createPlayerAreaHTML('player-1');
+    opponentsContainer.innerHTML = playerIdsInGame.filter(id => id !== 'player-1').map(id => createPlayerAreaHTML(id)).join('');
+    
+    updateLog('--- PROTEÇÃO DO ALTAR ---');
+    updateLog(`Sobreviva à primeira onda de 10 rodadas!`);
+
+    renderAll();
+    
+    // Start the game by starting the first round
+    await startNewRound(true);
+};
+
+
+/**
  * Initializes a new SINGLE PLAYER game with the specified mode and options.
  * The core game state creation is now handled by the server for PvP.
  */
