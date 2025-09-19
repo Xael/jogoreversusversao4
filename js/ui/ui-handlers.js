@@ -1,7 +1,7 @@
 // js/ui/ui-handlers.js
 import * as dom from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
-import { initializeGame, restartLastDuel } from '../game-controller.js';
+import { initializeGame, initializeAltarDefenseGame, restartLastDuel } from '../game-controller.js';
 import { renderAchievementsModal } from './achievements-renderer.js';
 import { renderAll, showGameOver, updateChatControls } from './ui-renderer.js';
 import * as sound from '../core/sound.js';
@@ -15,13 +15,15 @@ import * as network from '../core/network.js';
 import { shatterImage } from './animations.js';
 import { announceEffect } from '../core/sound.js';
 import { playCard } from '../game-logic/player-actions.js';
-import { advanceToNextPlayer, startNextInfiniteChallengeDuel } from '../game-logic/turn-manager.js';
+import { advanceToNextPlayer, startNextInfiniteChallengeDuel, startNewRound } from '../game-logic/turn-manager.js';
 import { setLanguage, t } from '../core/i18n.js';
 import { showSplashScreen } from './splash-screen.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from './profile-renderer.js';
 import { openChatWindow, initializeChatHandlers } from './chat-handler.js';
 import { renderShopAvatars } from './shop-renderer.js';
 import { renderCard } from './card-renderer.js';
+import { altarDialogue } from '../story/altar-dialogue.js';
+
 
 let currentEventData = null;
 let infiniteChallengeIntroHandler = null;
@@ -163,7 +165,16 @@ async function initiatePlayCardSequence(player, card) {
 
 export function showBuffSelectionModal() {
     const { gameState, achievements } = getState();
-    if (!gameState || !gameState.isInfiniteChallenge) return;
+    if (!gameState || (!gameState.isInfiniteChallenge && !gameState.isAltarDefense)) return;
+
+    // Set title based on game mode
+    const titleKey = gameState.isAltarDefense ? 'altar_defense.buff_selection_title' : 'infinite_challenge.buff_selection_title';
+    const modalTitleEl = dom.infiniteChallengeBuffModal.querySelector('h2');
+    if (modalTitleEl) {
+        modalTitleEl.textContent = t(titleKey);
+        modalTitleEl.dataset.i18n = titleKey; // Keep i18n key for language changes
+    }
+
 
     const ultraBuffs = {
         'versatrix_card': { achievements: ['versatrix_win'], image: 'cartaversatrix.png' },
@@ -180,23 +191,20 @@ export function showBuffSelectionModal() {
     });
 
     const buffs = [];
-    const level = gameState.infiniteChallengeLevel;
+    const level = gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.wave;
+    const rareBuffsPool = gameState.isAltarDefense ? ['draw_reversus_total', 'immunity_negative', 'draw_10_discard_one'] : config.INFINITE_CHALLENGE_BUFFS.rare;
 
-    if (level % 5 === 0 && availableVeryRare.length > 0) {
+
+    if (level % 5 === 0 && availableVeryRare.length > 0 && gameState.isInfiniteChallenge) { // Very rare only for infinite
         buffs.push(...shuffle(availableVeryRare).slice(0, 1));
     }
-    if (level % 3 === 0 && config.INFINITE_CHALLENGE_BUFFS.rare.length > 0) {
-        const rareBuffs = shuffle([...config.INFINITE_CHALLENGE_BUFFS.rare]);
-        const buffToAdd = rareBuffs.find(b => !buffs.includes(b));
-        if (buffToAdd) buffs.push(buffToAdd);
-    }
-
+    
     const needed = 3 - buffs.length;
-    if (needed > 0 && config.INFINITE_CHALLENGE_BUFFS.common.length > 0) {
-        const commonBuffs = shuffle([...config.INFINITE_CHALLENGE_BUFFS.common]);
-        buffs.push(...commonBuffs.slice(0, needed));
+    if (needed > 0 && rareBuffsPool.length > 0) {
+        const rareBuffs = shuffle([...rareBuffsPool]);
+        buffs.push(...rareBuffs.slice(0, needed));
     }
-
+    
     while (buffs.length < 3 && config.INFINITE_CHALLENGE_BUFFS.common.length > 0) {
         const commonBuffs = shuffle([...config.INFINITE_CHALLENGE_BUFFS.common]);
         const buffToAdd = commonBuffs.find(b => !buffs.includes(b));
@@ -246,26 +254,29 @@ export function showBuffSelectionModal() {
         const buff = card.dataset.buff;
 
         setTimeout(async () => {
-            updateState('activeBuff', buff);
-            
             dom.infiniteChallengeBuffModal.classList.add('hidden');
             dom.infiniteChallengeBuffCards.removeEventListener('click', buffClickHandler);
             dom.infiniteChallengeBuffCards.classList.remove('selection-made');
-
-
-            if (buff === 'auto_win') {
-                const { gameState, infiniteChallengeOpponentQueue } = getState();
-                infiniteChallengeOpponentQueue.shift();
-                gameState.infiniteChallengeLevel++;
-                updateLog(`Vitória Automática! Pulando oponente e avançando para o nível ${gameState.infiniteChallengeLevel}.`);
-                
-                if (infiniteChallengeOpponentQueue.length === 0) {
-                    document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
+            
+            if (gameState.isAltarDefense) {
+                updateState('activeAltarBuff', buff);
+                await startNewRound();
+            } else { // Infinite Challenge
+                updateState('activeBuff', buff);
+                if (buff === 'auto_win') {
+                    const { gameState, infiniteChallengeOpponentQueue } = getState();
+                    infiniteChallengeOpponentQueue.shift();
+                    gameState.infiniteChallengeLevel++;
+                    updateLog(`Vitória Automática! Pulando oponente e avançando para o nível ${gameState.infiniteChallengeLevel}.`);
+                    
+                    if (infiniteChallengeOpponentQueue.length === 0) {
+                        document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
+                    } else {
+                        showBuffSelectionModal();
+                    }
                 } else {
-                    showBuffSelectionModal();
+                    await startNextInfiniteChallengeDuel();
                 }
-            } else {
-                await startNextInfiniteChallengeDuel();
             }
         }, 2000);
     };
@@ -435,6 +446,72 @@ async function startInfiniteChallengeIntro() {
         }
     });
 }
+
+// --- Altar Defense Flow ---
+const typewriterAltar = (element, text, onComplete) => {
+    let { typewriterTimeout } = getState();
+    if (typewriterTimeout) clearTimeout(typewriterTimeout);
+    let i = 0;
+    element.innerHTML = '';
+    const speed = 30;
+
+    function type() {
+        if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+            typewriterTimeout = setTimeout(type, speed);
+            updateState('typewriterTimeout', typewriterTimeout);
+        } else {
+            if (onComplete) onComplete();
+        }
+    }
+    type();
+};
+
+const renderAltarNode = (nodeId) => {
+    const node = altarDialogue[nodeId];
+    if (!node) return;
+
+    if (node.isEndDialogue) {
+        dom.altarIntroModal.classList.add('hidden');
+        if (nodeId !== 'end_dialogue') {
+            dom.altarSetupModal.classList.remove('hidden');
+        } else {
+            showSplashScreen(); // Go back to menu if flow is fully cancelled
+        }
+        return;
+    }
+    
+    const textContentKey = typeof node.text === 'function' ? node.text() : node.text;
+    const textContent = t(textContentKey);
+    const optionsSource = typeof node.options === 'function' ? node.options() : node.options;
+
+    const onTypewriterComplete = () => {
+        dom.altarDialogueOptions.innerHTML = '';
+        if (node.isContinue) {
+            const button = document.createElement('button');
+            button.textContent = t('common.continue') + '...';
+            button.className = 'control-button';
+            button.onclick = () => renderAltarNode(node.next);
+            dom.altarDialogueOptions.appendChild(button);
+        } else if (optionsSource) {
+            optionsSource.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = t(option.text);
+                button.className = 'control-button';
+                button.onclick = () => renderAltarNode(option.next);
+                dom.altarDialogueOptions.appendChild(button);
+            });
+        }
+        dom.altarDialogueOptions.style.opacity = 1;
+    };
+    
+    dom.altarDialogueOptions.style.opacity = 0;
+    typewriterAltar(dom.altarDialogueText, textContent, onTypewriterComplete);
+};
+
+// --- End Altar Defense Flow ---
+
 
 export function initializeUiHandlers() {
     document.addEventListener('aiTurnEnded', advanceToNextPlayer);
@@ -629,6 +706,30 @@ export function initializeUiHandlers() {
         dom.storyContinueGameButton.disabled = !hasSave;
         dom.storyStartOptionsModal.classList.remove('hidden');
     });
+    
+    // --- Altar Defense Mode Button ---
+    dom.altarModeButton.addEventListener('click', () => {
+        const { isLoggedIn } = getState();
+        if (!isLoggedIn) {
+            alert(t('common.login_required', { feature: t('splash.altar_defense') }));
+            return;
+        }
+        sound.initializeMusic();
+        dom.splashScreenEl.classList.add('hidden');
+        dom.altarIntroModal.classList.remove('hidden');
+        sound.playStoryMusic('necroversofinal.ogg');
+        renderAltarNode('start');
+    });
+
+    dom.altarSoloButton.addEventListener('click', () => {
+        dom.altarSetupModal.classList.add('hidden');
+        initializeAltarDefenseGame({ mode: 'solo' });
+    });
+    
+    dom.altarSetupCloseButton.addEventListener('click', () => {
+        dom.altarSetupModal.classList.add('hidden');
+        showSplashScreen();
+    });
 
     dom.pvpModeButton.addEventListener('click', () => {
         const { userProfile } = getState();
@@ -739,6 +840,8 @@ export function initializeUiHandlers() {
                 network.emitGetRanking(1);
             } else if (tabId === 'ranking-infinite') {
                 network.emitGetInfiniteRanking(1);
+            } else if (tabId === 'ranking-altar') {
+                network.emitGetAltarRanking(1);
             }
         }
     
@@ -757,6 +860,14 @@ export function initializeUiHandlers() {
             const newPage = infiniteNextBtn ? currentPage + 1 : currentPage - 1;
             network.emitGetInfiniteRanking(newPage);
         }
+
+        const altarPrevBtn = e.target.closest('#altar-rank-prev-btn');
+        const altarNextBtn = e.target.closest('#altar-rank-next-btn');
+         if (altarPrevBtn || altarNextBtn) {
+            const currentPage = parseInt(document.getElementById('altar-ranking-pagination').querySelector('span')?.textContent.match(/(\d+)/)?.[0] || '1', 10);
+            const newPage = altarNextBtn ? currentPage + 1 : currentPage - 1;
+            network.emitGetAltarRanking(newPage);
+        }
     });
 
     if (dom.rankingContainer) {
@@ -773,6 +884,18 @@ export function initializeUiHandlers() {
 
     if (dom.infiniteRankingContainer) {
         dom.infiniteRankingContainer.addEventListener('click', (e) => {
+            const target = e.target.closest('.rank-name.clickable');
+            if (target) {
+                const googleId = target.dataset.googleId;
+                if (googleId) {
+                    network.emitViewProfile({ googleId });
+                }
+            }
+        });
+    }
+
+    if (dom.altarRankingContainer) {
+        dom.altarRankingContainer.addEventListener('click', (e) => {
             const target = e.target.closest('.rank-name.clickable');
             if (target) {
                 const googleId = target.dataset.googleId;

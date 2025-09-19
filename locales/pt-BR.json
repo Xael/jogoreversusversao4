@@ -1,5 +1,3 @@
-
-
 {
     "document": {
         "title": "Reversus - Jogo Online"
@@ -31,6 +29,7 @@
     "splash": {
         "quick_start": "Início Rápido",
         "story_mode": "Modo História",
+        "altar_defense": "PROTEÇÃO DO ALTAR",
         "infinite_challenge": "DESAFIO INFINITO",
         "continue": "CONTINUAR",
         "pvp_online": "PVP Online",
@@ -54,6 +53,9 @@
         "round_announcement": "Rodada {level}",
         "validating_entry": "Validando entrada e preparando o desafio...",
         "buff_selection_title": "Vitória! Escolha um bônus para a próxima rodada:"
+    },
+    "altar_defense": {
+        "buff_selection_title": "Onda Sobrevivida! Escolha um bônus:"
     },
     "buffs": {
         "resto_10_name": "Resto 10",
@@ -266,6 +268,16 @@
         "solo_4p": "1 vs 3",
         "duo": "2 vs 2"
     },
+    "altar_setup": {
+        "title": "Modo Proteção do Altar",
+        "description": "Como você deseja enfrentar o desafio?",
+        "solo": "Sozinho (1 vs 3)",
+        "duo": "Em Dupla (2 vs 2)"
+    },
+    "altar_push": {
+        "title": "Vitória na Rodada!",
+        "description": "Escolha um Necro-peão para empurrar para trás:"
+    },
     "one_v_one": {
         "title": "Modo 1 vs 1",
         "description": "Escolha seu oponente.",
@@ -290,7 +302,9 @@
         "infinite_challenge_title": "Fim do Desafio Infinito",
         "infinite_challenge_lose": "Você foi derrotado na rodada {level} após {time}.",
         "infinite_challenge_timeout": "O tempo acabou! Você alcançou a rodada {level} em 30:00.",
-        "infinite_challenge_win": "VITÓRIA ABSOLUTA! Você derrotou todos os oponentes em {time} e ganhou {pot} 🪙!"
+        "infinite_challenge_win": "VITÓRIA ABSOLUTA! Você derrotou todos os oponentes em {time} e ganhou {pot} 🪙!",
+        "altar_victory_message": "Você defendeu o Altar com sucesso! Recompensa: 20.000 CoinVersus e o título 'Defensor Final'!",
+        "altar_defeat_message": "Um Necro-peão alcançou o Altar! Você sobreviveu até a Onda {wave}, Rodada {round}."
     },
     "target": {
         "title_prefix": "Alvo para",
@@ -423,6 +437,7 @@
         "title": "🏆 Ranking 🏆",
         "pvp_tab": "PVP",
         "infinite_tab": "Desafio Infinito",
+        "altar_defense_tab": "Proteção do Altar",
         "loading": "Carregando ranking...",
         "error": "Não foi possível carregar o ranking.",
         "empty": "O ranking ainda está vazio. Seja o primeiro a vencer!",
@@ -431,7 +446,9 @@
         "header_victories": "Vitórias",
         "header_coinversus": "CoinVersus",
         "header_level": "Nível",
-        "header_time": "Tempo"
+        "header_time": "Tempo",
+        "header_wave": "Onda",
+        "header_round": "Rodada"
     },
     "profile": {
         "title": "Perfil do Jogador",
@@ -507,7 +524,8 @@
         "daily_login_toast": "Recompensa Diária! Você ganhou +{amount} CoinVersus.",
         "challenge_complete_toast": "Desafio Completo! Você ganhou +{amount} CoinVersus!",
         "challenge_complete_toast_with_title": "Desafio Completo! Você ganhou +{amount} CoinVersus e o título '{titleName}'!",
-        "infinite_challenge_toast": "Recompensa Infinita! Você ganhou +{amount} CoinVersus e o título '{titleName}'!"
+        "infinite_challenge_toast": "Recompensa Infinita! Você ganhou +{amount} CoinVersus e o título '{titleName}'!",
+        "altar_defense_toast": "Recompensa do Altar! Você ganhou +{amount} CoinVersus e o título '{titleName}'!"
     },
     "log": {
         "welcome": "Bem-vindo ao Reversus! Modo: {modeText}.",
@@ -552,6 +570,7 @@
         "creator": "Criador",
         "eternal_reversus": "Eternamente Reversus",
         "master_of_inversus": "Mestre do Inversus",
+        "final_defender": "Defensor Final",
         "event_jan": "O Visionário",
         "event_feb": "Unidor de Restos",
         "event_mar": "Abençoado pelo Resto",
@@ -774,6 +793,20 @@
         "endgame_dialogue_6": "Acho que é hora de você ir para casa, não é? Ou... se quiser, pode ficar... A escolha é sua.",
         "endgame_option_return": "Voltar para casa",
         "endgame_option_stay": "Ficar no Inversus"
+    },
+    "altar_dialogue": {
+        "start_text": "O Altar está sob ataque! Apenas os mais corajosos podem defendê-lo. Você tem o que é preciso?",
+        "start_option_1": "Eu defenderei o Altar!",
+        "ticket_ok_text": "Excelente! Seu bilhete de 100 CoinVersus foi aceito. A defesa do Altar é um desafio de resistência. Deseja que eu explique as regras?",
+        "ticket_ok_option_1": "Sim, por favor.",
+        "ticket_fail_text": "Você não tem CoinVersus suficientes (100) para entrar. Volte quando estiver mais preparado.",
+        "ticket_fail_option_1": "Entendido.",
+        "ask_rules_text": "A defesa do Altar é um desafio de resistência. Deseja que eu explique as regras?",
+        "rules_1_text": "Você enfrentará ondas de Necro-peões que avançam a cada rodada.",
+        "rules_2_text": "Seu objetivo é vencer a pontuação combinada deles. Se vencer, você empurra UM deles para trás. Se perder, todos eles avançam.",
+        "rules_3_text": "Se qualquer Necro-peão chegar à casa 10, o Altar cai e você perde. Sobreviva a todas as ondas para vencer!",
+        "rules_4_text": "Entre as ondas, você poderá escolher um bônus para te ajudar. Boa sorte, defensor!",
+        "mode_select_intro_text": "O desafio te aguarda. Como você irá lutar?"
     },
     "event_names": {
         "january": "Reversus Eclipse",

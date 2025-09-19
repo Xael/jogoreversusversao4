@@ -160,6 +160,66 @@ export function renderInfiniteRanking(rankingData) {
     pagination.innerHTML = paginationHTML;
 }
 
+export function renderAltarRanking(rankingData) {
+    const { players, currentPage, totalPages } = rankingData;
+    const container = dom.altarRankingContainer;
+    const pagination = document.getElementById('altar-ranking-pagination');
+
+    if (!players || !container || !pagination) return;
+
+    if (players.length === 0 && currentPage === 1) {
+        container.innerHTML = `<p>${t('ranking.empty')}</p>`;
+        pagination.innerHTML = '';
+        return;
+    }
+
+    const tableHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th>${t('ranking.header_rank')}</th>
+                    <th colspan="2">${t('ranking.header_player')}</th>
+                    <th>${t('ranking.header_wave')}</th>
+                    <th>${t('ranking.header_round')}</th>
+                    <th>${t('ranking.header_time')}</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${players.map((player, index) => {
+                    const rank = (currentPage - 1) * 10 + index + 1;
+                    const minutes = Math.floor(player.time_seconds / 60).toString().padStart(2, '0');
+                    const seconds = (player.time_seconds % 60).toString().padStart(2, '0');
+                    const timeFormatted = `${minutes}:${seconds}`;
+                    let titleText = player.selected_title_code ? t(`titles.${player.selected_title_code}`) : '';
+                    if (titleText.startsWith('titles.')) {
+                        titleText = player.selected_title_code;
+                    }
+                    return `
+                    <tr class="rank-${rank}">
+                        <td class="rank-position">${rank}</td>
+                        <td><img src="${player.avatar_url}" alt="Avatar" class="rank-avatar"></td>
+                        <td>
+                            <span class="rank-name clickable" data-google-id="${player.google_id}">${player.username}</span>
+                            <span class="rank-player-title">${titleText}</span>
+                        </td>
+                        <td>${player.highest_wave}</td>
+                        <td>${player.highest_round}</td>
+                        <td>${timeFormatted}</td>
+                    </tr>
+                `}).join('')}
+            </tbody>
+        </table>
+    `;
+    container.innerHTML = tableHTML;
+
+    const paginationHTML = `
+        <button id="altar-rank-prev-btn" ${currentPage === 1 ? 'disabled' : ''}>&lt;</button>
+        <span>Página ${currentPage} de ${totalPages}</span>
+        <button id="altar-rank-next-btn" ${currentPage >= totalPages ? 'disabled' : ''}>&gt;</button>
+    `;
+    pagination.innerHTML = paginationHTML;
+}
+
 export const updateLobbyUi = (roomData) => {
     const { clientId } = getState();
     const isHost = roomData.hostId === clientId;

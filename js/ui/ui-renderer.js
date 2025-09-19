@@ -89,6 +89,22 @@ function renderTurnTimer() {
     }
 }
 
+/**
+ * Renders the HUD for Altar Defense mode.
+ */
+function renderAltarHud() {
+    const { gameState } = getState();
+    if (!gameState || !gameState.isAltarDefense) {
+        dom.altarWaveInfo.classList.add('hidden');
+        return;
+    }
+
+    dom.altarWaveInfo.classList.remove('hidden');
+    dom.altarWaveInfo.innerHTML = `
+        <span>ONDA: ${gameState.wave}</span> | <span>RODADA: ${gameState.round} / ${gameState.targetRounds}</span>
+    `;
+}
+
 
 /**
  * Renders all dynamic UI components of the game.
@@ -121,6 +137,9 @@ export const renderAll = () => {
 
     // Render the turn timer for PvP
     renderTurnTimer();
+
+    // Render Altar Defense HUD if applicable
+    renderAltarHud();
     
     // Update Xael's Star Power button if in that challenge
     if (gameState.isStoryMode) {

@@ -2,7 +2,7 @@
 import { getState, updateState } from './state.js';
 import * as dom from './dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
-import { renderRoomList, renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
+import { renderRoomList, renderPvpRanking, renderInfiniteRanking, updateLobbyUi, renderAltarRanking } from '../ui/lobby-renderer.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
 import { showSplashScreen } from './splash-screen.js';
 import { updateLog } from './utils.js';
@@ -79,9 +79,12 @@ export function connectToServer() {
         showCoinRewardNotification(t('rewards.daily_login_toast', { amount }));
     });
     
-    socket.on('challengeRewardSuccess', ({ amount, titleCode }) => {
+    socket.on('challengeRewardSuccess', ({ amount, titleCode, challengeId }) => {
         let message;
-        if (titleCode) {
+
+        if (challengeId === 'altar_defense_win') {
+            message = t('rewards.altar_defense_toast', { amount, titleName: t(`titles.${titleCode}`) });
+        } else if (titleCode) {
             const titleName = t(`titles.${titleCode}`);
             if (titleCode === 'eternal_reversus') {
                 message = t('rewards.infinite_challenge_toast', { amount, titleName });
@@ -110,6 +113,10 @@ export function connectToServer() {
 
     socket.on('infiniteRankingData', (rankingData) => {
         renderInfiniteRanking(rankingData);
+    });
+    
+    socket.on('altarRankingData', (rankingData) => {
+        renderAltarRanking(rankingData);
     });
 
     socket.on('profileData', (profile) => {
@@ -450,6 +457,8 @@ export function connectToServer() {
 // --- EMITTERS ---
 export function emitGetRanking(page = 1) { const { socket } = getState(); if (socket) socket.emit('getRanking', { page }); }
 export function emitGetInfiniteRanking(page = 1) { const { socket } = getState(); if (socket) socket.emit('getInfiniteRanking', { page }); }
+export function emitGetAltarRanking(page = 1) { const { socket } = getState(); if (socket) socket.emit('getAltarRanking', { page }); }
+export function emitSubmitAltarResult(result) { const { socket } = getState(); if (socket) socket.emit('submitAltarResult', result); }
 export function emitGetInfiniteChallengePot(callback) { const { socket } = getState(); if (socket) socket.emit('getInfiniteChallengePot', callback); }
 export function emitStartInfiniteChallenge() { const { socket } = getState(); if (socket) socket.emit('startInfiniteChallenge'); }
 export function emitSubmitInfiniteResult(result) { const { socket } = getState(); if (socket) socket.emit('submitInfiniteResult', result); }

@@ -8,6 +8,7 @@ import { connectToServer } from './network.js';
 import { initI18n } from './i18n.js';
 import { updateState } from './state.js';
 import { scalableContainer } from './dom.js';
+import '../story/altar-dialogue.js';
 
 /**
  * Scales and centers the main application container to fit the window,
