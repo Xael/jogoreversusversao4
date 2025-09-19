@@ -3,7 +3,7 @@
 import * as config from './core/config.js';
 import * as dom from './core/dom.js';
 import { getState, updateState } from './core/state.js';
-import { renderAll, showGameOver } from './ui/ui-renderer.js';
+import { renderAll } from './ui/ui-renderer.js';
 import { showSplashScreen } from './ui/splash-screen.js';
 import { playStoryMusic, stopStoryMusic } from './core/sound.js';
 import { updateLog, shuffle } from './core/utils.js';
@@ -13,7 +13,6 @@ import { generateBoardPaths } from './game-logic/board.js';
 import { executeAiTurn } from './ai/ai-controller.js';
 import { createSpiralStarryBackground, resetGameEffects } from './ui/animations.js';
 import { t } from './core/i18n.js';
-import * as network from './core/network.js';
 
 
 /**
@@ -92,139 +91,11 @@ const showFullscreenAnnounce = async (text, imageSrc) => {
 };
 
 /**
- * Initializes a new Altar Defense game.
- * @param {object} options - Options for the game setup (e.g., mode: 'solo' or 'duo').
- */
-export const initializeAltarDefenseGame = async (options) => {
-    await playStoryMusic('altar.ogg');
-    
-    // UI Cleanup & Theme
-    document.body.classList.add('altar-defense-theme');
-    dom.splashScreenEl.classList.add('hidden');
-    dom.appContainerEl.classList.remove('blurred', 'hidden');
-    dom.debugButton.classList.remove('hidden');
-    resetGameEffects();
-
-    const { userProfile } = getState();
-    const player1Name = userProfile?.username || t('player_names.player-1');
-    
-    // Spend the ticket via a specific challenge reward event
-    network.emitClaimChallengeReward({ challengeId: 'altar_defense_ticket', amount: -100, titleCode: null });
-
-
-    // Create decks
-    const valueDeck = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
-    const effectDeck = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
-
-    // Create players and necro pawns
-    const players = {
-        'player-1': {
-            ...config.PLAYER_CONFIG['player-1'],
-            name: player1Name,
-            id: 'player-1',
-            position: 10, // Not used, conceptual position at Altar
-            pathId: -1, 
-            isHuman: true,
-             hand: [], resto: null, nextResto: null, effects: { score: null, movement: null },
-            playedCards: { value: [], effect: [] }, playedValueCardThisTurn: false, liveScore: 0,
-            coinversus: userProfile.coinversus - 100,
-        }
-    };
-    
-    const necroPawns = [];
-    let playerIdsInGame = ['player-1'];
-    let logMessage;
-
-    if (options.mode === 'duo') {
-        playerIdsInGame.push('player-3', 'player-2', 'player-4');
-        players['player-3'] = {
-            ...config.PLAYER_CONFIG['player-3'],
-            name: 'Versatrix', id: 'player-3', aiType: 'versatrix', isHuman: false, position: 10,
-            pathId: -1, hand: [], resto: null, nextResto: null, effects: { score: null, movement: null },
-            playedCards: { value: [], effect: [] }, playedValueCardThisTurn: false, liveScore: 0,
-        };
-        const necroPaths = shuffle([0, 1, 2, 3, 4, 5]).slice(0, 2);
-        for (let i = 0; i < 2; i++) {
-            const necroId = `necro-${i+1}`;
-            const playerId = `player-${i === 0 ? 2 : 4}`;
-            players[playerId] = {
-                ...config.PLAYER_CONFIG[playerId], name: `Necro-peão ${i + 1}`, id: playerId,
-                aiType: 'necroverso_final', isHuman: false, position: 10, pathId: -1,
-                hand: [], resto: null, nextResto: null, effects: { score: null, movement: null },
-                playedCards: { value: [], effect: [] }, playedValueCardThisTurn: false, liveScore: 0,
-                necroXUsedThisRound: false,
-            };
-            necroPawns.push({ id: necroId, position: 1, pathId: necroPaths[i] });
-        }
-        logMessage = "Você e Versatrix se unem para defender o Altar!";
-
-    } else { // Solo mode (1v3)
-        playerIdsInGame.push('player-2', 'player-3', 'player-4');
-        const necroPaths = shuffle([0, 1, 2, 3, 4, 5]).slice(0, 3);
-        for (let i = 0; i < 3; i++) {
-            const necroId = `necro-${i+1}`;
-            const playerId = `player-${i+2}`;
-            players[playerId] = {
-                ...config.PLAYER_CONFIG[playerId], name: `Necro-peão ${i + 1}`, id: playerId,
-                aiType: 'necroverso_final', isHuman: false, position: 10, pathId: -1,
-                hand: [], resto: null, nextResto: null, effects: { score: null, movement: null },
-                playedCards: { value: [], effect: [] }, playedValueCardThisTurn: false, liveScore: 0,
-                necroXUsedThisRound: false,
-            };
-            necroPawns.push({ id: necroId, position: 1, pathId: necroPaths[i] });
-        }
-        logMessage = "Sobreviva à primeira onda de 10 rodadas!";
-    }
-
-    const gameState = {
-        players,
-        playerIdsInGame,
-        necroPawns,
-        isAltarDefense: true,
-        wave: 1,
-        round: 1,
-        targetRounds: 10,
-        decks: { value: valueDeck, effect: effectDeck },
-        discardPiles: { value: [], effect: [] },
-        boardPaths: generateBoardPaths({ isAltarDefense: true }),
-        gamePhase: 'setup',
-        gameMode: options.mode === 'duo' ? 'altar-duo' : 'altar-solo',
-        currentPlayer: 'player-1',
-        log: [],
-        consecutivePasses: 0,
-        activeAltarBuff: null,
-        isPvp: false, gameOptions: options, isStoryMode: false, isInversusMode: false, isInfiniteChallenge: false,
-        isFinalBoss: false, isKingNecroBattle: false, isXaelChallenge: false, elapsedSeconds: 0,
-    };
-    
-    updateState('gameState', gameState);
-    updateState('gameStartTime', Date.now());
-    const timerInterval = setInterval(updateGameTimer, 1000);
-    updateState('gameTimerInterval', timerInterval);
-
-    // Setup UI containers
-    const player1Container = document.getElementById('player-1-area-container');
-    const opponentsContainer = document.getElementById('opponent-zones-container');
-    const createPlayerAreaHTML = (id) => `<div class="player-area" id="player-area-${id}"></div>`;
-    player1Container.innerHTML = createPlayerAreaHTML('player-1');
-    opponentsContainer.innerHTML = playerIdsInGame.filter(id => id !== 'player-1').map(id => createPlayerAreaHTML(id)).join('');
-    
-    updateLog('--- PROTEÇÃO DO ALTAR ---');
-    updateLog(logMessage);
-
-    renderAll();
-    
-    await initiateGameStartSequence();
-};
-
-
-/**
  * Initializes a new SINGLE PLAYER game with the specified mode and options.
  * The core game state creation is now handled by the server for PvP.
  */
 export const initializeGame = async (mode, options) => {
     const { isChatMuted, infiniteChallengeOpponentQueue } = getState();
-    document.body.classList.remove('altar-defense-theme');
     dom.chatInput.disabled = isChatMuted;
     dom.chatInput.placeholder = t(isChatMuted ? 'chat.chat_muted_message' : 'game.chat_placeholder');
 
@@ -351,7 +222,7 @@ export const initializeGame = async (mode, options) => {
     dom.debugButton.classList.remove('hidden');
 
     // Reset board classes
-    dom.boardEl.classList.remove('inverted', 'board-rotating', 'board-rotating-fast', 'board-rotating-super-fast', 'altar-defense'); 
+    dom.boardEl.classList.remove('inverted', 'board-rotating', 'board-rotating-fast', 'board-rotating-super-fast'); 
     
     dom.boardEl.classList.toggle('final-battle-board', isFinalBoss);
     dom.boardEl.classList.toggle('board-rotating', isFinalBoss); // Slow rotation for final bosses
@@ -458,7 +329,6 @@ export const initializeGame = async (mode, options) => {
         gamePhase: 'setup',
         gameMode: mode,
         isPvp: false, 
-        isAltarDefense: false, // Explicitly set to false for non-altar modes
         gameOptions: options,
         isStoryMode,
         isInversusMode,

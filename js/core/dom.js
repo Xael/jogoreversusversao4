@@ -141,22 +141,6 @@ export const dailyRewardToast = document.getElementById('daily-reward-toast');
 export const rewardToastText = document.getElementById('reward-toast-text');
 export const floatingHandOverlay = document.getElementById('floating-hand-overlay');
 export const floatingHandContainer = document.getElementById('floating-hand-container');
-export const altarModeButton = document.getElementById('altar-mode-button');
-export const altarWaveInfo = document.getElementById('altar-wave-info');
-export const altarIntroModal = document.getElementById('altar-intro-modal');
-export const altarDialogueScene = document.getElementById('altar-dialogue-scene');
-export const altarCharacterImage = document.getElementById('altar-character-image');
-export const altarDialogueBox = document.getElementById('altar-dialogue-box');
-export const altarDialogueText = document.getElementById('altar-dialogue-text');
-export const altarDialogueOptions = document.getElementById('altar-dialogue-options');
-export const altarSetupModal = document.getElementById('altar-setup-modal');
-export const altarSoloButton = document.getElementById('altar-solo-button');
-export const altarDuoButton = document.getElementById('altar-duo-button');
-export const altarSetupCloseButton = document.getElementById('altar-setup-close-button');
-export const altarPushModal = document.getElementById('altar-push-modal');
-export const altarPushButtons = document.getElementById('altar-push-buttons');
-export const altarRankingContainer = document.getElementById('altar-ranking-container');
-
 
 // Infinite Challenge Buff Modal
 export const infiniteChallengeBuffModal = document.getElementById('infinite-challenge-buff-modal');

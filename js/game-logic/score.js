@@ -12,11 +12,8 @@ export function updateLiveScoresAndWinningStatus() {
 
     // --- Part 1: Calculate live scores for all players ---
     const scores = {};
-    const playerIds = gameState.playerIdsInGame;
-
-    playerIds.forEach(id => {
+    gameState.playerIdsInGame.forEach(id => {
         const player = gameState.players[id];
-        if (!player) return;
         let score = player.playedCards.value.reduce((sum, card) => sum + card.value, 0);
 
         // Apply temporary effects for live scoring
@@ -38,7 +35,7 @@ export function updateLiveScoresAndWinningStatus() {
 
     // --- Part 2: Determine winning/losing status for each player ---
     const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
-    if (activePlayers.length > 1 && !gameState.isAltarDefense) {
+    if (activePlayers.length > 1) {
         const playerScores = activePlayers.map(id => scores[id]);
         const highestScore = Math.max(...playerScores);
         const lowestScore = Math.min(...playerScores);
@@ -127,39 +124,6 @@ function updateSideScoreBoxes(scores) {
                 ${teamBHeartsHTML}
             </div>
         `;
-
-    } else if (gameState.isAltarDefense) {
-        let playerScore, necroScore;
-        if (gameState.gameMode === 'altar-duo') {
-            const playerTeamIds = ['player-1', 'player-3'];
-            const necroTeamIds = ['player-2', 'player-4'];
-            playerScore = playerTeamIds.reduce((sum, id) => sum + (scores[id] || 0), 0);
-            necroScore = necroTeamIds.reduce((sum, id) => sum + (scores[id] || 0), 0);
-        } else { // solo
-            const necroPlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isHuman);
-            playerScore = scores['player-1'] || 0;
-            necroScore = necroPlayers.reduce((sum, id) => sum + (scores[id] || 0), 0);
-        }
-       
-        dom.leftScoreBox.classList.remove('hidden');
-        dom.leftScoreBox.className = 'side-score-box player-1-score';
-        dom.leftScoreValue.textContent = playerScore;
-
-        dom.rightScoreBox.classList.remove('hidden');
-        dom.rightScoreBox.className = 'side-score-box player-2-score'; // Necro team is red
-        dom.rightScoreValue.textContent = necroScore;
-
-        if (playerScore > necroScore) {
-            dom.leftScoreStatus.textContent = 'Ganhando';
-            dom.leftScoreStatus.classList.add('winning');
-            dom.rightScoreStatus.textContent = 'Perdendo';
-            dom.rightScoreStatus.classList.add('losing');
-        } else if (necroScore > playerScore) {
-            dom.rightScoreStatus.textContent = 'Ganhando';
-            dom.rightScoreStatus.classList.add('winning');
-            dom.leftScoreStatus.textContent = 'Perdendo';
-            dom.leftScoreStatus.classList.add('losing');
-        }
 
     } else { // Solo modes (1v1, 1v2, 1v3, etc.)
         // Always show and update the human player's score box (left)

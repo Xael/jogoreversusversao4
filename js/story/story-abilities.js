@@ -366,7 +366,7 @@ async function executeFieldEffect(player, effectName) {
  */
 export async function triggerFieldEffects() {
     const { gameState } = getState();
-    if (gameState.isPvp || gameState.isAltarDefense) return; // Server is authoritative in PvP, Altar has no field effects
+    if (gameState.isPvp) return; // Server is authoritative in PvP
     const originalCurrentPlayer = gameState.currentPlayer;
 
     for (const id of gameState.playerIdsInGame) {

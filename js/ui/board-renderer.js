@@ -10,8 +10,6 @@ export const renderBoard = () => {
     if (!gameState || !gameState.boardPaths) return;
     
     dom.boardEl.innerHTML = ''; // Clear previous board state
-    dom.boardEl.classList.toggle('altar-defense', gameState.isAltarDefense);
-
     const centerPawnsContainer = document.createElement('div');
     centerPawnsContainer.className = 'board-center-pawns';
 
@@ -53,7 +51,6 @@ export const renderBoard = () => {
     const pawnContainerParent = document.createElement('div');
     pawnContainerParent.className = 'board-pawns-overlay';
 
-    // Render Player Pawns
     gameState.playerIdsInGame.forEach(id => {
         const player = gameState.players[id];
         if (player.isEliminated) return;
@@ -65,40 +62,17 @@ export const renderBoard = () => {
 
         if (player.position >= config.WINNING_POSITION) {
             centerPawnsContainer.appendChild(pawnEl);
-        } else if (player.pathId !== -1 && player.position > 0) {
+        } else if (player.pathId !== -1) {
             const pathEl = dom.boardEl.children[player.pathId];
             if(pathEl){
                 const spaceEl = pathEl.children[player.position - 1];
+                // Append the pawn directly to the space element. CSS will handle layering.
                 if (spaceEl) {
                     spaceEl.appendChild(pawnEl);
                 }
             }
         }
     });
-
-    // Render Necro-Pawns for Altar Defense
-    if (gameState.isAltarDefense && gameState.necroPawns) {
-        gameState.necroPawns.forEach(necro => {
-            if (necro.position >= config.WINNING_POSITION) {
-                // This is a loss condition, handled elsewhere, but we can place the pawn in the center
-                const pawnEl = document.createElement('div');
-                pawnEl.className = 'pawn necro';
-                centerPawnsContainer.appendChild(pawnEl);
-            } else if (necro.pathId !== -1 && necro.position > 0) {
-                const pathEl = dom.boardEl.children[necro.pathId];
-                if (pathEl) {
-                    const spaceEl = pathEl.children[necro.position - 1];
-                    if (spaceEl) {
-                        const pawnEl = document.createElement('div');
-                        pawnEl.className = 'pawn necro';
-                        pawnEl.dataset.necroId = necro.id; // Add ID for targeting
-                        spaceEl.appendChild(pawnEl);
-                    }
-                }
-            }
-        });
-    }
-
 
     dom.boardEl.appendChild(centerPawnsContainer);
 };

@@ -1,4 +1,4 @@
-// js/game-logic/board.js
+
 
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
@@ -13,22 +13,6 @@ import { playSoundEffect, announceEffect } from '../core/sound.js';
  * @returns {Array<object>} An array of path objects.
  */
 export const generateBoardPaths = (options = {}) => {
-    // Altar Defense gets a special neutral board
-    if (options.isAltarDefense) {
-        const paths = [];
-        for (let i = 0; i < config.NUM_PATHS; i++) {
-            const spaces = Array.from({ length: config.BOARD_SIZE }, (_, j) => ({
-                id: j + 1,
-                color: 'white', // Base color, will be overridden by dark theme CSS
-                effectName: null,
-                isUsed: false,
-                hasHeart: false
-            }));
-            paths.push({ id: i, spaces });
-        }
-        return paths;
-    }
-
     const paths = [];
     const allPositiveEffects = Object.keys(config.POSITIVE_EFFECTS);
     const allNegativeEffects = Object.keys(config.NEGATIVE_EFFECTS);
