@@ -472,6 +472,9 @@ const renderAltarNode = (nodeId) => {
     const node = altarDialogue[nodeId];
     if (!node) return;
 
+    // FIX: Show the dialogue scene container.
+    dom.altarDialogueScene.classList.remove('hidden');
+
     if (node.isEndDialogue) {
         dom.altarIntroModal.classList.add('hidden');
         if (nodeId !== 'end_dialogue') {
