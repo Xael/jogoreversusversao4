@@ -12,7 +12,7 @@ export function updateLiveScoresAndWinningStatus() {
 
     // --- Part 1: Calculate live scores for all players ---
     const scores = {};
-    const playerIds = gameState.isAltarDefense ? ['player-1'] : gameState.playerIdsInGame;
+    const playerIds = gameState.playerIdsInGame;
 
     playerIds.forEach(id => {
         const player = gameState.players[id];
@@ -129,23 +129,32 @@ function updateSideScoreBoxes(scores) {
         `;
 
     } else if (gameState.isAltarDefense) {
-        const necroPlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isHuman);
-        const necroScore = necroPlayers.reduce((sum, id) => sum + (scores[id] || 0), 0);
-
+        let playerScore, necroScore;
+        if (gameState.gameMode === 'altar-duo') {
+            const playerTeamIds = ['player-1', 'player-3'];
+            const necroTeamIds = ['player-2', 'player-4'];
+            playerScore = playerTeamIds.reduce((sum, id) => sum + (scores[id] || 0), 0);
+            necroScore = necroTeamIds.reduce((sum, id) => sum + (scores[id] || 0), 0);
+        } else { // solo
+            const necroPlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isHuman);
+            playerScore = scores['player-1'] || 0;
+            necroScore = necroPlayers.reduce((sum, id) => sum + (scores[id] || 0), 0);
+        }
+       
         dom.leftScoreBox.classList.remove('hidden');
         dom.leftScoreBox.className = 'side-score-box player-1-score';
-        dom.leftScoreValue.textContent = scores['player-1'] || 0;
+        dom.leftScoreValue.textContent = playerScore;
 
         dom.rightScoreBox.classList.remove('hidden');
         dom.rightScoreBox.className = 'side-score-box player-2-score'; // Necro team is red
         dom.rightScoreValue.textContent = necroScore;
 
-        if ((scores['player-1'] || 0) > necroScore) {
+        if (playerScore > necroScore) {
             dom.leftScoreStatus.textContent = 'Ganhando';
             dom.leftScoreStatus.classList.add('winning');
             dom.rightScoreStatus.textContent = 'Perdendo';
             dom.rightScoreStatus.classList.add('losing');
-        } else if (necroScore > (scores['player-1'] || 0)) {
+        } else if (necroScore > playerScore) {
             dom.rightScoreStatus.textContent = 'Ganhando';
             dom.rightScoreStatus.classList.add('winning');
             dom.leftScoreStatus.textContent = 'Perdendo';

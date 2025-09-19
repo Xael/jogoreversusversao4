@@ -19,6 +19,7 @@ export const showSplashScreen = () => {
     updateState('currentRoomId', null);
 
     // Reset all visual effects
+    document.body.classList.remove('altar-defense-theme');
     resetGameEffects();
 
     // Play menu music

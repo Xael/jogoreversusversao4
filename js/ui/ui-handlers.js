@@ -688,7 +688,7 @@ export function initializeUiHandlers() {
         if (!button) return;
 
         const mode = button.dataset.mode;
-        network.emitJoinMatchmaking(mode);
+        network.emitJoinMatchmaking({ mode });
         dom.pvpMatchmakingModal.classList.add('hidden');
         dom.matchmakingStatusModal.classList.remove('hidden');
         dom.matchmakingStatusText.textContent = t('matchmaking.searching_text');
@@ -727,6 +727,11 @@ export function initializeUiHandlers() {
     dom.altarSoloButton.addEventListener('click', () => {
         dom.altarSetupModal.classList.add('hidden');
         initializeAltarDefenseGame({ mode: 'solo' });
+    });
+
+    dom.altarDuoButton.addEventListener('click', () => {
+        dom.altarSetupModal.classList.add('hidden');
+        initializeAltarDefenseGame({ mode: 'duo' });
     });
     
     dom.altarSetupCloseButton.addEventListener('click', () => {
@@ -1353,8 +1358,11 @@ export function initializeUiHandlers() {
     
     dom.saveGameYesButton.addEventListener('click', saveLoad.saveGameState);
     dom.saveGameNoButton.addEventListener('click', () => dom.saveGameConfirmModal.classList.add('hidden'));
+    
     dom.exitGameYesButton.addEventListener('click', () => {
         dom.exitGameConfirmModal.classList.add('hidden');
+        // Ensure dark theme is removed when exiting mid-game
+        document.body.classList.remove('altar-defense-theme');
         const { gameState } = getState();
         if (gameState && gameState.isPvp) {
             network.emitLeaveRoom();
@@ -1362,6 +1370,7 @@ export function initializeUiHandlers() {
             showSplashScreen();
         }
     });
+    
     dom.exitGameNoButton.addEventListener('click', () => dom.exitGameConfirmModal.classList.add('hidden'));
     
     document.addEventListener('startStoryGame', (e) => initializeGame(e.detail.mode, e.detail.options));

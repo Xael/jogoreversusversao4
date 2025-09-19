@@ -204,15 +204,24 @@ async function finalizeGameStart() {
 export async function advanceToNextPlayer() {
     const { gameState } = getState();
     if (gameState.gamePhase !== 'playing') return;
-
-    const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
     
-    // Altar Defense: The AI "players" don't take turns, so after the human passes, the round ends.
     if (gameState.isAltarDefense) {
+        if (gameState.gameMode === 'altar-duo' && gameState.currentPlayer === 'player-1') {
+            // It's the human's turn in duo, advance to the AI ally
+            const allyId = gameState.playerIdsInGame.find(id => id !== 'player-1' && !gameState.players[id].name.includes('Necroverso'));
+            gameState.currentPlayer = allyId;
+            const nextPlayer = gameState.players[gameState.currentPlayer];
+            updateLog(`É a vez de ${nextPlayer.name}.`);
+            renderAll();
+            executeAiTurn(nextPlayer);
+            return;
+        }
+        // If it's solo mode, OR it's the AI ally's turn in duo mode, the round ends.
         await endRound();
         return;
     }
-    
+
+    const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
     const endRoundPassCount = activePlayers.length * 2;
 
     if (activePlayers.length > 0 && gameState.consecutivePasses >= endRoundPassCount) {
@@ -708,13 +717,20 @@ async function calculateScoresAndEndRound() {
  */
 async function handleAltarDefenseRoundEnd() {
     const { gameState } = getState();
-    const player = gameState.players['player-1'];
-    const necroAIs = gameState.playerIdsInGame.filter(id => !gameState.players[id].isHuman);
     
-    // 1. Calculate scores
-    const playerScore = player.liveScore;
-    const necroScore = necroAIs.reduce((sum, id) => sum + gameState.players[id].liveScore, 0);
-
+    let playerScore, necroScore;
+    if (gameState.gameMode === 'altar-duo') {
+        const playerTeamIds = ['player-1', 'player-3'];
+        const necroTeamIds = ['player-2', 'player-4'];
+        playerScore = playerTeamIds.reduce((sum, id) => sum + (gameState.players[id]?.liveScore || 0), 0);
+        necroScore = necroTeamIds.reduce((sum, id) => sum + (gameState.players[id]?.liveScore || 0), 0);
+    } else { // solo
+        const player = gameState.players['player-1'];
+        const necroAIs = gameState.playerIdsInGame.filter(id => !gameState.players[id].isHuman);
+        playerScore = player.liveScore;
+        necroScore = necroAIs.reduce((sum, id) => sum + gameState.players[id].liveScore, 0);
+    }
+    
     // 2. Determine round winner and apply pushback
     if (playerScore > necroScore) {
         updateLog(`Você venceu a rodada (${playerScore} vs ${necroScore})! Escolha um Necro-peão para empurrar.`);

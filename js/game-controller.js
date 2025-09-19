@@ -98,7 +98,8 @@ const showFullscreenAnnounce = async (text, imageSrc) => {
 export const initializeAltarDefenseGame = async (options) => {
     await playStoryMusic('altar.ogg');
     
-    // UI Cleanup
+    // UI Cleanup & Theme
+    document.body.classList.add('altar-defense-theme');
     dom.splashScreenEl.classList.add('hidden');
     dom.appContainerEl.classList.remove('blurred', 'hidden');
     dom.debugButton.classList.remove('hidden');
@@ -121,8 +122,8 @@ export const initializeAltarDefenseGame = async (options) => {
             ...config.PLAYER_CONFIG['player-1'],
             name: player1Name,
             id: 'player-1',
-            position: 10, // Start at the altar
-            pathId: -1, // No path initially
+            position: 10, // Not used, conceptual position at Altar
+            pathId: -1, 
             isHuman: true,
              hand: [], resto: null, nextResto: null, effects: { score: null, movement: null },
             playedCards: { value: [], effect: [] }, playedValueCardThisTurn: false, liveScore: 0,
@@ -132,31 +133,47 @@ export const initializeAltarDefenseGame = async (options) => {
     
     const necroPawns = [];
     let playerIdsInGame = ['player-1'];
+    let logMessage;
 
-    // Setup for Solo mode (1v3)
-    const necroPaths = shuffle([0, 1, 2, 3, 4, 5]).slice(0, 3);
-    for (let i = 0; i < 3; i++) {
-        const necroId = `necro-${i+1}`;
-        const playerId = `player-${i+2}`;
-        playerIdsInGame.push(playerId);
-
-        players[playerId] = {
-            ...config.PLAYER_CONFIG[playerId],
-            name: `Necroverso ${i + 1}`,
-            id: playerId,
-            aiType: 'necroverso_final',
-            isHuman: false,
-            position: 10, // They don't use the board, their score is just calculated
-            pathId: -1,
-            hand: [], resto: null, nextResto: null, effects: { score: null, movement: null },
+    if (options.mode === 'duo') {
+        playerIdsInGame.push('player-3', 'player-2', 'player-4');
+        players['player-3'] = {
+            ...config.PLAYER_CONFIG['player-3'],
+            name: 'Versatrix', id: 'player-3', aiType: 'versatrix', isHuman: false, position: 10,
+            pathId: -1, hand: [], resto: null, nextResto: null, effects: { score: null, movement: null },
             playedCards: { value: [], effect: [] }, playedValueCardThisTurn: false, liveScore: 0,
         };
+        const necroPaths = shuffle([0, 1, 2, 3, 4, 5]).slice(0, 2);
+        for (let i = 0; i < 2; i++) {
+            const necroId = `necro-${i+1}`;
+            const playerId = `player-${i === 0 ? 2 : 4}`;
+            players[playerId] = {
+                ...config.PLAYER_CONFIG[playerId], name: `Necro-peão ${i + 1}`, id: playerId,
+                aiType: 'necroverso_final', isHuman: false, position: 10, pathId: -1,
+                hand: [], resto: null, nextResto: null, effects: { score: null, movement: null },
+                playedCards: { value: [], effect: [] }, playedValueCardThisTurn: false, liveScore: 0,
+                necroXUsedThisRound: false,
+            };
+            necroPawns.push({ id: necroId, position: 1, pathId: necroPaths[i] });
+        }
+        logMessage = "Você e Versatrix se unem para defender o Altar!";
 
-        necroPawns.push({
-            id: necroId,
-            position: 5, // Start in the middle of the board
-            pathId: necroPaths[i],
-        });
+    } else { // Solo mode (1v3)
+        playerIdsInGame.push('player-2', 'player-3', 'player-4');
+        const necroPaths = shuffle([0, 1, 2, 3, 4, 5]).slice(0, 3);
+        for (let i = 0; i < 3; i++) {
+            const necroId = `necro-${i+1}`;
+            const playerId = `player-${i+2}`;
+            players[playerId] = {
+                ...config.PLAYER_CONFIG[playerId], name: `Necro-peão ${i + 1}`, id: playerId,
+                aiType: 'necroverso_final', isHuman: false, position: 10, pathId: -1,
+                hand: [], resto: null, nextResto: null, effects: { score: null, movement: null },
+                playedCards: { value: [], effect: [] }, playedValueCardThisTurn: false, liveScore: 0,
+                necroXUsedThisRound: false,
+            };
+            necroPawns.push({ id: necroId, position: 1, pathId: necroPaths[i] });
+        }
+        logMessage = "Sobreviva à primeira onda de 10 rodadas!";
     }
 
     const gameState = {
@@ -169,14 +186,13 @@ export const initializeAltarDefenseGame = async (options) => {
         targetRounds: 10,
         decks: { value: valueDeck, effect: effectDeck },
         discardPiles: { value: [], effect: [] },
-        boardPaths: generateBoardPaths(), // Normal board, no special effects needed for now
+        boardPaths: generateBoardPaths({ isAltarDefense: true }),
         gamePhase: 'setup',
-        gameMode: 'altar-solo',
+        gameMode: options.mode === 'duo' ? 'altar-duo' : 'altar-solo',
         currentPlayer: 'player-1',
         log: [],
         consecutivePasses: 0,
         activeAltarBuff: null,
-        // Altar mode doesn't need these
         isPvp: false, gameOptions: options, isStoryMode: false, isInversusMode: false, isInfiniteChallenge: false,
         isFinalBoss: false, isKingNecroBattle: false, isXaelChallenge: false, elapsedSeconds: 0,
     };
@@ -194,12 +210,11 @@ export const initializeAltarDefenseGame = async (options) => {
     opponentsContainer.innerHTML = playerIdsInGame.filter(id => id !== 'player-1').map(id => createPlayerAreaHTML(id)).join('');
     
     updateLog('--- PROTEÇÃO DO ALTAR ---');
-    updateLog(`Sobreviva à primeira onda de 10 rodadas!`);
+    updateLog(logMessage);
 
     renderAll();
     
-    // Start the game by starting the first round
-    await startNewRound(true);
+    await initiateGameStartSequence();
 };
 
 
@@ -209,6 +224,7 @@ export const initializeAltarDefenseGame = async (options) => {
  */
 export const initializeGame = async (mode, options) => {
     const { isChatMuted, infiniteChallengeOpponentQueue } = getState();
+    document.body.classList.remove('altar-defense-theme');
     dom.chatInput.disabled = isChatMuted;
     dom.chatInput.placeholder = t(isChatMuted ? 'chat.chat_muted_message' : 'game.chat_placeholder');
 

@@ -3992,3 +3992,33 @@ body.screen-shaking {
     font-size: 0.9rem;
     line-height: 1.4;
 }
+
+/* --- Altar Defense Dark Theme --- */
+.altar-defense-theme {
+    background-color: #020405;
+    background-image: 
+        radial-gradient(circle at 15% 20%, hsla(356, 78%, 56%, 0.1) 0%, transparent 30%),
+        radial-gradient(circle at 85% 80%, hsla(250, 78%, 56%, 0.1) 0%, transparent 30%);
+}
+
+.altar-defense-theme .left-panel, 
+.altar-defense-theme .right-panel, 
+.altar-defense-theme .center-panel-header,
+.altar-defense-theme .actions-container,
+.altar-defense-theme #player-1-area-container {
+    background: rgba(10, 15, 20, 0.7);
+    border-color: rgba(100, 100, 120, 0.3);
+}
+
+.altar-defense-theme .game-board {
+    background-color: #1a1a1a;
+}
+
+.altar-defense-theme .board-space {
+    background-color: #282828 !important; /* Override all colors */
+    border-color: #444 !important;
+}
+
+.altar-defense-theme .space-number {
+    color: #666 !important;
+}

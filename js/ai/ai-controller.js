@@ -218,13 +218,21 @@ export async function executeAiTurn(player) {
                     }
                 }
             }
-        } else if (player.aiType === 'versatrix' && gameState.currentStoryBattle === 'necroverso_final') {
-             // ALLY LOGIC
+        } else if (player.aiType === 'versatrix' && (gameState.currentStoryBattle === 'necroverso_final' || gameState.isAltarDefense)) {
+            // ALLY LOGIC for Story or Altar
             const player1 = gameState.players['player-1'];
-            const necroTeamIds = ['player-2', 'player-3'];
-            const opponents = necroTeamIds.map(id => gameState.players[id]).filter(p => p && !p.isEliminated);
-            const leader = opponents.length > 0 ? [...opponents].sort((a,b) => b.liveScore - a.liveScore)[0] : null;
+            const opponents = gameState.playerIdsInGame.filter(id => !gameState.players[id].isHuman && id !== player.id);
+            const necroPawns = gameState.necroPawns || [];
 
+            let leader;
+            if (gameState.isAltarDefense) {
+                const leadingPawn = [...necroPawns].sort((a,b) => b.position - a.position)[0];
+                const leadingPawnOwnerId = opponents.find(id => gameState.players[id].pathId === leadingPawn.pathId) || opponents[0];
+                leader = gameState.players[leadingPawnOwnerId];
+            } else {
+                 leader = opponents.length > 0 ? opponents.map(id => gameState.players[id]).sort((a,b) => b.liveScore - a.liveScore)[0] : null;
+            }
+           
             for (const card of effectCards) {
                 // Help player 1
                 if (['Mais', 'Sobe'].includes(card.name) && player1.effects.score !== 'Mais' && 50 > bestMove.score) {
