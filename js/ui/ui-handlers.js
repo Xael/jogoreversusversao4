@@ -567,7 +567,15 @@ export function initializeUiHandlers() {
     dom.endTurnButton.addEventListener('click', handleEndTurnButtonClick);
     dom.cardViewerCloseButton.addEventListener('click', () => dom.cardViewerModalEl.classList.add('hidden'));
     
-    // The loginButton event listener is removed as it's handled by the Google button itself.
+    dom.loginButton.addEventListener('click', () => {
+        sound.initializeMusic();
+        if (typeof google !== 'undefined' && google.accounts) {
+            google.accounts.id.prompt();
+        } else {
+            console.error("Google Auth not ready.");
+            alert("Serviço de login não está pronto. Tente novamente em um momento.");
+        }
+    });
 
     dom.quickStartButton.addEventListener('click', () => {
         sound.initializeMusic();

@@ -220,6 +220,7 @@ export const privateChatPanel = document.getElementById('private-chat-panel');
 
 // PVP / Auth
 export const rankingButton = document.getElementById('ranking-button');
+export const loginButton = document.getElementById('login-button');
 export const profileModal = document.getElementById('profile-modal');
 export const closeProfileButton = document.getElementById('close-profile-button');
 export const profileDataContainer = document.getElementById('profile-data-container');
