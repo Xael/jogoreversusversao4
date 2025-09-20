@@ -35,9 +35,28 @@ export function initializeGoogleSignIn() {
                 callback: handleCredentialResponse
             });
             
+            const googleButtonContainer = document.getElementById('google-login-button-container');
+
+            if (googleButtonContainer) {
+                google.accounts.id.renderButton(
+                    googleButtonContainer,
+                    { 
+                        theme: "outline", 
+                        size: "large",
+                        type: "standard",
+                        text: "signin_with",
+                        shape: "rectangular",
+                        logo_alignment: "left",
+                        width: "308" // Fits inside the 350px max-width container
+                    }
+                );
+            }
+
             // Explicitly check login state to set visibility of login button vs profile display
             const { isLoggedIn } = getState();
-            dom.loginButton.classList.toggle('hidden', isLoggedIn);
+            if (googleButtonContainer) {
+                googleButtonContainer.style.display = isLoggedIn ? 'none' : 'flex';
+            }
             dom.userProfileDisplay.classList.toggle('hidden', !isLoggedIn);
 
         } else {
@@ -47,9 +66,9 @@ export function initializeGoogleSignIn() {
                 setTimeout(init, 100);
             } else {
                 console.error("Google Sign-In library failed to load in time. Login will not be available.");
-                if (dom.loginButton) {
-                    dom.loginButton.textContent = 'Erro de Login';
-                    dom.loginButton.disabled = true;
+                const googleButtonContainer = document.getElementById('google-login-button-container');
+                if (googleButtonContainer) {
+                    googleButtonContainer.textContent = 'Erro de Login';
                 }
             }
         }

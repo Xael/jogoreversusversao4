@@ -1816,6 +1816,14 @@ body.screen-shaking {
     max-width: 350px;
 }
 
+#google-login-button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
 #infinite-challenge-button {
     display: flex;
     flex-direction: column;
@@ -3961,4 +3969,50 @@ body.screen-shaking {
 .buff-card-back p {
     font-size: 0.9rem;
     line-height: 1.4;
+}
+
+/* --- SPLASH SCREEN RESPONSIVENESS --- */
+#splash-screen {
+    /* These styles apply by default (mobile-first) */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    background-color: var(--bg-main); /* Ensure it has a background */
+}
+
+#splash-screen .splash-logo {
+    width: 70%;
+    max-width: 300px; /* Limit size on larger portrait screens */
+    height: auto;
+    margin-bottom: 1.5rem;
+}
+
+#splash-screen .splash-button-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 1.5rem;
+}
+
+/* Styles for landscape mode on smaller devices */
+@media (orientation: landscape) and (max-height: 600px) {
+    #splash-screen .splash-content {
+        flex-direction: row;
+        gap: 2rem;
+        width: 100%;
+        max-width: 900px;
+        align-items: center;
+    }
+
+    #splash-screen .splash-logo {
+        flex: 1 1 40%;
+        max-width: 250px;
+        margin-bottom: 0;
+    }
+
+    #splash-screen .splash-button-container {
+        flex: 1 1 50%;
+        padding: 1rem;
+    }
 }
