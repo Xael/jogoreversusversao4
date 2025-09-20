@@ -3971,48 +3971,53 @@ body.screen-shaking {
     line-height: 1.4;
 }
 
-/* --- SPLASH SCREEN RESPONSIVENESS --- */
-#splash-screen {
-    /* These styles apply by default (mobile-first) */
+/* --- RESPONSIVIDADE APENAS PARA A SPLASH SCREEN --- */
+@media (max-width: 768px) {
+  #splash-screen .modal-content.splash-content {
+    width: 90vw;
+    max-width: 600px;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    padding: 1rem;
-    background-color: var(--bg-main); /* Ensure it has a background */
-}
-
-#splash-screen .splash-logo {
-    width: 70%;
-    max-width: 300px; /* Limit size on larger portrait screens */
+    justify-content: center;
+    transform: none !important;
     height: auto;
-    margin-bottom: 1.5rem;
-}
+    overflow-y: auto;
+  }
 
-#splash-screen .splash-button-container {
+  #splash-screen .splash-logo {
+    max-width: 70%;
+    height: auto;
+  }
+
+  #splash-screen .splash-button-container .button-group.vertical {
     width: 100%;
-    max-width: 400px;
-    padding: 1.5rem;
+  }
+
+  #splash-screen .control-button {
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    width: 100%;
+  }
+
+  #splash-screen .language-switcher {
+    position: static;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1rem;
+  }
 }
 
-/* Styles for landscape mode on smaller devices */
-@media (orientation: landscape) and (max-height: 600px) {
-    #splash-screen .splash-content {
-        flex-direction: row;
-        gap: 2rem;
-        width: 100%;
-        max-width: 900px;
-        align-items: center;
-    }
-
-    #splash-screen .splash-logo {
-        flex: 1 1 40%;
-        max-width: 250px;
-        margin-bottom: 0;
-    }
-
-    #splash-screen .splash-button-container {
-        flex: 1 1 50%;
-        padding: 1rem;
-    }
+@media (orientation: landscape) and (max-height: 500px) {
+  #splash-screen .modal-content.splash-content {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  #splash-screen .splash-logo {
+    max-width: 40%;
+  }
 }
