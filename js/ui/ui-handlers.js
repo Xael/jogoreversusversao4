@@ -22,6 +22,8 @@ import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMe
 import { openChatWindow, initializeChatHandlers } from './chat-handler.js';
 import { renderShopAvatars } from './shop-renderer.js';
 import { renderCard } from './card-renderer.js';
+import { renderTournamentView } from './torneio-renderer.js';
+
 
 let currentEventData = null;
 let infiniteChallengeIntroHandler = null;
@@ -739,6 +741,8 @@ export function initializeUiHandlers() {
                 network.emitGetRanking(1);
             } else if (tabId === 'ranking-infinite') {
                 network.emitGetInfiniteRanking(1);
+            } else if (tabId === 'ranking-tournament') {
+                network.emitGetTournamentRanking({ page: 1 });
             }
         }
     
@@ -757,6 +761,14 @@ export function initializeUiHandlers() {
             const newPage = infiniteNextBtn ? currentPage + 1 : currentPage - 1;
             network.emitGetInfiniteRanking(newPage);
         }
+
+        const tournamentPrevBtn = e.target.closest('#tournament-rank-prev-btn');
+        const tournamentNextBtn = e.target.closest('#tournament-rank-next-btn');
+        if (tournamentPrevBtn || tournamentNextBtn) {
+            const currentPage = parseInt(dom.tournamentRankingPagination.querySelector('span')?.textContent.match(/(\d+)/)?.[0] || '1', 10);
+            const newPage = tournamentNextBtn ? currentPage + 1 : currentPage - 1;
+            network.emitGetTournamentRanking({ page: newPage });
+        }
     });
 
     if (dom.rankingContainer) {
@@ -773,6 +785,18 @@ export function initializeUiHandlers() {
 
     if (dom.infiniteRankingContainer) {
         dom.infiniteRankingContainer.addEventListener('click', (e) => {
+            const target = e.target.closest('.rank-name.clickable');
+            if (target) {
+                const googleId = target.dataset.googleId;
+                if (googleId) {
+                    network.emitViewProfile({ googleId });
+                }
+            }
+        });
+    }
+
+    if(dom.tournamentRankingContainer) {
+        dom.tournamentRankingContainer.addEventListener('click', (e) => {
             const target = e.target.closest('.rank-name.clickable');
             if (target) {
                 const googleId = target.dataset.googleId;
@@ -1794,4 +1818,30 @@ export function initializeUiHandlers() {
             }
         });
     }
+
+     // --- TOURNAMENT HANDLERS ---
+    dom.tournamentButton.addEventListener('click', () => {
+        if (!getState().isLoggedIn) {
+            alert(t('common.login_required', { feature: t('splash.tournament') }));
+            return;
+        }
+        renderTournamentView({ status: 'hub' });
+    });
+
+    dom.tournamentPlayOnlineButton.addEventListener('click', () => {
+        network.emitJoinTournamentQueue({ type: 'online' });
+    });
+
+    dom.tournamentPlayOfflineButton.addEventListener('click', () => {
+        network.emitJoinTournamentQueue({ type: 'offline' });
+    });
+
+    dom.tournamentCancelQueueButton.addEventListener('click', () => {
+        network.emitCancelTournamentQueue();
+        renderTournamentView({ status: 'hub' }); // Go back to hub
+    });
+
+    dom.tournamentCloseButton.addEventListener('click', () => {
+        dom.tournamentModal.classList.add('hidden');
+    });
 }

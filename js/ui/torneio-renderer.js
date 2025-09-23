@@ -1,3 +1,4 @@
+
 // js/ui/torneio-renderer.js
 import * as dom from '../core/dom.js';
 import { t } from '../core/i18n.js';
@@ -60,11 +61,11 @@ function renderChampionView(state) {
         dom.tournamentChampionText.innerHTML = `
             <h2>${t('tournament.champion_title')}</h2>
             <p class="champion-name">🏆 ${champion.username} 🏆</p>
-            <p class="prize-info">${t('tournament.prize_champion', { amount: 560 })}</p>
+            <p class="prize-info">${t('tournament.prize_champion')}</p>
             <br>
             <h3>${t('tournament.runner_up_title')}</h3>
             <p class="runner-up-name">🥈 ${runnerUp.username} 🥈</p>
-            <p class="prize-info">${t('tournament.prize_runner_up', { amount: 240 })}</p>
+            <p class="prize-info">${t('tournament.prize_runner_up')}</p>
         `;
     }
 }
@@ -196,22 +197,22 @@ export function renderTournamentRankingTable(rankingData) {
 
 export function renderTournamentMatchScore(score) {
     if (!dom.centerPanelHeader) return;
+    
+    // Remove existing score container to prevent duplicates
+    clearTournamentMatchScore();
 
-    let container = dom.tournamentMatchScoreContainer;
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'tournament-match-score-container';
-        dom.centerPanelHeader.appendChild(container);
-    }
+    const container = document.createElement('div');
+    container.id = 'tournament-match-score-container'; // Use a consistent ID
     
     container.innerHTML = `
         <span class="tournament-match-score">${t('tournament.best_of_3_score')}: ${score[0]} - ${score[1]}</span>
     `;
+    dom.centerPanelHeader.appendChild(container);
 }
 
 export function clearTournamentMatchScore() {
-    if (dom.tournamentMatchScoreContainer) {
-        dom.tournamentMatchScoreContainer.remove();
-        dom.tournamentMatchScoreContainer = null;
+    const existingContainer = document.getElementById('tournament-match-score-container');
+    if (existingContainer) {
+        existingContainer.remove();
     }
 }

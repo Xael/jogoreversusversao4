@@ -1,7 +1,7 @@
 
 {
     "document": {
-        "title": "Reversus - 4 Players"
+        "title": "Reversus - Online Game"
     },
     "card": {
         "Mais": "More",
@@ -28,19 +28,19 @@
         "xael_power_title": "Xael's Star Power (Reveal Hands)"
     },
     "splash": {
-        "quick_start": "Quick Start",
-        "story_mode": "Story Mode",
+        "quick_start": "QUICK MATCH",
+        "story_mode": "INVERSUS STORY",
         "infinite_challenge": "INFINITE CHALLENGE",
         "continue": "CONTINUE",
-        "pvp_online": "PVP Online",
-        "shop": "Shop",
-        "event": "Event",
-        "ranking": "Ranking",
-        "profile": "Profile",
-        "achievements": "Achievements",
-        "friends": "Friends",
+        "pvp_online": "PVP ONLINE",
+        "shop": "SHOP",
+        "event": "MONTHLY EVENT",
+        "ranking": "WORLD RANKING",
+        "profile": "PROFILE",
+        "achievements": "ACHIEVEMENTS",
+        "friends": "FRIENDS",
         "inversus": "INVERSUS",
-        "version": "Version 4.0",
+        "version": "VERSION 4.0",
         "login": "LOGIN",
         "tournament": "TOURNAMENT"
     },

@@ -14,6 +14,8 @@ import { showCoinRewardNotification } from '../ui/toast-renderer.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
 import * as sound from './sound.js';
 import { renderShopAvatars, updateCoinVersusDisplay } from '../ui/shop-renderer.js';
+import { renderTournamentView, renderTournamentRankingTable, renderTournamentMatchScore, clearTournamentMatchScore } from '../ui/torneio-renderer.js';
+
 
 /**
  * Sets up the player areas in the UI so the local player is always at the bottom.
@@ -69,6 +71,8 @@ export function connectToServer() {
         dom.eventButton.classList.remove('hidden');
         dom.pvpModeButton.classList.remove('hidden');
         dom.infiniteChallengeButton.classList.remove('hidden');
+        dom.tournamentButton.classList.remove('hidden');
+
 
         emitGetFriendsList(); // Carrega a lista de amigos após o login
         emitGetPendingRequests(); // Carrega pedidos pendentes
@@ -399,8 +403,6 @@ export function connectToServer() {
     });
 
     socket.on('infiniteChallengeStartSuccess', (payload) => {
-        // BUG FIX: The server might not send a payload if there's an issue.
-        // This defensive check prevents the client from crashing.
         if (!payload || !payload.opponentQueue) {
             console.error("Received empty or invalid payload for infiniteChallengeStartSuccess.", payload);
             alert("Ocorreu um erro ao iniciar o desafio. Por favor, tente novamente.");
@@ -417,7 +419,6 @@ export function connectToServer() {
             return;
         }
         
-        // Update profile to reflect new coin balance immediately
         if (updatedProfile) {
             updateState('userProfile', updatedProfile);
             renderProfile(updatedProfile); // This will update the header display
@@ -444,6 +445,36 @@ export function connectToServer() {
             t('game_over.infinite_challenge_title'),
             { action: 'menu', text: t('game_over.back_to_menu') }
         );
+    });
+
+    // --- TOURNAMENT LISTENERS ---
+    socket.on('tournamentQueueUpdate', (data) => {
+        renderTournamentView({ status: 'queue', playerCount: data.count });
+    });
+
+    socket.on('tournamentStateUpdate', (tournamentState) => {
+        if (tournamentState.status === 'active' || tournamentState.status === 'finished') {
+            renderTournamentView(tournamentState);
+        }
+    });
+
+    socket.on('tournamentMatchStart', (matchData) => {
+        dom.tournamentModal.classList.add('hidden');
+        clearTournamentMatchScore();
+        renderTournamentMatchScore([0, 0]);
+    });
+
+    socket.on('tournamentMatchScoreUpdate', (score) => {
+        renderTournamentMatchScore(score);
+    });
+
+    socket.on('tournamentMatchEnd', () => {
+        clearTournamentMatchScore();
+        dom.tournamentModal.classList.remove('hidden');
+    });
+
+    socket.on('tournamentRankingData', (rankingData) => {
+        renderTournamentRankingTable(rankingData);
     });
 }
 
@@ -574,4 +605,18 @@ export function emitAdminUnbanUser(userId) {
 export function emitAdminResolveReport(reportId) {
     const { socket } = getState();
     if (socket) socket.emit('admin:resolveReport', { reportId });
+}
+
+// --- Tournament Emitters ---
+export function emitJoinTournamentQueue(data) {
+    const { socket } = getState();
+    if (socket) socket.emit('joinTournamentQueue', data);
+}
+export function emitCancelTournamentQueue() {
+    const { socket } = getState();
+    if (socket) socket.emit('cancelTournamentQueue');
+}
+export function emitGetTournamentRanking(data) {
+    const { socket } = getState();
+    if (socket) socket.emit('getTournamentRanking', data);
 }
