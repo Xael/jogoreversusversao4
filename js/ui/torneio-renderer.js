@@ -4,6 +4,8 @@ import * as dom from '../core/dom.js';
 import { t } from '../core/i18n.js';
 import { getState } from '../core/state.js';
 
+let queueCountdownInterval = null;
+
 function clearViews() {
     dom.tournamentHubView.classList.add('hidden');
     dom.tournamentQueueView.classList.add('hidden');
@@ -41,9 +43,29 @@ function renderHubView() {
 
 function renderQueueView(state) {
     dom.tournamentQueueView.classList.remove('hidden');
-    const queueStatusEl = dom.tournamentQueueView.querySelector('p');
+    const queueStatusEl = document.getElementById('tournament-queue-status-text');
     if (queueStatusEl) {
-        queueStatusEl.textContent = t('tournament.searching', { current: state.playerCount, max: 8 });
+        queueStatusEl.textContent = t('tournament.searching', { current: state.playerCount, max: state.max });
+    }
+
+    if (queueCountdownInterval) clearInterval(queueCountdownInterval);
+    const countdownEl = document.getElementById('tournament-queue-countdown');
+    if (countdownEl && state.timeout && state.playerCount > 0) {
+        let timeLeft = state.timeout;
+        countdownEl.textContent = t('tournament.starting_in', { seconds: timeLeft });
+        countdownEl.classList.remove('hidden');
+
+        queueCountdownInterval = setInterval(() => {
+            timeLeft--;
+            if (timeLeft >= 0) {
+                countdownEl.textContent = t('tournament.starting_in', { seconds: timeLeft });
+            } else {
+                countdownEl.textContent = t('tournament.starting_now');
+                clearInterval(queueCountdownInterval);
+            }
+        }, 1000);
+    } else if (countdownEl) {
+        countdownEl.classList.add('hidden');
     }
 }
 

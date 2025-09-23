@@ -53,6 +53,8 @@
         "entry_fee": "Entry Fee: 100 🪙",
         "prize_pool": "Total Prize: 800 🪙",
         "searching": "Searching for opponents... ({current}/{max})",
+        "starting_in": "Starting in {seconds}s...",
+        "starting_now": "Starting match...",
         "leaderboard": "Leaderboard",
         "header_pos": "Pos.",
         "header_name": "Name",

@@ -438,7 +438,7 @@ export function connectToServer() {
 
     // --- TOURNAMENT LISTENERS ---
     socket.on('tournamentQueueUpdate', (data) => {
-        renderTournamentView({ status: 'queue', playerCount: data.count });
+        renderTournamentView({ status: 'queue', playerCount: data.count, max: data.max, timeout: data.timeout });
     });
 
     socket.on('tournamentStateUpdate', (tournamentState) => {
