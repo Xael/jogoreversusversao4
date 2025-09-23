@@ -221,10 +221,11 @@ export const INFINITE_CHALLENGE_OPPONENTS = [
 export const INFINITE_CHALLENGE_BUFFS = {
     common: [
         'resto_10', 'discard_low_draw_value', 'discard_effect_draw_effect',
-        'reveal_opponent_hand', 'draw_two_effect', 'draw_two_value'
+        'reveal_opponent_hand', 'draw_two_effect', 'draw_one_value', 'pula_draw_effect'
     ],
     rare: [
-        'draw_10_discard_one', 'draw_reversus_total', 'immunity_negative'
+        'draw_10_discard_one', 'draw_reversus_total', 'immunity_negative',
+        'draw_two_value', 'sobe_resto_boost', 'desce_resto_nerf'
     ],
     very_rare: [
         'immunity_defeat', 'auto_win',

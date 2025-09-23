@@ -8,10 +8,11 @@ import * as dom from '../core/dom.js';
 import { triggerXaelChallengePopup } from '../story/story-abilities.js';
 import { renderAll } from '../ui/ui-renderer.js';
 
-export async function applyEffect(card, targetId, casterName, effectTypeToReverse) {
+export async function applyEffect(card, targetId, casterId, effectTypeToReverse, options) {
     const { gameState } = getState();
     const target = gameState.players[targetId];
-    if (!target) return;
+    const caster = gameState.players[casterId];
+    if (!target || !caster) return;
 
     let effectName;
     // Correctly determine the effect name, especially for locked Reversus Total
@@ -68,8 +69,19 @@ export async function applyEffect(card, targetId, casterName, effectTypeToRevers
         case 'Mais': case 'Menos': case 'NECRO X': case 'NECRO X Invertido':
             target.effects.score = effectName;
             break;
-        case 'Sobe': case 'Desce': case 'Pula':
+        case 'Sobe': case 'Desce':
             target.effects.movement = effectName;
+            break;
+        case 'Pula':
+            target.effects.movement = effectName;
+            // NEW BUFF LOGIC for pula_draw_effect
+            if (caster.hasPulaDrawEffect && casterId === targetId) {
+                const newCard = dealCard('effect');
+                if (newCard) {
+                    caster.hand.push(newCard);
+                    updateLog(`${caster.name} usou Pula em si mesmo e comprou uma nova carta de efeito.`);
+                }
+            }
             break;
         case 'Reversus': {
             const targetScoreEffectCard = target.playedCards.effect.find(c => ['Mais', 'Menos'].includes(c.name) || (c.isLocked && ['Mais', 'Menos'].includes(c.lockedEffect)));
@@ -86,14 +98,14 @@ export async function applyEffect(card, targetId, casterName, effectTypeToRevers
             
             if (effectTypeToReverse === 'score') {
                 target.effects.score = getInverseEffect(target.effects.score);
-                updateLog(`${casterName} usou ${card.name} em ${target.name} para reverter efeito de pontuação para ${target.effects.score || 'Nenhum'}.`);
+                updateLog(`${caster.name} usou ${card.name} em ${target.name} para reverter efeito de pontuação para ${target.effects.score || 'Nenhum'}.`);
             } else if (effectTypeToReverse === 'movement') {
                 if (target.effects.movement === 'Pula') {
                     target.effects.movement = null;
-                    updateLog(`${casterName} anulou o efeito 'Pula' de ${target.name} com Reversus!`);
+                    updateLog(`${caster.name} anulou o efeito 'Pula' de ${target.name} com Reversus!`);
                 } else {
                     target.effects.movement = getInverseEffect(target.effects.movement);
-                    updateLog(`${casterName} usou ${card.name} em ${target.name} para reverter efeito de movimento para ${target.effects.movement || 'Nenhum'}.`);
+                    updateLog(`${caster.name} usou ${card.name} em ${target.name} para reverter efeito de movimento para ${target.effects.movement || 'Nenhum'}.`);
                 }
             }
             break;
@@ -117,7 +129,7 @@ export async function applyEffect(card, targetId, casterName, effectTypeToRevers
                     p.effects.movement = getInverseEffect(p.effects.movement);
                 }
             });
-            updateLog(`${casterName} ativou o Reversus Total!`);
+            updateLog(`${caster.name} ativou o Reversus Total!`);
             
             // XAEL POPUP TRIGGER
             triggerXaelChallengePopup();
@@ -142,7 +154,7 @@ export async function applyEffect(card, targetId, casterName, effectTypeToRevers
                     target.hand.push(newCard);
                 }
             }
-            updateLog(`${casterName} usou a ${card.name}, comprando 2 cartas de efeito.`);
+            updateLog(`${caster.name} usou a ${card.name}, comprando 2 cartas de efeito.`);
 
             // Set cooldown on the card object itself
             card.cooldown = 3; 
@@ -152,7 +164,6 @@ export async function applyEffect(card, targetId, casterName, effectTypeToRevers
             const cardIndexInPlay = target.playedCards.effect.findIndex(c => c.id === card.id);
             if (cardIndexInPlay > -1) {
                 const [removedCard] = target.playedCards.effect.splice(cardIndexInPlay, 1);
-                const caster = gameState.players[casterName];
                 if(caster) {
                     caster.hand.push(removedCard);
                 } else {
@@ -167,9 +178,9 @@ export async function applyEffect(card, targetId, casterName, effectTypeToRevers
     }
 
     if (card.isLocked) {
-        updateLog(`${casterName} usou Reversus Individual para travar o efeito ${effectName} em ${target.name}.`);
+        updateLog(`${caster.name} usou Reversus Individual para travar o efeito ${effectName} em ${target.name}.`);
     } else if (card.name !== 'Pula' && card.name !== 'Reversus' && card.name !== 'Reversus Total' && card.name !== 'Carta da Versatrix') {
         // This covers Mais, Menos, Sobe, Desce
-        updateLog(`${casterName} usou ${card.name} em ${target.name} para aplicar o efeito ${effectName}.`);
+        updateLog(`${caster.name} usou ${card.name} em ${target.name} para aplicar o efeito ${effectName}.`);
     }
 }

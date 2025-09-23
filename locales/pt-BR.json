@@ -1,5 +1,4 @@
 
-
 {
     "document": {
         "title": "Reversus - Jogo Online"
@@ -85,7 +84,15 @@
         "necroverso_card_name": "Maldição Sombria",
         "necroverso_card_desc": "A carta de valor mais alta do oponente é bloqueada para a próxima rodada.",
         "rei_reversum_card_name": "Decreto Real",
-        "rei_reversum_card_desc": "Troque uma de suas cartas de efeito por uma carta 'Reversus Total'."
+        "rei_reversum_card_desc": "Troque uma de suas cartas de efeito por uma carta 'Reversus Total'.",
+        "draw_one_value_name": "Reforço Básico",
+        "draw_one_value_desc": "Compre 1 carta de valor adicional.",
+        "sobe_resto_boost_name": "Ascensão Cumulativa",
+        "sobe_resto_boost_desc": "Ao jogar 'Sobe' em si mesmo, seu 'Resto' aumenta em +1 para o cálculo da pontuação desta rodada.",
+        "desce_resto_nerf_name": "Queda Cumulativa",
+        "desce_resto_nerf_desc": "Ao jogar 'Desce' em um oponente, o 'Resto' dele diminui em 1 para o cálculo da pontuação desta rodada.",
+        "pula_draw_effect_name": "Salto Estratégico",
+        "pula_draw_effect_desc": "Ao jogar 'Pula' em si mesmo, compre uma nova carta de efeito."
     },
     "shop": {
         "buy_avatars_tab": "Comprar Avatares",
