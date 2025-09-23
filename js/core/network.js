@@ -118,8 +118,6 @@ export function connectToServer() {
 
     socket.on('profileData', (profile) => {
         const { userProfile: myProfile } = getState();
-        // This check ensures we only update the main user's profile if it matches,
-        // but it still allows viewing other profiles.
         if (myProfile && profile.google_id === myProfile.google_id) {
             updateState('userProfile', profile);
         }
@@ -182,14 +180,11 @@ export function connectToServer() {
         if (action === 'accept') {
             alert(t('friends.request_accepted_alert', { username }));
         }
-        // Refresh both lists to show new friend or updated request list
         emitGetFriendsList();
         emitGetPendingRequests();
     });
     
     socket.on('friendStatusUpdate', () => {
-        // A simple status change for one friend requires a full refresh to guarantee
-        // that the online status and message buttons are always correct.
         emitGetFriendsList();
     });
 
@@ -215,12 +210,10 @@ export function connectToServer() {
             }
         }
         
-        // Hide other modals/screens that might be open
         dom.splashScreenEl.classList.add('hidden');
         dom.pvpRoomListModal.classList.add('hidden');
         dom.lobbyInviteNotificationModal.classList.add('hidden');
         
-        // Show lobby
         dom.pvpLobbyModal.classList.remove('hidden');
         
         updateLobbyUi(roomData);
@@ -235,7 +228,6 @@ export function connectToServer() {
     });
 
     socket.on('gameStarted', async (initialGameState) => {
-        // Determine this client's player ID from the map sent by the server.
         if (initialGameState.playerSocketMap) {
             const myEntry = Object.entries(initialGameState.playerSocketMap).find(([socketId, pId]) => socketId === getState().clientId);
             if (myEntry) {
@@ -248,8 +240,8 @@ export function connectToServer() {
         dom.pvpLobbyModal.classList.add('hidden');
         dom.matchmakingStatusModal.classList.add('hidden');
         dom.appContainerEl.classList.remove('hidden');
-        sound.stopStoryMusic(); // Restore default playlist and enable next track button
-        dom.nextTrackButton.disabled = false; // Explicitly re-enable for PvP
+        sound.stopStoryMusic();
+        dom.nextTrackButton.disabled = false;
         
         const state = getState();
         if (state.gameTimerInterval) clearInterval(state.gameTimerInterval);
@@ -259,9 +251,7 @@ export function connectToServer() {
         
         if (initialGameState.gamePhase === 'initial_draw') {
             await showPvpDrawSequence(initialGameState);
-            // The server will send a gameStateUpdate with gamePhase: 'playing' after this.
         } else {
-             // Fallback for games that might not have a draw phase
             setupPlayerPerspective();
             renderAll();
         }
@@ -271,7 +261,6 @@ export function connectToServer() {
         const startElement = document.querySelector(`#hand-${casterId} [data-card-id="${card.id}"]`);
         await animateCardPlay(card, startElement, targetId, targetSlotLabel);
     
-        // Adiciona som e anúncio visual para cartas de efeito
         const soundToPlay = card.name.toLowerCase().replace(/\s/g, '');
         const effectsWithSounds = ['mais', 'menos', 'sobe', 'desce', 'pula', 'reversus'];
     
@@ -349,7 +338,7 @@ export function connectToServer() {
         dom.lobbyInviteNotificationText.textContent = t('pvp.invite_notification_text', { username: inviterUsername, roomName });
         dom.lobbyInviteAcceptButton.dataset.roomId = roomId;
         dom.lobbyInviteDeclineButton.dataset.roomId = roomId;
-        dom.lobbyInviteDeclineButton.dataset.inviterId = inviterUsername; // Not strictly needed but good practice
+        dom.lobbyInviteDeclineButton.dataset.inviterId = inviterUsername;
         dom.lobbyInviteNotificationModal.classList.remove('hidden');
     });
 
@@ -390,7 +379,7 @@ export function connectToServer() {
 
     socket.on('avatarPurchaseError', ({ message }) => {
         alert(t('shop.purchase_error', { error: message }));
-        renderShopAvatars(); // Re-render to re-enable button
+        renderShopAvatars();
     });
 
     // --- Infinite Challenge Listeners ---
@@ -421,7 +410,7 @@ export function connectToServer() {
         
         if (updatedProfile) {
             updateState('userProfile', updatedProfile);
-            renderProfile(updatedProfile); // This will update the header display
+            renderProfile(updatedProfile);
         }
 
         updateState('infiniteChallengeOpponentQueue', opponentQueue);
@@ -458,8 +447,30 @@ export function connectToServer() {
         }
     });
 
-    socket.on('tournamentMatchStart', (matchData) => {
+    socket.on('tournamentMatchStart', async (initialGameState) => {
         dom.tournamentModal.classList.add('hidden');
+        
+        // This logic is now a copy of the 'gameStarted' handler to correctly set up the UI
+        if (initialGameState.playerSocketMap) {
+            const myEntry = Object.entries(initialGameState.playerSocketMap).find(([socketId, pId]) => socketId === getState().clientId);
+            if (myEntry) {
+                updateState('playerId', myEntry[1]);
+            }
+        }
+        updateState('gameState', initialGameState);
+        
+        dom.appContainerEl.classList.remove('hidden');
+        dom.nextTrackButton.disabled = false;
+        
+        const state = getState();
+        if (state.gameTimerInterval) clearInterval(state.gameTimerInterval);
+        updateState('gameStartTime', Date.now());
+        updateGameTimer();
+        updateState('gameTimerInterval', setInterval(updateGameTimer, 1000));
+        
+        setupPlayerPerspective();
+        renderAll();
+        
         clearTournamentMatchScore();
         renderTournamentMatchScore([0, 0]);
     });
@@ -470,7 +481,9 @@ export function connectToServer() {
 
     socket.on('tournamentMatchEnd', () => {
         clearTournamentMatchScore();
+        dom.appContainerEl.classList.add('hidden');
         dom.tournamentModal.classList.remove('hidden');
+        // The server will send a 'tournamentStateUpdate' to refresh the view
     });
 
     socket.on('tournamentRankingData', (rankingData) => {

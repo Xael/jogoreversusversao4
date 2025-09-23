@@ -1447,21 +1447,16 @@ export function initializeUiHandlers() {
         }, 800);
     });
 
-    // Robust click handler for the secret Versatrix card
     dom.scalableContainer.addEventListener('click', (e) => {
         if (e.target.id === 'secret-versatrix-card') {
             const { achievements: unlockedAchievements, versatrixCardInterval } = getState();
-            // Check conditions again just before granting to prevent race conditions
             if (unlockedAchievements.has('versatrix_win') && !unlockedAchievements.has('versatrix_card_collected')) {
-                // Stop the animation interval immediately
                 if (versatrixCardInterval) {
                     clearInterval(versatrixCardInterval);
                     updateState('versatrixCardInterval', null);
                 }
-                // Grant the achievement (this will save to localStorage)
                 sound.playSoundEffect('conquista');
                 achievements.grantAchievement('versatrix_card_collected');
-                // Remove the card element
                 e.target.remove();
             }
         }
@@ -1825,6 +1820,7 @@ export function initializeUiHandlers() {
             alert(t('common.login_required', { feature: t('splash.tournament') }));
             return;
         }
+        sound.playStoryMusic('altar.ogg');
         renderTournamentView({ status: 'hub' });
     });
 
@@ -1843,5 +1839,6 @@ export function initializeUiHandlers() {
 
     dom.tournamentCloseButton.addEventListener('click', () => {
         dom.tournamentModal.classList.add('hidden');
+        sound.stopStoryMusic();
     });
 }
