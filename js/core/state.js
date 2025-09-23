@@ -51,6 +51,8 @@ const appState = {
     infiniteChallengeOpponentQueue: [],
     // Holds the active buff for the current infinite challenge round
     activeBuff: null,
+    // Holds the state for the client-side offline tournament.
+    currentOfflineTournament: null,
 
 
     // --- PVP/Network State ---
