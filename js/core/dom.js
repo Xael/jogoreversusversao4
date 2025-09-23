@@ -288,3 +288,23 @@ export const lobbyInviteNotificationModal = document.getElementById('lobby-invit
 export const lobbyInviteNotificationText = document.getElementById('lobby-invite-notification-text');
 export const lobbyInviteAcceptButton = document.getElementById('lobby-invite-accept-button');
 export const lobbyInviteDeclineButton = document.getElementById('lobby-invite-decline-button');
+
+// Tournament Modal
+export const tournamentButton = document.getElementById('tournament-button');
+export const tournamentModal = document.getElementById('tournament-modal');
+export const tournamentHubView = document.getElementById('tournament-hub-view');
+export const tournamentQueueView = document.getElementById('tournament-queue-view');
+export const tournamentMainView = document.getElementById('tournament-main-view');
+export const tournamentChampionView = document.getElementById('tournament-champion-view');
+export const tournamentPlayOnlineButton = document.getElementById('tournament-play-online-btn');
+export const tournamentPlayOfflineButton = document.getElementById('tournament-play-offline-btn');
+export const tournamentCancelQueueButton = document.getElementById('tournament-cancel-queue-btn');
+export const tournamentCloseButton = document.getElementById('tournament-close-btn');
+export const tournamentLeaderboardContainer = document.getElementById('tournament-leaderboard');
+export const tournamentMatchesContainer = document.getElementById('tournament-matches');
+export const tournamentChampionText = document.getElementById('tournament-champion-text');
+export const tournamentRankingTabContent = document.getElementById('ranking-tournament-tab-content');
+export const tournamentRankingContainer = document.getElementById('tournament-ranking-container');
+export const tournamentRankingPagination = document.getElementById('tournament-ranking-pagination');
+export const tournamentMatchScoreContainer = document.getElementById('tournament-match-score-container');
+export const centerPanelHeader = document.querySelector('.center-panel-header');
