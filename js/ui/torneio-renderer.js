@@ -1,4 +1,3 @@
-
 // js/ui/torneio-renderer.js
 import * as dom from '../core/dom.js';
 import { t } from '../core/i18n.js';
@@ -12,6 +11,14 @@ function clearViews() {
     dom.tournamentMainView.classList.add('hidden');
     dom.tournamentChampionView.classList.add('hidden');
 }
+
+function getPlayerName(player) {
+    if (player.username && (player.username.startsWith('event_chars.') || player.username.startsWith('player_names.'))) {
+        return t(player.username);
+    }
+    return player.username;
+}
+
 
 export function renderTournamentView(state) {
     clearViews();
@@ -82,11 +89,11 @@ function renderChampionView(state) {
         const runnerUp = state.leaderboard[1];
         dom.tournamentChampionText.innerHTML = `
             <h2>${t('tournament.champion_title')}</h2>
-            <p class="champion-name">🏆 ${champion.username} 🏆</p>
+            <p class="champion-name">🏆 ${getPlayerName(champion)} 🏆</p>
             <p class="prize-info">${t('tournament.prize_champion')}</p>
             <br>
             <h3>${t('tournament.runner_up_title')}</h3>
-            <p class="runner-up-name">🥈 ${runnerUp.username} 🥈</p>
+            <p class="runner-up-name">🥈 ${getPlayerName(runnerUp)} 🥈</p>
             <p class="prize-info">${t('tournament.prize_runner_up')}</p>
         `;
     }
@@ -114,7 +121,7 @@ function renderLeaderboard(leaderboard) {
                 ${sortedLeaderboard.map((player, index) => `
                     <tr>
                         <td>${index + 1}</td>
-                        <td>${player.username}</td>
+                        <td>${getPlayerName(player)}</td>
                         <td>${player.points}</td>
                         <td>${player.wins}</td>
                         <td>${player.draws}</td>
@@ -152,9 +159,9 @@ function renderMatches(schedule, currentRound) {
 
                 return `
                     <div class="match-card ${isMyMatch ? 'my-match' : ''} ${isFinished ? 'finished' : ''}">
-                        <div class="match-player">${match.p1.username}</div>
+                        <div class="match-player">${getPlayerName(match.p1)}</div>
                         <div class="match-result">${isFinished ? resultText : 'vs'}</div>
-                        <div class="match-player">${match.p2.username}</div>
+                        <div class="match-player">${getPlayerName(match.p2)}</div>
                     </div>
                 `;
             }).join('')}

@@ -1,6 +1,6 @@
 // js/core/network.js
 import { getState, updateState } from './state.js';
-import * as dom from './dom.js';
+import * as dom from '../core/dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
 import { renderRoomList, renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
@@ -15,6 +15,7 @@ import { playSoundEffect, announceEffect } from '../core/sound.js';
 import * as sound from './sound.js';
 import { renderShopAvatars, updateCoinVersusDisplay } from '../ui/shop-renderer.js';
 import { renderTournamentView, renderTournamentRankingTable, renderTournamentMatchScore, clearTournamentMatchScore } from '../ui/torneio-renderer.js';
+import { executeAiTurn } from '../ai/ai-controller.js';
 
 
 /**
@@ -290,9 +291,15 @@ export function connectToServer() {
         setupPlayerPerspective();
         renderAll();
 
-        const newCurrentPlayer = newGameState.currentPlayer;
-        if (newCurrentPlayer === playerId && oldCurrentPlayer !== newCurrentPlayer && newGameState.gamePhase === 'playing') {
+        const newCurrentPlayer = newGameState.players[newGameState.currentPlayer];
+        if (newCurrentPlayer?.id === playerId && oldCurrentPlayer !== newGameState.currentPlayer && newGameState.gamePhase === 'playing') {
             showTurnIndicator();
+        }
+
+        // AI TURN TRIGGER FOR TOURNAMENTS
+        if (newGameState.isTournamentMatch && newGameState.currentPlayer !== playerId && newCurrentPlayer && !newCurrentPlayer.isHuman && oldCurrentPlayer !== newGameState.currentPlayer) {
+             console.log(`Game state updated. It's now AI's turn: ${newCurrentPlayer.name}. Triggering AI logic.`);
+             setTimeout(() => executeAiTurn(newCurrentPlayer), 1500); // Delay for user to see opponent's move
         }
     });
 
@@ -449,8 +456,8 @@ export function connectToServer() {
 
     socket.on('tournamentMatchStart', async (initialGameState) => {
         dom.tournamentModal.classList.add('hidden');
+        dom.splashScreenEl.classList.add('hidden');
         
-        // This logic is now a copy of the 'gameStarted' handler to correctly set up the UI
         if (initialGameState.playerSocketMap) {
             const myEntry = Object.entries(initialGameState.playerSocketMap).find(([socketId, pId]) => socketId === getState().clientId);
             if (myEntry) {
@@ -470,6 +477,14 @@ export function connectToServer() {
         
         setupPlayerPerspective();
         renderAll();
+
+        const firstPlayer = state.gameState.players[state.gameState.currentPlayer];
+        const myPlayerId = state.playerId;
+        
+        if (state.gameState.currentPlayer !== myPlayerId && firstPlayer && !firstPlayer.isHuman) {
+            console.log(`Tournament match started. It's AI's turn: ${firstPlayer.name}. Triggering AI logic.`);
+            setTimeout(() => executeAiTurn(firstPlayer), 1500);
+        }
         
         clearTournamentMatchScore();
         renderTournamentMatchScore([0, 0]);
@@ -483,7 +498,6 @@ export function connectToServer() {
         clearTournamentMatchScore();
         dom.appContainerEl.classList.add('hidden');
         dom.tournamentModal.classList.remove('hidden');
-        // The server will send a 'tournamentStateUpdate' to refresh the view
     });
 
     socket.on('tournamentRankingData', (rankingData) => {

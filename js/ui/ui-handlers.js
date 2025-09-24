@@ -575,7 +575,7 @@ export function initializeUiHandlers() {
             google.accounts.id.prompt();
         } else {
             console.error("Google Auth not ready.");
-            alert("Serviço de login não está pronto. Tente novamente em um momento.");
+            alert("Não foi possível processar o login. Ocorreu um erro de conexão com o servidor. Tente novamente.");
         }
     });
 
@@ -1695,131 +1695,12 @@ export function initializeUiHandlers() {
         }
     });
     
-    if (dom.profileFriendsTabContent) {
-        dom.profileFriendsTabContent.addEventListener('click', (e) => {
-            const button = e.target.closest('button');
-            if (!button) return;
-    
-            if (button.matches('.add-friend-btn')) {
-                const userId = parseInt(button.dataset.userId, 10);
-                button.disabled = true;
-                network.emitSendFriendRequest(userId, (response) => {
-                    if (response.success) {
-                        button.textContent = t('profile.request_sent');
-                    } else {
-                        alert(response.error || 'Falha ao enviar pedido.');
-                        button.disabled = false;
-                    }
-                });
-                return;
-            }
-    
-            if (button.matches('.remove-friend-btn')) {
-                const userId = parseInt(button.dataset.userId, 10);
-                const username = button.closest('.friend-item')?.querySelector('.friend-name')?.textContent.trim() || 'este amigo';
-                if (confirm(t('confirm.remove_friend', { username }))) {
-                     network.emitRemoveFriend(userId);
-                }
-                return;
-            }
-    
-            if (button.matches('.view-profile-btn')) {
-                const googleId = button.dataset.googleId;
-                if (googleId) {
-                    network.emitViewProfile(googleId);
-                }
-                return;
-            }
-    
-            if (button.matches('.send-message-btn')) {
-                const userId = button.dataset.userId;
-                const username = button.dataset.username;
-                if (userId && username) {
-                    openChatWindow(userId, username);
-                }
-                return;
-            }
-    
-            if (button.matches('.accept-request-btn') || button.matches('.decline-request-btn')) {
-                const requestId = parseInt(button.dataset.requestId, 10);
-                if (requestId) {
-                    const action = button.matches('.accept-request-btn') ? 'accept' : 'decline';
-                    network.emitRespondToRequest(requestId, action);
-                }
-                return;
-            }
-        });
-    }
-
-    if (dom.friendsSearchButton) {
-        dom.friendsSearchButton.addEventListener('click', () => {
-            const query = dom.friendsSearchInput ? dom.friendsSearchInput.value.trim() : '';
-            if (query) network.emitSearchUsers(query);
-        });
-    }
-
-    if (dom.profileModal) {
-        dom.profileModal.addEventListener('click', (e) => {
-             const actionButton = e.target.closest('button.add-friend-btn, button.remove-friend-btn, button#toggle-chat-mute-button, button.equip-avatar-btn');
-             if (!actionButton) return;
-
-             if (actionButton.matches('.add-friend-btn')) {
-                const userId = parseInt(actionButton.dataset.userId, 10);
-                actionButton.disabled = true;
-                network.emitSendFriendRequest(userId, (response) => {
-                    if (response.success) {
-                        actionButton.textContent = t('profile.request_sent');
-                    } else {
-                        alert(response.error || 'Falha ao enviar pedido.');
-                        actionButton.disabled = false;
-                    }
-                });
-            } else if (actionButton.matches('.remove-friend-btn')) {
-                const userId = parseInt(actionButton.dataset.userId, 10);
-                network.emitRemoveFriend(userId);
-            } else if (actionButton.matches('#toggle-chat-mute-button')) {
-                const state = getState();
-                const newMuteState = !state.isChatMuted;
-                updateState('isChatMuted', newMuteState);
-                localStorage.setItem('reversus-chat-muted', JSON.stringify(newMuteState));
-                
-                actionButton.textContent = t(newMuteState ? 'profile.unmute_chat' : 'profile.mute_chat');
-            } else if (actionButton.matches('.equip-avatar-btn')) {
-                const avatarCode = actionButton.dataset.avatarCode;
-                network.emitSetSelectedAvatar({ avatarCode });
-            }
-        });
-    }
-
-    if (dom.profileAdminTabContent) {
-        dom.profileAdminTabContent.addEventListener('click', (e) => {
-            const button = e.target.closest('button');
-            if (!button) return;
-    
-            const userId = parseInt(button.dataset.userId, 10);
-            const username = button.dataset.username;
-
-            if (button.matches('.admin-ban-btn')) {
-                if (confirm(t('confirm.ban_player', { username }))) {
-                    network.emitAdminBanUser(userId);
-                }
-            } else if (button.matches('.admin-unban-btn')) {
-                if (confirm(t('confirm.unban_player', { username }))) {
-                    network.emitAdminUnbanUser(userId);
-                }
-            } else if (button.matches('.admin-dismiss-report-btn')) {
-                const reportId = parseInt(button.dataset.reportId, 10);
-                network.emitAdminResolveReport(reportId);
-            }
-        });
-    }
-
-     // --- TOURNAMENT HANDLERS ---
     dom.tournamentButton.addEventListener('click', () => {
         if (!getState().isLoggedIn) {
             alert(t('common.login_required', { feature: t('splash.tournament') }));
             return;
         }
+        dom.splashScreenEl.classList.add('hidden');
         sound.playStoryMusic('altar.ogg');
         renderTournamentView({ status: 'hub' });
     });
