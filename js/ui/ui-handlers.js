@@ -1,7 +1,7 @@
 // js/ui/ui-handlers.js
 import * as dom from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
-import { initializeGame, restartLastDuel } from '../game-controller.js';
+import { initializeGame, restartLastDuel, updateGameTimer } from '../game-controller.js';
 import { renderAchievementsModal } from './achievements-renderer.js';
 import { renderAll, showGameOver, updateChatControls } from './ui-renderer.js';
 import * as sound from '../core/sound.js';
@@ -164,8 +164,18 @@ async function initiatePlayCardSequence(player, card) {
 // --- END FLOATING HAND HELPERS ---
 
 export function showBuffSelectionModal() {
-    const { gameState, achievements } = getState();
+    const { gameState, achievements, infiniteChallengeTimerInterval } = getState();
     if (!gameState || !gameState.isInfiniteChallenge) return;
+
+    // Pause the timer
+    if (infiniteChallengeTimerInterval) {
+        clearInterval(infiniteChallengeTimerInterval);
+        updateState('infiniteChallengeTimerInterval', null);
+    }
+
+    const continueContainer = document.getElementById('infinite-challenge-continue-container');
+    const continueBtn = document.getElementById('infinite-challenge-continue-btn');
+    if (continueContainer) continueContainer.classList.add('hidden');
 
     const ultraBuffs = {
         'versatrix_card': { achievements: ['versatrix_win'], image: 'cartaversatrix.png' },
@@ -237,7 +247,7 @@ export function showBuffSelectionModal() {
         `;
     }).join('');
 
-    const buffClickHandler = async (e) => {
+    const buffClickHandler = (e) => {
         const card = e.target.closest('.buff-card');
         if (!card || dom.infiniteChallengeBuffCards.classList.contains('selection-made')) return;
         
@@ -246,35 +256,43 @@ export function showBuffSelectionModal() {
         sound.playSoundEffect('jogarcarta');
         
         const buff = card.dataset.buff;
+        updateState('activeBuff', buff); 
 
-        setTimeout(async () => {
-            updateState('activeBuff', buff);
+        if (continueContainer) continueContainer.classList.remove('hidden');
+    };
+
+    const continueClickHandler = async () => {
+        const { activeBuff } = getState();
+        
+        dom.infiniteChallengeBuffModal.classList.add('hidden');
+        dom.infiniteChallengeBuffCards.removeEventListener('click', buffClickHandler);
+        if (continueBtn) continueBtn.removeEventListener('click', continueClickHandler);
+        dom.infiniteChallengeBuffCards.classList.remove('selection-made');
+
+        // Resume timer
+        updateState('infiniteChallengeTimerInterval', setInterval(updateGameTimer, 1000));
+        
+        if (activeBuff === 'auto_win') {
+            const { gameState, infiniteChallengeOpponentQueue } = getState();
+            infiniteChallengeOpponentQueue.shift();
+            gameState.infiniteChallengeLevel++;
+            updateLog(`Vitória Automática! Pulando oponente e avançando para o nível ${gameState.infiniteChallengeLevel}.`);
             
-            dom.infiniteChallengeBuffModal.classList.add('hidden');
-            dom.infiniteChallengeBuffCards.removeEventListener('click', buffClickHandler);
-            dom.infiniteChallengeBuffCards.classList.remove('selection-made');
-
-
-            if (buff === 'auto_win') {
-                const { gameState, infiniteChallengeOpponentQueue } = getState();
-                infiniteChallengeOpponentQueue.shift();
-                gameState.infiniteChallengeLevel++;
-                updateLog(`Vitória Automática! Pulando oponente e avançando para o nível ${gameState.infiniteChallengeLevel}.`);
-                
-                if (infiniteChallengeOpponentQueue.length === 0) {
-                    document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
-                } else {
-                    showBuffSelectionModal();
-                }
+            if (infiniteChallengeOpponentQueue.length === 0) {
+                document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
             } else {
-                await startNextInfiniteChallengeDuel();
+                showBuffSelectionModal();
             }
-        }, 2000);
+        } else {
+            await startNextInfiniteChallengeDuel();
+        }
     };
     
     dom.infiniteChallengeBuffCards.addEventListener('click', buffClickHandler);
+    if (continueBtn) continueBtn.addEventListener('click', continueClickHandler);
     dom.infiniteChallengeBuffModal.classList.remove('hidden');
 }
+
 
 function continueStory(nodeId) {
     setTimeout(() => {
@@ -1720,6 +1738,7 @@ export function initializeUiHandlers() {
 
     dom.tournamentCloseButton.addEventListener('click', () => {
         dom.tournamentModal.classList.add('hidden');
+        showSplashScreen();
         sound.stopStoryMusic();
     });
 }

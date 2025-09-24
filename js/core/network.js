@@ -278,7 +278,9 @@ export function connectToServer() {
     });
 
     socket.on('gameStateUpdate', (gameState) => {
-        const { gameState: localGameState, playerId } = getState();
+        const state = getState();
+        const localGameState = state.gameState;
+        const playerId = state.playerId;
         const oldCurrentPlayer = localGameState?.currentPlayer;
 
         const localUiState = localGameState ? {
@@ -296,10 +298,10 @@ export function connectToServer() {
             showTurnIndicator();
         }
 
-        // AI TURN TRIGGER FOR TOURNAMENTS
-        if (newGameState.isTournamentMatch && newGameState.currentPlayer !== playerId && newCurrentPlayer && !newCurrentPlayer.isHuman && oldCurrentPlayer !== newGameState.currentPlayer) {
+        // AI TURN TRIGGER FOR TOURNAMENTS (CLIENT SIDE)
+        if (newGameState.isTournamentMatch && newCurrentPlayer && !newCurrentPlayer.isHuman && oldCurrentPlayer !== newGameState.currentPlayer) {
              console.log(`Game state updated. It's now AI's turn: ${newCurrentPlayer.name}. Triggering AI logic.`);
-             setTimeout(() => executeAiTurn(newCurrentPlayer), 1500); // Delay for user to see opponent's move
+             setTimeout(() => executeAiTurn(newCurrentPlayer), 1500);
         }
     });
 
@@ -458,12 +460,18 @@ export function connectToServer() {
         dom.tournamentModal.classList.add('hidden');
         dom.splashScreenEl.classList.add('hidden');
         
-        if (initialGameState.playerSocketMap) {
-            const myEntry = Object.entries(initialGameState.playerSocketMap).find(([socketId, pId]) => socketId === getState().clientId);
-            if (myEntry) {
-                updateState('playerId', myEntry[1]);
-            }
+        // This is a tournament match, not a lobby-based one, so we need to find our player ID.
+        // We assume the server sends 'player-1' for the human player in offline mode.
+        // In online mode, we need to check against our user profile ID.
+        const { userProfile } = getState();
+        const myPlayerEntry = Object.values(initialGameState.players).find(p => p.name === userProfile.username);
+        if (myPlayerEntry) {
+            updateState('playerId', myPlayerEntry.id);
+        } else {
+             // Fallback for offline mode
+            updateState('playerId', 'player-1');
         }
+
         updateState('gameState', initialGameState);
         
         dom.appContainerEl.classList.remove('hidden');
@@ -481,9 +489,10 @@ export function connectToServer() {
         const firstPlayer = state.gameState.players[state.gameState.currentPlayer];
         const myPlayerId = state.playerId;
         
-        if (state.gameState.currentPlayer !== myPlayerId && firstPlayer && !firstPlayer.isHuman) {
-            console.log(`Tournament match started. It's AI's turn: ${firstPlayer.name}. Triggering AI logic.`);
-            setTimeout(() => executeAiTurn(firstPlayer), 1500);
+        // Trigger AI turn if it starts and is not the human player
+        if (firstPlayer && !firstPlayer.isHuman && state.gameState.currentPlayer !== myPlayerId) {
+             console.log(`Tournament match started. It's AI's turn: ${firstPlayer.name}. Triggering AI logic.`);
+             setTimeout(() => executeAiTurn(firstPlayer), 1500);
         }
         
         clearTournamentMatchScore();

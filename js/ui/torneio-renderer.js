@@ -12,8 +12,13 @@ function clearViews() {
     dom.tournamentChampionView.classList.add('hidden');
 }
 
+/**
+ * Translates player names if they are translation keys.
+ * @param {object} player - The player object from the leaderboard or match.
+ * @returns {string} The translated or original username.
+ */
 function getPlayerName(player) {
-    if (player.username && (player.username.startsWith('event_chars.') || player.username.startsWith('player_names.'))) {
+    if (player.username && (player.username.startsWith('event_chars.') || player.username.startsWith('player_names.') || player.username.startsWith('avatars.'))) {
         return t(player.username);
     }
     return player.username;
