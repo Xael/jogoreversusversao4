@@ -45,7 +45,7 @@ function renderQueueView(state) {
     dom.tournamentQueueView.classList.remove('hidden');
     const queueStatusEl = document.getElementById('tournament-queue-status-text');
     if (queueStatusEl) {
-        queueStatusEl.textContent = t('tournament.searching', { current: state.playerCount, max: state.max });
+        queueStatusEl.textContent = t('tournament.searching', { current: state.playerCount, max: state.max || 8 });
     }
 
     if (queueCountdownInterval) clearInterval(queueCountdownInterval);
