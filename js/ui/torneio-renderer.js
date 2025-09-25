@@ -5,18 +5,18 @@ import { getState } from '../core/state.js';
 
 let queueCountdownInterval = null;
 
-function clearViews() {
-    dom.tournamentHubView.classList.add('hidden');
-    dom.tournamentQueueView.classList.add('hidden');
-    dom.tournamentMainView.classList.add('hidden');
-    dom.tournamentChampionView.classList.add('hidden');
+function clearViews(container) {
+    const hubView = container.querySelector('#tournament-hub-view');
+    const queueView = container.querySelector('#tournament-queue-view');
+    const mainView = container.querySelector('#tournament-main-view');
+    const championView = container.querySelector('#tournament-champion-view');
+
+    if (hubView) hubView.classList.add('hidden');
+    if (queueView) queueView.classList.add('hidden');
+    if (mainView) mainView.classList.add('hidden');
+    if (championView) championView.classList.add('hidden');
 }
 
-/**
- * Translates player names if they are translation keys.
- * @param {object} player - The player object from the leaderboard or match.
- * @returns {string} The translated or original username.
- */
 function getPlayerName(player) {
     if (player && player.username && (player.username.startsWith('event_chars.') || player.username.startsWith('player_names.') || player.username.startsWith('avatars.'))) {
         return t(player.username);
@@ -24,44 +24,55 @@ function getPlayerName(player) {
     return player ? player.username : 'Desconhecido';
 }
 
-
 export function renderTournamentView(state) {
-    clearViews();
-    dom.tournamentModal.classList.remove('hidden');
+    const { gameState } = getState();
+    const inMatch = gameState && gameState.isTournamentMatch;
 
-    switch (state.status) {
-        case 'hub':
-            renderHubView();
-            break;
-        case 'queue':
-            renderQueueView(state);
-            break;
-        case 'active':
-            renderMainView(state);
-            break;
-        case 'finished':
-            renderChampionView(state);
-            break;
-        default:
-            // Fallback to hub if state is unknown
-            renderHubView();
-            break;
+    if (inMatch) {
+        // We are in a match, render the bracket inside the game's center panel
+        dom.tournamentModal.classList.add('hidden');
+        dom.tournamentViewContainer.classList.remove('hidden');
+        renderMainView(state, dom.tournamentViewContainer);
+    } else {
+        // Not in a match, render the appropriate view inside the modal
+        dom.tournamentModal.classList.remove('hidden');
+        dom.tournamentViewContainer.classList.add('hidden');
+        
+        switch (state.status) {
+            case 'hub':
+                renderHubView(dom.tournamentModal);
+                break;
+            case 'queue':
+                renderQueueView(state, dom.tournamentModal);
+                break;
+            case 'active':
+            case 'finished':
+                renderMainView(state, dom.tournamentModal);
+                break;
+            default:
+                renderHubView(dom.tournamentModal);
+                break;
+        }
     }
 }
 
-function renderHubView() {
-    dom.tournamentHubView.classList.remove('hidden');
+function renderHubView(container) {
+    clearViews(container);
+    container.querySelector('#tournament-hub-view').classList.remove('hidden');
 }
 
-function renderQueueView(state) {
-    dom.tournamentQueueView.classList.remove('hidden');
-    const queueStatusEl = document.getElementById('tournament-queue-status-text');
+function renderQueueView(state, container) {
+    clearViews(container);
+    const queueView = container.querySelector('#tournament-queue-view');
+    queueView.classList.remove('hidden');
+
+    const queueStatusEl = queueView.querySelector('#tournament-queue-status-text');
     if (queueStatusEl) {
         queueStatusEl.textContent = t('tournament.searching', { current: state.playerCount, max: state.max || 8 });
     }
 
     if (queueCountdownInterval) clearInterval(queueCountdownInterval);
-    const countdownEl = document.getElementById('tournament-queue-countdown');
+    const countdownEl = queueView.querySelector('#tournament-queue-countdown');
     if (countdownEl && state.timeout && state.playerCount > 0) {
         let timeLeft = state.timeout;
         countdownEl.textContent = t('tournament.starting_in', { seconds: timeLeft });
@@ -81,21 +92,63 @@ function renderQueueView(state) {
     }
 }
 
-function renderMainView(state) {
-    dom.tournamentMainView.classList.remove('hidden');
-    renderLeaderboard(state.leaderboard, state.players);
-    renderMatches(state, state.currentRound);
+function renderMainView(state, container) {
+    const isModal = container.id === 'tournament-modal';
+
+    const leaderboardHTML = renderLeaderboard(state.leaderboard, state.players);
+    const matchesHTML = renderMatches(state, state.currentRound);
+    const championHTML = state.status === 'finished' ? renderChampionView(state) : '';
+
+    const content = `
+        <div id="tournament-main-view" class="${isModal ? '' : 'in-game-view'}">
+             ${championHTML}
+             <div class="tournament-main-grid">
+                <div id="tournament-leaderboard-container">
+                    ${leaderboardHTML}
+                </div>
+                <div id="tournament-matches-container">
+                    ${matchesHTML}
+                </div>
+            </div>
+            <div class="tournament-actions-container">
+                 <button id="tournament-continue-btn" class="control-button hidden" data-i18n="tournament.continue_to_match">Continuar para Partida</button>
+            </div>
+        </div>
+    `;
+
+    if (isModal) {
+        clearViews(container);
+        const modalContent = container.querySelector('.modal-content');
+        let mainViewEl = modalContent.querySelector('#tournament-main-view');
+        if (!mainViewEl) {
+            mainViewEl = document.createElement('div');
+            modalContent.appendChild(mainViewEl);
+        }
+        mainViewEl.innerHTML = content;
+        mainViewEl.classList.remove('hidden');
+    } else {
+        container.innerHTML = content;
+    }
+    
+    // After rendering, check if the "Continue" button should be shown
+    const continueBtn = container.querySelector('#tournament-continue-btn');
+    const { userProfile } = getState();
+    const roundMatches = state.schedule.find(round => round.round === state.currentRound)?.matches || [];
+    const myMatch = roundMatches.find(m => (m.p1.id === userProfile.id || m.p2.id === userProfile.id) && m.result === null);
+    if (myMatch && continueBtn) {
+        continueBtn.dataset.matchId = myMatch.matchId;
+        continueBtn.classList.remove('hidden');
+    }
 }
 
 function renderChampionView(state) {
-    dom.tournamentChampionView.classList.remove('hidden');
-    if (dom.tournamentChampionText) {
-        const champion = state.leaderboard[0];
-        const runnerUp = state.leaderboard[1];
-        const championPlayer = state.players.find(p => p.id === champion.id);
-        const runnerUpPlayer = state.players.find(p => p.id === runnerUp.id);
-        
-        dom.tournamentChampionText.innerHTML = `
+    const champion = state.leaderboard[0];
+    const runnerUp = state.leaderboard[1];
+    const championPlayer = state.players.find(p => p.id === champion.id);
+    const runnerUpPlayer = state.players.find(p => p.id === runnerUp.id);
+    
+    return `
+        <div id="tournament-champion-view">
             <h2>${t('tournament.champion_title')}</h2>
             <p class="champion-name">🏆 ${getPlayerName(championPlayer)} 🏆</p>
             <p class="prize-info">${t('tournament.prize_champion')}</p>
@@ -103,16 +156,13 @@ function renderChampionView(state) {
             <h3>${t('tournament.runner_up_title')}</h3>
             <p class="runner-up-name">🥈 ${getPlayerName(runnerUpPlayer)} 🥈</p>
             <p class="prize-info">${t('tournament.prize_runner_up')}</p>
-        `;
-    }
+        </div>
+    `;
 }
 
 function renderLeaderboard(leaderboard, allPlayers) {
-    if (!dom.tournamentLeaderboardContainer) return;
-
     const sortedLeaderboard = [...leaderboard].sort((a, b) => b.points - a.points || b.wins - a.wins);
-
-    dom.tournamentLeaderboardContainer.innerHTML = `
+    return `
         <h3 class="tournament-section-title">${t('tournament.leaderboard')}</h3>
         <table class="tournament-table">
             <thead>
@@ -129,7 +179,6 @@ function renderLeaderboard(leaderboard, allPlayers) {
                 ${sortedLeaderboard.map((playerEntry, index) => {
                     const fullPlayer = allPlayers.find(p => p.id === playerEntry.id);
                     const avatarUrl = fullPlayer?.avatar_url ? (fullPlayer.avatar_url.startsWith('http') ? fullPlayer.avatar_url : `./${fullPlayer.avatar_url}`) : './aleatorio1.png';
-                    
                     return `
                     <tr>
                         <td>${index + 1}</td>
@@ -149,50 +198,38 @@ function renderLeaderboard(leaderboard, allPlayers) {
 }
 
 function renderMatches(state, currentRound) {
-    if (!dom.tournamentMatchesContainer) return;
-    const { userProfile } = getState();
     const allPlayers = state.players;
-
     const roundMatches = state.schedule.find(round => round.round === currentRound)?.matches || [];
-    const continueBtn = document.getElementById('tournament-continue-btn');
+    const { userProfile } = getState();
 
-    let isMyTurnToPlay = false;
-
-    dom.tournamentMatchesContainer.innerHTML = `
+    return `
         <h3 class="tournament-section-title">${t('tournament.current_round', { round: currentRound })}</h3>
         <div class="matches-grid">
             ${roundMatches.map(match => {
                 const player1 = allPlayers.find(p => p.id === match.p1.id);
                 const player2 = allPlayers.find(p => p.id === match.p2.id);
-
                 const isMyMatch = player1.id === userProfile.id || player2.id === userProfile.id;
                 const isFinished = match.result !== null;
-
-                if (isMyMatch && !isFinished) {
-                    isMyTurnToPlay = true;
-                    if(continueBtn) continueBtn.dataset.matchId = match.matchId;
-                }
                 
                 let resultText = '';
                 if (isFinished) {
-                    if (match.result === 'draw') {
-                        resultText = '1 - 1';
-                    } else if (match.winnerId === player1.id) {
-                        resultText = 'V - D';
-                    } else {
-                        resultText = 'D - V';
-                    }
+                    if (match.winnerId === 'draw') resultText = '1 - 1';
+                    else if (match.winnerId === player1.id) resultText = 'V - D';
+                    else resultText = 'D - V';
                 }
 
+                const p1AvatarUrl = player1?.avatar_url ? (player1.avatar_url.startsWith('http') ? player1.avatar_url : `./${player1.avatar_url}`) : './aleatorio1.png';
+                const p2AvatarUrl = player2?.avatar_url ? (player2.avatar_url.startsWith('http') ? player2.avatar_url : `./${player2.avatar_url}`) : './aleatorio1.png';
+
                 return `
-                    <div class="match-card ${isMyMatch ? 'my-match' : ''} ${isFinished ? 'finished' : ''}">
+                    <div class="match-card ${isMyMatch && !isFinished ? 'my-match' : ''} ${isFinished ? 'finished' : ''}">
                         <div class="match-player">
-                             <img src="${player1.avatar_url ? (player1.avatar_url.startsWith('http') ? player1.avatar_url : `./${player1.avatar_url}`) : './aleatorio1.png'}" class="match-player-avatar">
+                            <img src="${p1AvatarUrl}" class="match-player-avatar">
                             <span>${getPlayerName(player1)}</span>
                         </div>
                         <div class="match-result">${isFinished ? resultText : 'vs'}</div>
                         <div class="match-player">
-                             <img src="${player2.avatar_url ? (player2.avatar_url.startsWith('http') ? player2.avatar_url : `./${player2.avatar_url}`) : './aleatorio1.png'}" class="match-player-avatar">
+                            <img src="${p2AvatarUrl}" class="match-player-avatar">
                             <span>${getPlayerName(player2)}</span>
                         </div>
                     </div>
@@ -200,10 +237,6 @@ function renderMatches(state, currentRound) {
             }).join('')}
         </div>
     `;
-
-    if (continueBtn) {
-        continueBtn.classList.toggle('hidden', !isMyTurnToPlay);
-    }
 }
 
 export function renderTournamentRankingTable(rankingData) {
@@ -233,9 +266,7 @@ export function renderTournamentRankingTable(rankingData) {
                 ${players.map((player, index) => {
                     const rank = (currentPage - 1) * 10 + index + 1;
                     let titleText = player.selected_title_code ? t(`titles.${player.selected_title_code}`) : '';
-                    if (titleText.startsWith('titles.')) {
-                        titleText = player.selected_title_code; // Fallback to the code itself
-                    }
+                    if (titleText.startsWith('titles.')) titleText = player.selected_title_code;
                     const avatarUrl = player.avatar_url ? (player.avatar_url.startsWith('http') ? player.avatar_url : `./${player.avatar_url}`) : './aleatorio1.png';
                     return `
                     <tr class="rank-${rank}">
@@ -263,23 +294,16 @@ export function renderTournamentRankingTable(rankingData) {
 }
 
 export function renderTournamentMatchScore(score) {
-    if (!dom.centerPanelHeader) return;
-    
-    // Remove existing score container to prevent duplicates
-    clearTournamentMatchScore();
-
-    const container = document.createElement('div');
-    container.id = 'tournament-match-score-container'; // Use a consistent ID
-    
-    container.innerHTML = `
-        <span class="tournament-match-score">${t('tournament.best_of_3_score')}: ${score[0]} - ${score[1]}</span>
-    `;
-    dom.centerPanelHeader.appendChild(container);
+    const container = dom.tournamentMatchScoreContainer;
+    if (!container) return;
+    container.classList.remove('hidden');
+    container.innerHTML = `<span class="tournament-match-score">${t('tournament.best_of_3_score')}: ${score[0]} - ${score[1]}</span>`;
 }
 
 export function clearTournamentMatchScore() {
-    const existingContainer = document.getElementById('tournament-match-score-container');
-    if (existingContainer) {
-        existingContainer.remove();
+    const container = dom.tournamentMatchScoreContainer;
+    if (container) {
+        container.classList.add('hidden');
+        container.innerHTML = '';
     }
 }

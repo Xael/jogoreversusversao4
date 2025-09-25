@@ -15,7 +15,7 @@ import * as network from '../core/network.js';
 import { shatterImage } from './animations.js';
 import { announceEffect } from '../core/sound.js';
 import { playCard } from '../game-logic/player-actions.js';
-import { advanceToNextPlayer, startNextInfiniteChallengeDuel } from '../game-logic/turn-manager.js';
+import { advanceToNextPlayer, startNextInfiniteChallengeDuel, initiateGameStartSequence } from '../game-logic/turn-manager.js';
 import { setLanguage, t } from '../core/i18n.js';
 import { showSplashScreen } from './splash-screen.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from './profile-renderer.js';
@@ -531,6 +531,15 @@ export function initializeUiHandlers() {
                 network.emitReportPlayer(googleId, message);
             }
         }
+        
+        const continueBtn = e.target.closest('#tournament-continue-btn');
+        if (continueBtn) {
+            const { gameState } = getState();
+            if (gameState && gameState.isTournamentMatch) {
+                initiateGameStartSequence();
+                continueBtn.classList.add('hidden'); 
+            }
+        }
     });
 
     dom.cardsButton.addEventListener('click', () => {
@@ -1033,6 +1042,10 @@ export function initializeUiHandlers() {
             } else {
                  showSplashScreen();
             }
+        } else if (action === 'tournament_continue') {
+            const { tournamentState } = getState();
+            dom.appContainerEl.classList.add('hidden');
+            renderTournamentView(tournamentState);
         } else {
             showSplashScreen();
         }
@@ -1725,7 +1738,7 @@ export function initializeUiHandlers() {
             return;
         }
         dom.splashScreenEl.classList.add('hidden');
-        sound.playStoryMusic('altar.ogg');
+        sound.playStoryMusic('tela.ogg'); // Use main menu music
         renderTournamentView({ status: 'hub' });
     });
 
@@ -1739,12 +1752,19 @@ export function initializeUiHandlers() {
 
     dom.tournamentCancelQueueButton.addEventListener('click', () => {
         network.emitCancelTournamentQueue();
-        renderTournamentView({ status: 'hub' }); // Go back to hub
     });
 
     dom.tournamentCloseButton.addEventListener('click', () => {
-        dom.tournamentModal.classList.add('hidden');
-        showSplashScreen();
-        sound.stopStoryMusic();
+        const { gameState } = getState();
+        if (gameState && gameState.isTournamentMatch) {
+            if (confirm("Tem certeza que deseja desistir do torneio?")) {
+                 showSplashScreen();
+                 sound.stopStoryMusic();
+            }
+        } else {
+            dom.tournamentModal.classList.add('hidden');
+            showSplashScreen();
+            sound.stopStoryMusic();
+        }
     });
 }

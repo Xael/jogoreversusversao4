@@ -13,6 +13,7 @@ import { generateBoardPaths } from './game-logic/board.js';
 import { executeAiTurn } from './ai/ai-controller.js';
 import { createSpiralStarryBackground, resetGameEffects } from './ui/animations.js';
 import { t } from './core/i18n.js';
+import { renderTournamentView } from '../ui/torneio-renderer.js';
 
 
 /**
@@ -95,7 +96,7 @@ const showFullscreenAnnounce = async (text, imageSrc) => {
  * The core game state creation is now handled by the server for PvP.
  */
 export const initializeGame = async (mode, options) => {
-    const { isChatMuted, infiniteChallengeOpponentQueue } = getState();
+    const { isChatMuted, infiniteChallengeOpponentQueue, tournamentState } = getState();
     dom.chatInput.disabled = isChatMuted;
     dom.chatInput.placeholder = t(isChatMuted ? 'chat.chat_muted_message' : 'game.chat_placeholder');
 
@@ -136,9 +137,10 @@ export const initializeGame = async (mode, options) => {
     } else if (mode === 'tournament') {
         isTournamentMatch = true;
         numPlayers = 2;
-        playerIdsInGame = options.playerIds;
+        // In tournament mode, playerIds come from the match options
+        playerIdsInGame = options.tournamentMatch.playerIds; 
         modeText = 'Partida de Torneio';
-        // Music might be set already, don't override
+        // Music is managed by the splash screen/hub for tournaments
     }
     else if (options.story) { // Covers both Story Mode and Events
         isStoryMode = true; // We use the story mode flag to handle shared logic like win/loss events.
@@ -223,9 +225,19 @@ export const initializeGame = async (mode, options) => {
     dom.eventModal.classList.add('hidden');
     dom.pvpRoomListModal.classList.add('hidden');
     dom.pvpLobbyModal.classList.add('hidden');
+    dom.tournamentModal.classList.add('hidden'); // Hide the hub modal
     dom.appContainerEl.classList.remove('blurred', 'hidden');
     dom.reversusTotalIndicatorEl.classList.add('hidden');
     dom.debugButton.classList.remove('hidden');
+
+    // --- NEW TOURNAMENT VIEW LOGIC ---
+    if (isTournamentMatch) {
+        dom.boardAndScoresWrapper.classList.add('hidden');
+        dom.tournamentViewContainer.classList.remove('hidden');
+    } else {
+        dom.boardAndScoresWrapper.classList.remove('hidden');
+        dom.tournamentViewContainer.classList.add('hidden');
+    }
 
     // Reset board classes
     dom.boardEl.classList.remove('inverted', 'board-rotating', 'board-rotating-fast', 'board-rotating-super-fast'); 
@@ -257,22 +269,29 @@ export const initializeGame = async (mode, options) => {
     } else {
         updateState('gameTimerInterval', timerInterval);
     }
-
     
     const valueDeck = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
     const effectDeck = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
 
     const players = Object.fromEntries(
         playerIdsInGame.map((id, index) => {
-            const playerConfig = options.tournamentMatch ? (id === options.tournamentMatch.player1.playerId ? options.tournamentMatch.player1 : options.tournamentMatch.player2) : config.PLAYER_CONFIG[id];
+             // In tournament mode, get player data from the tournament state
+            const playerConfig = isTournamentMatch 
+                ? (tournamentState.players.find(p => p.id === options.tournamentMatch.playerData[id].id))
+                : config.PLAYER_CONFIG[id];
+
+            const playerName = isTournamentMatch 
+                ? (playerConfig.username.startsWith('player_names.') ? t(playerConfig.username) : playerConfig.username)
+                : (playerConfig.name || (playerConfig.nameKey ? t(playerConfig.nameKey) : `Player ${index + 1}`));
             
-            const playerName = playerConfig.name || (playerConfig.nameKey ? t(playerConfig.nameKey) : `Player ${index + 1}`);
+            const isHuman = isTournamentMatch ? !playerConfig.isAI : playerConfig.isHuman;
 
             const playerObject = {
                 ...playerConfig,
                 name: playerName,
-                id,
-                aiType: playerConfig.aiType || 'default',
+                id: id, // Use the game-specific ID ('player-1', 'player-2')
+                isHuman: isHuman,
+                aiType: isHuman ? null : (playerConfig.aiType || 'default'),
                 pathId: index,
                 position: 1,
                 hand: [],
@@ -432,8 +451,12 @@ export const initializeGame = async (mode, options) => {
     if(mode === 'duo' && !isStoryMode) updateLog("Equipe Azul/Verde (Você & Jogador 3) vs. Equipe Vermelho/Amarelo (Jogador 2 & Jogador 4)");
     
     renderAll();
-    
-    await initiateGameStartSequence();
+
+    // For non-tournament games, start the action immediately.
+    // For tournaments, wait for the player to click "Continue".
+    if (!isTournamentMatch) {
+        await initiateGameStartSequence();
+    }
 };
 
 export function restartLastDuel() {
