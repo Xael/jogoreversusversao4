@@ -135,6 +135,11 @@ function updateSideScoreBoxes(scores) {
         `;
 
     } else { // Solo modes (1v1, 1v2, 1v3, etc.)
+        // Do not show side scores for tournament matches
+        if (gameState.isTournamentMatch) {
+            return;
+        }
+
         // Always show and update the human player's score box (left)
         dom.leftScoreBox.classList.remove('hidden');
         dom.leftScoreBox.className = 'side-score-box player-1-score'; // Always blue for player 1

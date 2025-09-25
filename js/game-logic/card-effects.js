@@ -30,32 +30,19 @@ export async function applyEffect(card, targetId, casterId, effectTypeToReverse,
             case 'Sobe':
             case 'Desce':
                 // The last effect played is the one that counts.
-                // Clear any effect previously cast by this caster on any player.
-                allPlayers.forEach(p => {
-                    if (p.tournamentScoreEffect && p.tournamentScoreEffect.casterId === casterId) {
-                        p.tournamentScoreEffect = null;
-                    }
-                });
-                // Apply new effect to the target
-                target.tournamentScoreEffect = { effect: cardName, casterId };
+                // It's applied to the target, and we record who cast it.
+                target.tournamentScoreEffect = { effect: cardName, casterId: caster.id };
                 updateLog(`${caster.name} usou ${cardName} em ${target.name}.`);
                 playTournamentEffectSound(cardName);
-                return; // End execution here for these cards in tournament mode
+                return;
 
             case 'Pula':
                 if (target.tournamentScoreEffect) {
                     const stolenEffect = { ...target.tournamentScoreEffect };
                     target.tournamentScoreEffect = null; // Remove effect from target
                     
-                    // Clear any previous effect cast by the caster of Pula
-                    allPlayers.forEach(p => {
-                        if (p.tournamentScoreEffect && p.tournamentScoreEffect.casterId === casterId) {
-                            p.tournamentScoreEffect = null;
-                        }
-                    });
-
                     // Give the stolen effect to the caster of Pula
-                    caster.tournamentScoreEffect = { effect: stolenEffect.effect, casterId: casterId };
+                    caster.tournamentScoreEffect = { effect: stolenEffect.effect, casterId: caster.id };
                     updateLog(`${caster.name} usou Pula e roubou o efeito '${stolenEffect.effect}' de ${target.name}!`);
                 } else {
                     updateLog(`${caster.name} usou Pula em ${target.name}, mas não havia efeito para roubar.`);
@@ -66,22 +53,18 @@ export async function applyEffect(card, targetId, casterId, effectTypeToReverse,
             case 'Reversus':
                 if (target.tournamentScoreEffect) {
                     const effectToReverse = target.tournamentScoreEffect;
-                    
+                    const originalCasterId = effectToReverse.casterId;
+                    const originalEffect = effectToReverse.effect;
+
                     // Special case: reclaim stolen effect
-                    if (effectToReverse.casterId !== targetId && casterId === effectToReverse.casterId) {
+                    if (target.id !== originalCasterId && caster.id === originalCasterId) {
                         target.tournamentScoreEffect = null; // Remove from target
-                        // Clear any previous effect cast by caster
-                        allPlayers.forEach(p => {
-                            if (p.tournamentScoreEffect && p.tournamentScoreEffect.casterId === casterId) {
-                                p.tournamentScoreEffect = null;
-                            }
-                        });
-                        caster.tournamentScoreEffect = { effect: effectToReverse.effect, casterId: casterId }; // Reclaim it
-                        updateLog(`${caster.name} usou Reversus e recuperou seu efeito '${effectToReverse.effect}' de ${target.name}!`);
+                        caster.tournamentScoreEffect = { effect: originalEffect, casterId: caster.id }; // Reclaim it
+                        updateLog(`${caster.name} usou Reversus e recuperou seu efeito '${originalEffect}' de ${target.name}!`);
                     } else {
                         // Standard inversion
-                        const newEffect = effectToReverse.effect === 'Sobe' ? 'Desce' : 'Sobe';
-                        effectToReverse.effect = newEffect;
+                        const newEffect = originalEffect === 'Sobe' ? 'Desce' : 'Sobe';
+                        target.tournamentScoreEffect.effect = newEffect;
                         updateLog(`${caster.name} usou Reversus e inverteu o efeito em ${target.name} para '${newEffect}'!`);
                     }
                 } else {
@@ -95,8 +78,6 @@ export async function applyEffect(card, targetId, casterId, effectTypeToReverse,
             case 'Reversus Total':
                 // These cards have no effect in tournament mode as per the new rules.
                 updateLog(`A carta ${cardName} não tem efeito especial no modo Torneio.`);
-                // We still need to discard it from hand, which happens outside this function.
-                // The animation will play, but the game state won't change.
                 return;
         }
     }

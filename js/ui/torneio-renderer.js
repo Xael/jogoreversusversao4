@@ -18,10 +18,10 @@ function clearViews() {
  * @returns {string} The translated or original username.
  */
 function getPlayerName(player) {
-    if (player.username && (player.username.startsWith('event_chars.') || player.username.startsWith('player_names.') || player.username.startsWith('avatars.'))) {
+    if (player && player.username && (player.username.startsWith('event_chars.') || player.username.startsWith('player_names.') || player.username.startsWith('avatars.'))) {
         return t(player.username);
     }
-    return player.username;
+    return player ? player.username : 'Desconhecido';
 }
 
 
@@ -83,8 +83,8 @@ function renderQueueView(state) {
 
 function renderMainView(state) {
     dom.tournamentMainView.classList.remove('hidden');
-    renderLeaderboard(state.leaderboard);
-    renderMatches(state.schedule, state.currentRound);
+    renderLeaderboard(state.leaderboard, state.players);
+    renderMatches(state, state.currentRound);
 }
 
 function renderChampionView(state) {
@@ -92,19 +92,22 @@ function renderChampionView(state) {
     if (dom.tournamentChampionText) {
         const champion = state.leaderboard[0];
         const runnerUp = state.leaderboard[1];
+        const championPlayer = state.players.find(p => p.id === champion.id);
+        const runnerUpPlayer = state.players.find(p => p.id === runnerUp.id);
+        
         dom.tournamentChampionText.innerHTML = `
             <h2>${t('tournament.champion_title')}</h2>
-            <p class="champion-name">🏆 ${getPlayerName(champion)} 🏆</p>
+            <p class="champion-name">🏆 ${getPlayerName(championPlayer)} 🏆</p>
             <p class="prize-info">${t('tournament.prize_champion')}</p>
             <br>
             <h3>${t('tournament.runner_up_title')}</h3>
-            <p class="runner-up-name">🥈 ${getPlayerName(runnerUp)} 🥈</p>
+            <p class="runner-up-name">🥈 ${getPlayerName(runnerUpPlayer)} 🥈</p>
             <p class="prize-info">${t('tournament.prize_runner_up')}</p>
         `;
     }
 }
 
-function renderLeaderboard(leaderboard) {
+function renderLeaderboard(leaderboard, allPlayers) {
     if (!dom.tournamentLeaderboardContainer) return;
 
     const sortedLeaderboard = [...leaderboard].sort((a, b) => b.points - a.points || b.wins - a.wins);
@@ -123,39 +126,58 @@ function renderLeaderboard(leaderboard) {
                 </tr>
             </thead>
             <tbody>
-                ${sortedLeaderboard.map((player, index) => `
+                ${sortedLeaderboard.map((playerEntry, index) => {
+                    const fullPlayer = allPlayers.find(p => p.id === playerEntry.id);
+                    const avatarUrl = fullPlayer?.avatar_url ? (fullPlayer.avatar_url.startsWith('http') ? fullPlayer.avatar_url : `./${fullPlayer.avatar_url}`) : './aleatorio1.png';
+                    
+                    return `
                     <tr>
                         <td>${index + 1}</td>
-                        <td>${getPlayerName(player)}</td>
-                        <td>${player.points}</td>
-                        <td>${player.wins}</td>
-                        <td>${player.draws}</td>
-                        <td>${player.losses}</td>
+                        <td class="tournament-player-cell">
+                            <img src="${avatarUrl}" alt="Avatar" class="tournament-player-avatar">
+                            <span>${getPlayerName(fullPlayer)}</span>
+                        </td>
+                        <td>${playerEntry.points}</td>
+                        <td>${playerEntry.wins}</td>
+                        <td>${playerEntry.draws}</td>
+                        <td>${playerEntry.losses}</td>
                     </tr>
-                `).join('')}
+                `}).join('')}
             </tbody>
         </table>
     `;
 }
 
-function renderMatches(schedule, currentRound) {
+function renderMatches(state, currentRound) {
     if (!dom.tournamentMatchesContainer) return;
     const { userProfile } = getState();
+    const allPlayers = state.players;
 
-    const roundMatches = schedule.find(round => round.round === currentRound)?.matches || [];
+    const roundMatches = state.schedule.find(round => round.round === currentRound)?.matches || [];
+    const continueBtn = document.getElementById('tournament-continue-btn');
+
+    let isMyTurnToPlay = false;
 
     dom.tournamentMatchesContainer.innerHTML = `
         <h3 class="tournament-section-title">${t('tournament.current_round', { round: currentRound })}</h3>
         <div class="matches-grid">
             ${roundMatches.map(match => {
-                const isMyMatch = match.p1.id === userProfile.id || match.p2.id === userProfile.id;
+                const player1 = allPlayers.find(p => p.id === match.p1.id);
+                const player2 = allPlayers.find(p => p.id === match.p2.id);
+
+                const isMyMatch = player1.id === userProfile.id || player2.id === userProfile.id;
                 const isFinished = match.result !== null;
+
+                if (isMyMatch && !isFinished) {
+                    isMyTurnToPlay = true;
+                    if(continueBtn) continueBtn.dataset.matchId = match.matchId;
+                }
                 
                 let resultText = '';
                 if (isFinished) {
                     if (match.result === 'draw') {
                         resultText = '1 - 1';
-                    } else if (match.winnerId === match.p1.id) {
+                    } else if (match.winnerId === player1.id) {
                         resultText = 'V - D';
                     } else {
                         resultText = 'D - V';
@@ -164,14 +186,24 @@ function renderMatches(schedule, currentRound) {
 
                 return `
                     <div class="match-card ${isMyMatch ? 'my-match' : ''} ${isFinished ? 'finished' : ''}">
-                        <div class="match-player">${getPlayerName(match.p1)}</div>
+                        <div class="match-player">
+                             <img src="${player1.avatar_url ? (player1.avatar_url.startsWith('http') ? player1.avatar_url : `./${player1.avatar_url}`) : './aleatorio1.png'}" class="match-player-avatar">
+                            <span>${getPlayerName(player1)}</span>
+                        </div>
                         <div class="match-result">${isFinished ? resultText : 'vs'}</div>
-                        <div class="match-player">${getPlayerName(match.p2)}</div>
+                        <div class="match-player">
+                             <img src="${player2.avatar_url ? (player2.avatar_url.startsWith('http') ? player2.avatar_url : `./${player2.avatar_url}`) : './aleatorio1.png'}" class="match-player-avatar">
+                            <span>${getPlayerName(player2)}</span>
+                        </div>
                     </div>
                 `;
             }).join('')}
         </div>
     `;
+
+    if (continueBtn) {
+        continueBtn.classList.toggle('hidden', !isMyTurnToPlay);
+    }
 }
 
 export function renderTournamentRankingTable(rankingData) {
@@ -204,10 +236,11 @@ export function renderTournamentRankingTable(rankingData) {
                     if (titleText.startsWith('titles.')) {
                         titleText = player.selected_title_code; // Fallback to the code itself
                     }
+                    const avatarUrl = player.avatar_url ? (player.avatar_url.startsWith('http') ? player.avatar_url : `./${player.avatar_url}`) : './aleatorio1.png';
                     return `
                     <tr class="rank-${rank}">
                         <td class="rank-position">${rank}</td>
-                        <td><img src="${player.avatar_url}" alt="Avatar" class="rank-avatar"></td>
+                        <td><img src="${avatarUrl}" alt="Avatar" class="rank-avatar"></td>
                         <td>
                             <span class="rank-name clickable" data-google-id="${player.google_id}">${player.username}</span>
                             <span class="rank-player-title">${titleText}</span>

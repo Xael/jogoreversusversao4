@@ -697,7 +697,7 @@ export function initializeUiHandlers() {
                 dom.eventProgressMarkers.appendChild(marker);
             }
     
-        } else {
+       } else {
             sound.playStoryMusic('tela.ogg');
             dom.eventCharacterImage.src = '';
             dom.eventCharacterName.textContent = 'Nenhum Evento Ativo';
