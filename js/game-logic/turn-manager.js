@@ -574,7 +574,7 @@ async function calculateScoresAndEndRound() {
         updateLog("A rodada terminou em empate. Ninguém avança por pontuação.");
     }
     
-    // Show summary for non-tournament, non-infinite-challenge games.
+    // Always show summary for all modes except infinite challenge.
     if (!gameState.isInfiniteChallenge) {
         await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
     }

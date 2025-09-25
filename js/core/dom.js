@@ -51,6 +51,8 @@ export const drawStartModal = document.getElementById('draw-start-modal');
 export const roundSummaryModal = document.getElementById('round-summary-modal');
 export const cardViewerModalEl = document.getElementById('card-viewer-modal');
 export const achievementsModal = document.getElementById('achievements-modal');
+export const turnAnnounceModal = document.getElementById('turn-announce-modal');
+
 
 // --- Modals (Confirmation & Choices) ---
 export const reversusTargetModal = document.getElementById('reversus-target-modal');

@@ -21,7 +21,7 @@ export async function applyEffect(card, targetId, casterId, effectTypeToReverse,
         
         // Helper to play sound and announce tournament-specific effects
         const playTournamentEffectSound = (name) => {
-            const soundToPlay = name.toLowerCase().replace(/\s/g, '');
+            const soundToPlay = name.toString().toLowerCase().replace(/\s/g, '');
             setTimeout(() => playSoundEffect(soundToPlay), 100);
             setTimeout(() => announceEffect(name), 150);
         };
@@ -120,7 +120,7 @@ export async function applyEffect(card, targetId, casterId, effectTypeToReverse,
     }
     
     // Play sound and announce effect
-    const soundToPlay = effectName.toLowerCase().replace(/\s/g, '');
+    const soundToPlay = effectName.toString().toLowerCase().replace(/\s/g, '');
     const effectsWithSounds = ['mais', 'menos', 'sobe', 'desce', 'pula', 'reversus'];
 
     if (card.isLocked) {

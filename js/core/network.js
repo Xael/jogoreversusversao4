@@ -262,7 +262,7 @@ export function connectToServer() {
         const startElement = document.querySelector(`#hand-${casterId} [data-card-id="${card.id}"]`);
         await animateCardPlay(card, startElement, targetId, targetSlotLabel);
     
-        const soundToPlay = card.name.toLowerCase().replace(/\s/g, '');
+        const soundToPlay = card.name.toString().toLowerCase().replace(/\s/g, '');
         const effectsWithSounds = ['mais', 'menos', 'sobe', 'desce', 'pula', 'reversus'];
     
         if (card.isLocked) {
@@ -464,12 +464,22 @@ export function connectToServer() {
         dom.tournamentModal.classList.add('hidden');
         dom.splashScreenEl.classList.add('hidden');
         
+        // --- UI FIX ---
+        dom.appContainerEl.classList.add('in-tournament-match');
+        dom.tournamentViewContainer.classList.remove('hidden');
+        if (dom.boardAndScoresWrapper) {
+            dom.boardAndScoresWrapper.style.display = 'none';
+        }
+
         const { userProfile } = getState();
         const myPlayerEntry = Object.values(initialGameState.players).find(p => p.name === userProfile.username);
         if (myPlayerEntry) {
             updateState('playerId', myPlayerEntry.id);
         } else {
-            updateState('playerId', 'player-1');
+             // Fallback for AI matches
+            const human = Object.values(initialGameState.players).find(p => p.isHuman);
+            if (human) updateState('playerId', human.id);
+            else updateState('playerId', 'player-1');
         }
 
         updateState('gameState', initialGameState);
@@ -485,15 +495,20 @@ export function connectToServer() {
         
         setupPlayerPerspective();
         renderAll();
-
-        const firstPlayer = state.gameState.players[state.gameState.currentPlayer];
-        const myPlayerId = state.playerId;
         
-        if (firstPlayer && !firstPlayer.isHuman && state.gameState.currentPlayer !== myPlayerId) {
-             console.log(`Tournament match started. It's AI's turn: ${firstPlayer.name}. Triggering AI logic.`);
-             setTimeout(() => executeAiTurn(firstPlayer), 1500);
-        } else if (firstPlayer && firstPlayer.isHuman) {
-            await showTurnIndicator();
+        // --- INITIAL DRAW FIX ---
+        if (initialGameState.gamePhase === 'initial_draw') {
+            await showPvpDrawSequence(initialGameState);
+        } else {
+            // Fallback if draw phase isn't sent
+            const firstPlayer = state.gameState.players[state.gameState.currentPlayer];
+            const myPlayerId = state.playerId;
+            
+            if (firstPlayer && !firstPlayer.isHuman && state.gameState.currentPlayer !== myPlayerId) {
+                 setTimeout(() => executeAiTurn(firstPlayer), 1500);
+            } else if (firstPlayer && firstPlayer.isHuman) {
+                await showTurnIndicator();
+            }
         }
         
         clearTournamentMatchScore();
