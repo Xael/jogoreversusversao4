@@ -792,7 +792,7 @@ body.screen-shaking {
     min-height: 40px; /* Give it a minimum height to avoid layout shifts */
     display: flex;
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
     justify-content: center;
     gap: 0.5rem;
 }
@@ -4018,6 +4018,12 @@ body.screen-shaking {
     gap: 2rem;
     margin-top: 1.5rem;
 }
+.tournament-actions-container {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
 
 .tournament-section-title {
     color: var(--accent-yellow);
@@ -4033,6 +4039,7 @@ body.screen-shaking {
     padding: 10px;
     text-align: left;
     border-bottom: 1px solid var(--card-border);
+    vertical-align: middle;
 }
 .tournament-table th {
     font-weight: 600;
@@ -4040,6 +4047,17 @@ body.screen-shaking {
 .tournament-table td:nth-child(1), .tournament-table td:nth-child(3) {
     text-align: center;
     font-weight: bold;
+}
+.tournament-player-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.tournament-player-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .matches-grid {
@@ -4066,6 +4084,15 @@ body.screen-shaking {
 }
 .match-player {
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.match-player-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 .match-result {
     font-weight: bold;
@@ -4088,8 +4115,37 @@ body.screen-shaking {
     font-size: 1.2rem;
 }
 .tournament-match-score {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     font-weight: bold;
-    color: var(--accent-blue);
+    color: var(--accent-yellow);
+    text-shadow: 0 0 5px rgba(0,0,0,0.5);
     text-align: center;
+}
+
+#tournament-rules-modal .modal-content {
+    width: 800px;
+}
+.tournament-card-rules {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+    text-align: center;
+}
+.card-rule-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+.card-rule-item img {
+    width: 105px; /* 1.5x of 70px */
+    height: 150px; /* 1.5x of 100px */
+    border-radius: 9px;
+}
+.card-rule-item p {
+    font-size: 0.95rem;
+    line-height: 1.5;
 }

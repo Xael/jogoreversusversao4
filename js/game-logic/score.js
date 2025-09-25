@@ -28,6 +28,15 @@ export function updateLiveScoresAndWinningStatus() {
 
         if (effect === 'Mais') score += restoValue;
         if (effect === 'Menos') score -= restoValue;
+
+        // --- NEW TOURNAMENT LOGIC ---
+        if (gameState.isTournamentMatch && player.tournamentScoreEffect) {
+            if (player.tournamentScoreEffect.effect === 'Sobe') {
+                score += 5;
+            } else if (player.tournamentScoreEffect.effect === 'Desce') {
+                score -= 5;
+            }
+        }
         
         player.liveScore = score;
         scores[id] = score;

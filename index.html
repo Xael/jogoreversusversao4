@@ -558,6 +558,9 @@
                     <div id="tournament-leaderboard"></div>
                     <div id="tournament-matches"></div>
                 </div>
+                <div class="tournament-actions-container">
+                    <button id="tournament-continue-btn" class="control-button hidden" data-i18n="tournament.continue_to_match">Continuar para Partida</button>
+                </div>
             </div>
 
             <!-- Champion View -->
@@ -566,6 +569,29 @@
             </div>
 
             <button id="tournament-close-btn" class="control-button" data-i18n="common.close">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Tournament Rules Modal -->
+    <div id="tournament-rules-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 data-i18n="tournament.rules_title">Regras do Torneio</h2>
+            <p data-i18n="tournament.rules_explanation">Para este torneio, o objetivo é vencer as partidas (melhor de 3), não avançar no tabuleiro. As cartas Sobe, Desce e Pula têm efeitos especiais!</p>
+            <div class="tournament-card-rules">
+                <div class="card-rule-item">
+                    <img src="frente_sobe.png" alt="Carta Sobe">
+                    <p data-i18n="tournament.rule_sobe"><strong>Sobe:</strong> Soma +5 ao seu resultado final na rodada.</p>
+                </div>
+                <div class="card-rule-item">
+                    <img src="frente_desce.png" alt="Carta Desce">
+                    <p data-i18n="tournament.rule_desce"><strong>Desce:</strong> Subtrai -5 do seu resultado final na rodada.</p>
+                </div>
+                <div class="card-rule-item">
+                    <img src="frente_pula.png" alt="Carta Pula">
+                    <p data-i18n="tournament.rule_pula"><strong>Pula:</strong> Rouba o efeito 'Sobe' ou 'Desce' de um oponente.</p>
+                </div>
+            </div>
+            <button id="tournament-rules-understood-btn" class="control-button" data-i18n="common.understand">Entendido!</button>
         </div>
     </div>
 

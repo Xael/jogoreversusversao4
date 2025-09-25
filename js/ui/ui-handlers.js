@@ -917,6 +917,12 @@ export function initializeUiHandlers() {
                 network.emitBuyAvatar({ avatarCode });
             }
         }
+
+        const equipButton = e.target.closest('.equip-avatar-btn');
+        if (equipButton) {
+            const avatarCode = equipButton.dataset.avatarCode;
+            network.emitSetSelectedAvatar({ avatarCode });
+        }
     });
 
     dom.infoButton.addEventListener('click', () => dom.infoModal.classList.remove('hidden'));

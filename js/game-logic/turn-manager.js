@@ -1,7 +1,5 @@
 // js/game-logic/turn-manager.js
 
-
-
 import { getState, updateState } from '../core/state.js';
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
@@ -18,6 +16,7 @@ import { rotateAndApplyKingNecroversoBoardEffects } from './board.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
 import { t } from '../core/i18n.js';
 import { createDeck } from './deck.js';
+import { renderTournamentMatchScore } from '../ui/torneio-renderer.js';
 
 
 /**
@@ -329,6 +328,7 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
         player.effects = { score: null, movement: null };
         player.playedValueCardThisTurn = false;
         player.targetPathForPula = null;
+        player.tournamentScoreEffect = null; // Reset tournament effect
 
         // Decrease Versatrix Card cooldown per round
         const versatrixCard = player.hand.find(c => c.name === 'Carta da Versatrix');
@@ -404,6 +404,12 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
 
 function checkGameEnd() {
     const { gameState } = getState();
+    
+    // In tournament matches, the game does not end based on board position.
+    // The win condition is handled in calculateScoresAndEndRound.
+    if (gameState.isTournamentMatch) {
+        return false;
+    }
 
     // Specific win/loss condition for heart-based battles
     if (gameState.currentStoryBattle === 'necroverso_final') {
@@ -514,6 +520,12 @@ async function calculateScoresAndEndRound() {
         if (p.effects.score === 'Menos') score -= (restoValue * scoreModifier);
         if (p.effects.score === 'NECRO X') score += 10;
         if (p.effects.score === 'NECRO X Invertido') score -= 10;
+        
+        // Apply tournament score effects
+        if (gameState.isTournamentMatch && p.tournamentScoreEffect) {
+            if (p.tournamentScoreEffect.effect === 'Sobe') score += 5;
+            if (p.tournamentScoreEffect.effect === 'Desce') score -= 5;
+        }
 
         finalScores[id] = score;
         p.liveScore = score;
@@ -562,10 +574,56 @@ async function calculateScoresAndEndRound() {
         updateLog("A rodada terminou em empate. Ninguém avança por pontuação.");
     }
     
-    if (!gameState.isInfiniteChallenge) {
+    // Show summary for non-tournament games. Tournament handles its own flow.
+    if (!gameState.isInfiniteChallenge && !gameState.isTournamentMatch) {
         await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
     }
 
+    // --- TOURNAMENT MATCH LOGIC ---
+    if (gameState.isTournamentMatch) {
+        const match = gameState.tournamentMatch;
+        if (!match) { console.error("Tournament match data is missing!"); return; }
+
+        if (winners.length === 1) {
+            const winnerId = winners[0];
+            const player1_is_in_match = gameState.playerIdsInGame.includes(match.player1.playerId);
+            const player2_is_in_match = gameState.playerIdsInGame.includes(match.player2.playerId);
+
+            if (winnerId === match.player1.playerId && player1_is_in_match) {
+                match.score[0]++;
+            } else if (winnerId === match.player2.playerId && player2_is_in_match) {
+                match.score[1]++;
+            }
+        } else {
+            match.draws++;
+        }
+        
+        renderTournamentMatchScore(match.score);
+        await new Promise(res => setTimeout(res, 3000)); // Pause to show scores
+
+        const [p1Score, p2Score] = match.score;
+        const matchIsOver = p1Score >= 2 || p2Score >= 2 || (p1Score + p2Score + match.draws >= 3);
+
+        if (matchIsOver) {
+            let winnerName, loserName;
+            if (p1Score > p2Score) {
+                winnerName = match.player1.name;
+                loserName = match.player2.name;
+            } else if (p2Score > p1Score) {
+                winnerName = match.player2.name;
+                loserName = match.player1.name;
+            } else { // Draw
+                 showGameOver(`A partida terminou em empate!`, "Fim da Partida", { action: 'tournament_continue' });
+                 return;
+            }
+             showGameOver(`${winnerName} venceu a partida contra ${loserName}!`, "Fim da Partida", { action: 'tournament_continue' });
+             return;
+        } else {
+            await startNewRound();
+            return; // IMPORTANT: Prevent normal game logic from running after this
+        }
+    }
+    
     // Handle INVERSUS heart loss & Infinite Challenge duel end
     if (gameState.isInversusMode) {
         const player1Won = winners.includes('player-1');

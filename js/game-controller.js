@@ -104,7 +104,7 @@ export const initializeGame = async (mode, options) => {
     Object.assign(config.PLAYER_CONFIG, structuredClone(config.originalPlayerConfig));
     updateState('reversusTotalIndividualFlow', false); // Reset flow state
     
-    let playerIdsInGame, numPlayers, modeText, isStoryMode = false, isFinalBoss = false, storyBattle = null, storyBattleType = null, isInversusMode = false, isXaelChallenge = false, isInfiniteChallenge = false;
+    let playerIdsInGame, numPlayers, modeText, isStoryMode = false, isFinalBoss = false, storyBattle = null, storyBattleType = null, isInversusMode = false, isXaelChallenge = false, isInfiniteChallenge = false, isTournamentMatch = false;
     let isKingNecroBattle = false;
     let eventData = null;
 
@@ -133,6 +133,12 @@ export const initializeGame = async (mode, options) => {
         const nextOpponent = infiniteChallengeOpponentQueue[0];
         const opponentName = nextOpponent.name || (nextOpponent.nameKey ? t(nextOpponent.nameKey) : 'Opponent');
         options.overrides = { 'player-2': { name: opponentName, aiType: nextOpponent.aiType, avatar_url: nextOpponent.avatar_url } };
+    } else if (mode === 'tournament') {
+        isTournamentMatch = true;
+        numPlayers = 2;
+        playerIdsInGame = options.playerIds;
+        modeText = 'Partida de Torneio';
+        // Music might be set already, don't override
     }
     else if (options.story) { // Covers both Story Mode and Events
         isStoryMode = true; // We use the story mode flag to handle shared logic like win/loss events.
@@ -232,7 +238,7 @@ export const initializeGame = async (mode, options) => {
     dom.appContainerEl.classList.toggle('effect-monitor', storyBattle === 'narrador');
 
     const state = getState();
-    if (!isStoryMode && !isInversusMode) {
+    if (!isStoryMode && !isInversusMode && !isTournamentMatch) {
         stopStoryMusic();
         updateState('currentTrackIndex', 0);
         dom.musicPlayer.src = config.MUSIC_TRACKS[state.currentTrackIndex];
@@ -258,7 +264,8 @@ export const initializeGame = async (mode, options) => {
 
     const players = Object.fromEntries(
         playerIdsInGame.map((id, index) => {
-            const playerConfig = config.PLAYER_CONFIG[id];
+            const playerConfig = options.tournamentMatch ? (id === options.tournamentMatch.player1.playerId ? options.tournamentMatch.player1 : options.tournamentMatch.player2) : config.PLAYER_CONFIG[id];
+            
             const playerName = playerConfig.name || (playerConfig.nameKey ? t(playerConfig.nameKey) : `Player ${index + 1}`);
 
             const playerObject = {
@@ -278,6 +285,7 @@ export const initializeGame = async (mode, options) => {
                 liveScore: 0,
                 status: 'neutral', // neutral, winning, losing
                 isEliminated: false,
+                tournamentScoreEffect: null
             };
             if (eventData && id === 'player-2') {
                 playerObject.isEventBoss = true;
@@ -314,7 +322,7 @@ export const initializeGame = async (mode, options) => {
     );
     
     const boardPaths = generateBoardPaths({ storyBattle, isFinalBoss, isXaelChallenge, isKingNecroBattle });
-    if (!isFinalBoss && !isXaelChallenge) {
+    if (!isFinalBoss && !isXaelChallenge && !isTournamentMatch) {
         playerIdsInGame.forEach((id, index) => { 
             if(boardPaths[index]) boardPaths[index].playerId = id; 
         });
@@ -329,6 +337,8 @@ export const initializeGame = async (mode, options) => {
         gamePhase: 'setup',
         gameMode: mode,
         isPvp: false, 
+        isTournamentMatch,
+        tournamentMatch: options.tournamentMatch || null,
         gameOptions: options,
         isStoryMode,
         isInversusMode,
@@ -403,7 +413,7 @@ export const initializeGame = async (mode, options) => {
     }
 
     if (dom.leftScoreBox && dom.rightScoreBox) {
-        if (isInversusMode || isKingNecroBattle || isInfiniteChallenge) {
+        if (isInversusMode || isKingNecroBattle || isInfiniteChallenge || isTournamentMatch) {
             dom.leftScoreBox.classList.add('hidden');
             dom.rightScoreBox.classList.add('hidden');
         } else {
