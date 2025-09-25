@@ -574,26 +574,23 @@ async function calculateScoresAndEndRound() {
         updateLog("A rodada terminou em empate. Ninguém avança por pontuação.");
     }
     
-    // Show summary for non-tournament games. Tournament handles its own flow.
-    if (!gameState.isInfiniteChallenge && !gameState.isTournamentMatch) {
+    // Show summary for non-tournament, non-infinite-challenge games.
+    if (!gameState.isInfiniteChallenge) {
         await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
     }
 
     // --- TOURNAMENT MATCH LOGIC ---
     if (gameState.isTournamentMatch) {
-        const match = gameState.gameOptions.tournamentMatch;
+        const match = gameState.tournamentMatch;
         if (!match) { console.error("Tournament match data is missing!"); return; }
-
-        const player1_id = match.p1.id;
-        const player2_id = match.p2.id;
-        const player1_game_id = Object.keys(gameState.players).find(id => gameState.players[id].id === player1_id);
-        const player2_game_id = Object.keys(gameState.players).find(id => gameState.players[id].id === player2_id);
-
+        
         if (winners.length === 1) {
-            const winnerId = gameState.players[winners[0]].id;
-            if (winnerId === player1_id) {
+            const winnerGameId = winners[0];
+            const winnerPlayerObject = gameState.players[winnerGameId];
+
+            if (winnerPlayerObject.dbId === match.p1.id) {
                 match.score[0]++;
-            } else if (winnerId === player2_id) {
+            } else if (winnerPlayerObject.dbId === match.p2.id) {
                 match.score[1]++;
             }
         } else {
@@ -607,21 +604,23 @@ async function calculateScoresAndEndRound() {
         const matchIsOver = p1Score >= 2 || p2Score >= 2 || (p1Score + p2Score + (match.draws || 0) >= 3);
 
         if (matchIsOver) {
-            let winnerName, loserName, winnerId = null;
+            let winnerName, loserName, winnerDbId = 'draw';
             if (p1Score > p2Score) {
-                winnerId = player1_id;
+                winnerDbId = match.p1.id;
                 winnerName = match.p1.username;
                 loserName = match.p2.username;
             } else if (p2Score > p1Score) {
-                winnerId = player2_id;
+                winnerDbId = match.p2.id;
                 winnerName = match.p2.username;
                 loserName = match.p1.username;
-            } else {
-                 showGameOver(`A partida terminou em empate!`, "Fim da Partida", { action: 'tournament_continue', winnerId: 'draw' });
-                 return;
             }
-             showGameOver(`${winnerName} venceu a partida contra ${loserName}!`, "Fim da Partida", { action: 'tournament_continue', winnerId });
-             return;
+            
+            const message = winnerDbId === 'draw'
+                ? `A partida terminou em empate!`
+                : `${winnerName} venceu a partida contra ${loserName}!`;
+
+            showGameOver(message, "Fim da Partida", { action: 'tournament_continue', winnerId: winnerDbId });
+            return;
         } else {
             await startNewRound();
             return;

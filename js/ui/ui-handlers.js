@@ -1032,7 +1032,7 @@ export function initializeUiHandlers() {
     dom.restartButton.addEventListener('click', (e) => {
         dom.gameOverModal.classList.add('hidden');
         const action = e.target.dataset.action;
-        
+    
         if (action === 'restart') {
             const { gameState } = getState();
             if (gameState && gameState.isStoryMode) {
@@ -1040,12 +1040,75 @@ export function initializeUiHandlers() {
             } else if (gameState) {
                 initializeGame(gameState.gameMode, gameState.gameOptions);
             } else {
-                 showSplashScreen();
+                showSplashScreen();
             }
         } else if (action === 'tournament_continue') {
-            const { tournamentState } = getState();
+            const { tournamentState, gameState, userProfile } = getState();
+            const winnerId = e.target.dataset.winnerId;
+    
+            if (!tournamentState || !gameState || !gameState.tournamentMatch) {
+                console.error("State missing for tournament continuation.");
+                showSplashScreen();
+                return;
+            }
+    
+            // Find the match in the main tournament state and update it
+            const currentRoundData = tournamentState.schedule.find(r => r.round === tournamentState.currentRound);
+            const matchInState = currentRoundData.matches.find(m => m.matchId === gameState.tournamentMatch.matchId);
+    
+            if (matchInState) {
+                matchInState.result = winnerId;
+                matchInState.winnerId = winnerId;
+                matchInState.score = gameState.tournamentMatch.score;
+            }
+    
+            // Update leaderboard
+            const p1Leaderboard = tournamentState.leaderboard.find(p => p.id == gameState.tournamentMatch.p1.id);
+            const p2Leaderboard = tournamentState.leaderboard.find(p => p.id == gameState.tournamentMatch.p2.id);
+    
+            if (winnerId === 'draw') {
+                if (p1Leaderboard) { p1Leaderboard.points += 1; p1Leaderboard.draws += 1; }
+                if (p2Leaderboard) { p2Leaderboard.points += 1; p2Leaderboard.draws += 1; }
+            } else if (winnerId == p1Leaderboard.id) {
+                p1Leaderboard.points += 3; p1Leaderboard.wins += 1;
+                p2Leaderboard.losses += 1;
+            } else if (winnerId == p2Leaderboard.id) {
+                p2Leaderboard.points += 3; p2Leaderboard.wins += 1;
+                p1Leaderboard.losses += 1;
+            }
+    
+            // Check if all matches in the round are finished
+            const allRoundMatchesFinished = currentRoundData.matches.every(m => m.result !== null);
+    
+            if (allRoundMatchesFinished) {
+                if (tournamentState.currentRound < 7) {
+                    tournamentState.currentRound++;
+                } else {
+                    tournamentState.status = 'finished';
+                    tournamentState.leaderboard.sort((a, b) => b.points - a.points || b.wins - a.wins);
+                }
+            }
+    
+            updateState('tournamentState', tournamentState);
+            updateState('gameState', null);
+    
             dom.appContainerEl.classList.add('hidden');
+            dom.gameOverModal.classList.add('hidden');
+    
             renderTournamentView(tournamentState);
+    
+            const nextRoundData = tournamentState.schedule.find(r => r.round === tournamentState.currentRound);
+            if (nextRoundData && tournamentState.status === 'active') {
+                const myNextMatch = nextRoundData.matches.find(m => (m.p1.id === userProfile.id || m.p2.id === userProfile.id) && m.p1.isAI !== m.p2.isAI && m.result === null);
+                if (myNextMatch) {
+                    setTimeout(() => {
+                        const continueBtn = document.querySelector('#tournament-continue-btn');
+                        if (continueBtn && !continueBtn.classList.contains('hidden')) {
+                            continueBtn.click();
+                        }
+                    }, 1000);
+                }
+            }
         } else {
             showSplashScreen();
         }
