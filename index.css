@@ -1,3 +1,4 @@
+
 :root {
     --bg-main: #0b131a; 
     --bg-panel: rgba(29, 53, 87, 0.6);
@@ -4167,4 +4168,38 @@ body.screen-shaking {
 .card-rule-item p {
     font-size: 0.95rem;
     line-height: 1.5;
+}
+
+/* --- IN-GAME TOURNAMENT VIEW --- */
+.app-container.in-tournament-match .board-and-scores-wrapper {
+    display: none;
+}
+
+.app-container.in-tournament-match .center-panel {
+    justify-content: space-between;
+}
+
+.app-container.in-tournament-match #player-1-area-container {
+    height: 38%;
+    flex-grow: 0;
+}
+
+.app-container.in-tournament-match #opponent-zones-container {
+    height: 38%;
+    flex-grow: 0;
+}
+
+.app-container.in-tournament-match .right-panel {
+    justify-content: center;
+}
+
+.app-container.in-tournament-match #tournament-view-container {
+    height: 40%;
+    flex-grow: 0;
+}
+
+.app-container.in-tournament-match .right-panel .player-area {
+    flex-basis: auto;
+    flex-grow: 0;
+    height: 100%; /* Take full height of the opponent container */
 }

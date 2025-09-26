@@ -231,13 +231,9 @@ export const initializeGame = async (mode, options) => {
     dom.debugButton.classList.remove('hidden');
 
     // --- NEW TOURNAMENT VIEW LOGIC ---
-    if (isTournamentMatch) {
-        dom.boardAndScoresWrapper.classList.add('hidden');
-        dom.tournamentViewContainer.classList.remove('hidden');
-    } else {
-        dom.boardAndScoresWrapper.classList.remove('hidden');
-        dom.tournamentViewContainer.classList.add('hidden');
-    }
+    dom.appContainerEl.classList.toggle('in-tournament-match', isTournamentMatch);
+    dom.tournamentViewContainer.classList.toggle('hidden', !isTournamentMatch);
+
 
     // Reset board classes
     dom.boardEl.classList.remove('inverted', 'board-rotating', 'board-rotating-fast', 'board-rotating-super-fast'); 
@@ -288,8 +284,9 @@ export const initializeGame = async (mode, options) => {
 
             const playerObject = {
                 ...playerConfig,
+                dbId: playerConfig.id, // Store the persistent ID
+                id: id, // Overwrite with the game-specific ID ('player-1', 'player-2')
                 name: playerName,
-                id: id, // Use the game-specific ID ('player-1', 'player-2')
                 isHuman: isHuman,
                 aiType: isHuman ? null : (playerConfig.aiType || 'default'),
                 pathId: index,
