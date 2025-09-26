@@ -451,6 +451,7 @@ export function connectToServer() {
     });
 
     socket.on('tournamentStateUpdate', (tournamentState) => {
+        updateState('tournamentState', tournamentState);
         if (tournamentState.status === 'active' || tournamentState.status === 'finished') {
             renderTournamentView(tournamentState);
         }

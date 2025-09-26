@@ -9,6 +9,7 @@ import { showSplashScreen } from './splash-screen.js';
 import { updateLog } from '../core/utils.js';
 import { t } from '../core/i18n.js';
 import { resetGameEffects } from './animations.js';
+import { renderInGameTournamentView } from './torneio-renderer.js';
 
 /**
  * Updates the UI for the chat filter and mute/unmute buttons.
@@ -106,6 +107,10 @@ export const renderAll = () => {
 
     // Render the game board and pawns
     renderBoard();
+
+    if (gameState.isTournamentMatch) {
+        renderInGameTournamentView();
+    }
 
     // CRITICAL FIX: Re-render the log from the authoritative game state
     updateLog();

@@ -230,9 +230,14 @@ export const initializeGame = async (mode, options) => {
     // Reset board classes
     dom.boardEl.classList.remove('inverted', 'board-rotating', 'board-rotating-fast', 'board-rotating-super-fast'); 
     
-    dom.boardEl.classList.toggle('final-battle-board', isFinalBoss);
-    dom.boardEl.classList.toggle('board-rotating', isFinalBoss); // Slow rotation for final bosses
-    dom.boardEl.classList.toggle('board-rotating-super-fast', isInversusMode || isInfiniteChallenge); // Fast rotation for Inversus
+    dom.tournamentGameView.classList.toggle('hidden', !isTournamentMatch);
+    dom.boardEl.classList.toggle('hidden', isTournamentMatch);
+
+    if (!isTournamentMatch) {
+        dom.boardEl.classList.toggle('final-battle-board', isFinalBoss);
+        dom.boardEl.classList.toggle('board-rotating', isFinalBoss); // Slow rotation for final bosses
+        dom.boardEl.classList.toggle('board-rotating-super-fast', isInversusMode || isInfiniteChallenge); // Fast rotation for Inversus
+    }
     
     // Apply narrator monitor effect
     dom.appContainerEl.classList.toggle('effect-monitor', storyBattle === 'narrador');

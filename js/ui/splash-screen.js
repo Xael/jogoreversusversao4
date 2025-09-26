@@ -28,6 +28,9 @@ export const showSplashScreen = () => {
     dom.appContainerEl.classList.add('hidden');
     dom.debugButton.classList.add('hidden');
     dom.xaelStarPowerButton.classList.add('hidden');
+    if (dom.tournamentGameView) dom.tournamentGameView.classList.add('hidden');
+    if (dom.boardEl) dom.boardEl.classList.remove('hidden');
+
 
     // Hide all modals
     const modals = document.querySelectorAll('.modal-overlay');

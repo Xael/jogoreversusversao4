@@ -1,4 +1,5 @@
 
+
 export const appContainerEl = document.getElementById('app-container');
 export const boardEl = document.getElementById('game-board');
 export const cardsButton = document.getElementById('cards-button');
@@ -248,6 +249,7 @@ export const tournamentModal = document.getElementById('tournament-modal');
 export const tournamentHubView = document.getElementById('tournament-hub-view');
 export const tournamentQueueView = document.getElementById('tournament-queue-view');
 export const tournamentMainView = document.getElementById('tournament-main-view');
+export const tournamentGameView = document.getElementById('tournament-game-view');
 export const tournamentChampionView = document.getElementById('tournament-champion-view');
 export const tournamentPlayOnlineButton = document.getElementById('tournament-play-online-btn');
 export const tournamentPlayOfflineButton = document.getElementById('tournament-play-offline-btn');
