@@ -1,4 +1,5 @@
 
+
 :root {
     --bg-main: #0b131a; 
     --bg-panel: rgba(29, 53, 87, 0.6);
@@ -4054,34 +4055,56 @@ body.screen-shaking {
     margin-bottom: 1rem;
 }
 
+#tournament-leaderboard-container {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+}
+.leaderboard-column {
+    flex: 1;
+}
+
 .tournament-table {
     width: 100%;
     border-collapse: collapse;
 }
 .tournament-table th, .tournament-table td {
-    padding: 10px;
+    padding: 8px 4px;
     text-align: left;
     border-bottom: 1px solid var(--card-border);
     vertical-align: middle;
+    font-size: 0.9rem;
 }
 .tournament-table th {
     font-weight: 600;
 }
-.tournament-table td:nth-child(1), .tournament-table td:nth-child(3) {
+.tournament-table td:nth-child(1) {
     text-align: center;
     font-weight: bold;
+    width: 25px;
+}
+.tournament-table th:not(:first-child),
+.tournament-table td:not(:first-child) {
+    text-align: center;
 }
 .tournament-player-cell {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 .tournament-player-avatar {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     object-fit: cover;
+    flex-shrink: 0;
 }
+.tournament-player-cell span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 
 .matches-grid {
     display: flex;
@@ -4172,34 +4195,26 @@ body.screen-shaking {
 
 /* --- IN-GAME TOURNAMENT VIEW --- */
 .app-container.in-tournament-match .board-and-scores-wrapper {
-    display: none;
+    display: flex; /* Re-enable for tournament matches */
 }
 
+/* Remove problematic layout overrides */
 .app-container.in-tournament-match .center-panel {
-    justify-content: space-between;
+    justify-content: flex-start; /* Revert to default */
 }
 
-.app-container.in-tournament-match #player-1-area-container {
-    height: 38%;
-    flex-grow: 0;
-}
-
-.app-container.in-tournament-match #opponent-zones-container {
-    height: 38%;
-    flex-grow: 0;
-}
-
-.app-container.in-tournament-match .right-panel {
-    justify-content: center;
+.app-container.in-tournament-match #tournament-view-container,
+.app-container.in-tournament-match .right-panel .player-area {
+    /* Let the default grid layout handle sizing */
+    height: auto;
+    flex-grow: 1;
+    flex-basis: auto;
 }
 
 .app-container.in-tournament-match #tournament-view-container {
-    height: 40%;
-    flex-grow: 0;
+    display: none; /* Hide the bracket during the match */
 }
 
-.app-container.in-tournament-match .right-panel .player-area {
-    flex-basis: auto;
-    flex-grow: 0;
-    height: 100%; /* Take full height of the opponent container */
+.app-container.in-tournament-match .board-and-scores-wrapper {
+    display: none; /* Hide the board for tournament matches */
 }
