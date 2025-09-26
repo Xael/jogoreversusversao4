@@ -1,6 +1,6 @@
 // js/core/network.js
 import { getState, updateState } from './state.js';
-import * as dom from './dom.js';
+import * as dom from '../core/dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
 import { renderRoomList, renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
@@ -262,7 +262,7 @@ export function connectToServer() {
         const startElement = document.querySelector(`#hand-${casterId} [data-card-id="${card.id}"]`);
         await animateCardPlay(card, startElement, targetId, targetSlotLabel);
     
-        const soundToPlay = card.name.toString().toLowerCase().replace(/\s/g, '');
+        const soundToPlay = card.name.toLowerCase().replace(/\s/g, '');
         const effectsWithSounds = ['mais', 'menos', 'sobe', 'desce', 'pula', 'reversus'];
     
         if (card.isLocked) {
@@ -315,11 +315,7 @@ export function connectToServer() {
     });
 
     socket.on('gameOver', ({ message, winnerId }) => {
-        const { gameState } = getState();
-        const buttonOptions = (gameState && gameState.isTournamentMatch)
-            ? { action: 'tournament_continue', text: t('common.continue') }
-            : { action: 'menu' };
-        showGameOver(message, "Fim de Jogo!", buttonOptions);
+        showGameOver(message, "Fim de Jogo!", { action: 'menu' });
     });
 
     socket.on('error', (message) => {
@@ -464,22 +460,16 @@ export function connectToServer() {
         dom.tournamentModal.classList.add('hidden');
         dom.splashScreenEl.classList.add('hidden');
         
-        // --- UI FIX ---
-        dom.appContainerEl.classList.add('in-tournament-match');
-        dom.tournamentViewContainer.classList.remove('hidden');
-        if (dom.boardAndScoresWrapper) {
-            dom.boardAndScoresWrapper.style.display = 'none';
-        }
-
+        // This is a tournament match, not a lobby-based one, so we need to find our player ID.
+        // We assume the server sends 'player-1' for the human player in offline mode.
+        // In online mode, we need to check against our user profile ID.
         const { userProfile } = getState();
         const myPlayerEntry = Object.values(initialGameState.players).find(p => p.name === userProfile.username);
         if (myPlayerEntry) {
             updateState('playerId', myPlayerEntry.id);
         } else {
-             // Fallback for AI matches
-            const human = Object.values(initialGameState.players).find(p => p.isHuman);
-            if (human) updateState('playerId', human.id);
-            else updateState('playerId', 'player-1');
+             // Fallback for offline mode
+            updateState('playerId', 'player-1');
         }
 
         updateState('gameState', initialGameState);
@@ -495,20 +485,14 @@ export function connectToServer() {
         
         setupPlayerPerspective();
         renderAll();
+
+        const firstPlayer = state.gameState.players[state.gameState.currentPlayer];
+        const myPlayerId = state.playerId;
         
-        // --- INITIAL DRAW FIX ---
-        if (initialGameState.gamePhase === 'initial_draw') {
-            await showPvpDrawSequence(initialGameState);
-        } else {
-            // Fallback if draw phase isn't sent
-            const firstPlayer = state.gameState.players[state.gameState.currentPlayer];
-            const myPlayerId = state.playerId;
-            
-            if (firstPlayer && !firstPlayer.isHuman && state.gameState.currentPlayer !== myPlayerId) {
-                 setTimeout(() => executeAiTurn(firstPlayer), 1500);
-            } else if (firstPlayer && firstPlayer.isHuman) {
-                await showTurnIndicator();
-            }
+        // Trigger AI turn if it starts and is not the human player
+        if (firstPlayer && !firstPlayer.isHuman && state.gameState.currentPlayer !== myPlayerId) {
+             console.log(`Tournament match started. It's AI's turn: ${firstPlayer.name}. Triggering AI logic.`);
+             setTimeout(() => executeAiTurn(firstPlayer), 1500);
         }
         
         clearTournamentMatchScore();
@@ -671,8 +655,4 @@ export function emitCancelTournamentQueue() {
 export function emitGetTournamentRanking(data) {
     const { socket } = getState();
     if (socket) socket.emit('getTournamentRanking', data);
-}
-export function emitPlayerReadyForTournamentMatch(matchId) {
-    const { socket } = getState();
-    if (socket) socket.emit('playerReadyForTournamentMatch', { matchId });
 }

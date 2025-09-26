@@ -413,7 +413,7 @@
                 <img src="logo.png" alt="Reversus Logo" class="game-logo">
             </div>
             <div id="game-timer-container">00:00</div>
-            <div id="chat-container" class="chat-container">
+            <div class="chat-container">
                 <div class="chat-header">
                     <h2 data-i18n="game.log_title">Histórico do Jogo</h2>
                 </div>
@@ -428,11 +428,10 @@
             </div>
         </div>
         <div class="center-panel">
-            <div id="center-panel-header" class="center-panel-header">
+            <div class="center-panel-header">
                 <div id="reversus-total-indicator" class="hidden" data-i18n="game.reversus_total_active">Reversus Total Ativo!</div>
                 <div id="pvp-pot-container" class="pvp-pot-container hidden"></div>
                 <div id="team-scores-container" class="team-scores-container hidden"></div>
-                <div id="tournament-match-score-container" class="hidden"></div>
             </div>
             <div class="board-and-scores-wrapper">
                 <div id="left-score-box" class="side-score-box player-1-score hidden">
@@ -444,9 +443,6 @@
                     <span id="right-score-value">0</span>
                     <span id="right-score-status" class="side-score-status"></span>
                 </div>
-            </div>
-            <div id="tournament-view-container" class="hidden">
-                 <!-- Tournament Bracket will be rendered here during matches -->
             </div>
             <div id="player-1-area-container">
                  <!-- Player 1 Area will be rendered here -->
@@ -528,24 +524,6 @@
             <!-- Hub View -->
             <div id="tournament-hub-view">
                 <h2 data-i18n="tournament.title">Torneio</h2>
-                 <div class="tournament-rules-explanation">
-                    <h3 data-i18n="tournament.rules_title">Regras do Torneio</h3>
-                    <p data-i18n="tournament.rules_explanation">Para este torneio, o objetivo é vencer as partidas (melhor de 3), não avançar no tabuleiro. As cartas Sobe, Desce e Pula têm efeitos especiais!</p>
-                    <div class="tournament-card-rules">
-                        <div class="card-rule-item">
-                            <img src="frente_sobe.png" alt="Carta Sobe">
-                            <p data-i18n="tournament.rule_sobe"><strong>Sobe:</strong> Soma +5 ao seu resultado final na rodada.</p>
-                        </div>
-                        <div class="card-rule-item">
-                            <img src="frente_desce.png" alt="Carta Desce">
-                            <p data-i18n="tournament.rule_desce"><strong>Desce:</strong> Subtrai -5 do seu resultado final na rodada.</p>
-                        </div>
-                        <div class="card-rule-item">
-                            <img src="frente_pula.png" alt="Carta Pula">
-                            <p data-i18n="tournament.rule_pula"><strong>Pula:</strong> Rouba o efeito 'Sobe' ou 'Desce' de um oponente.</p>
-                        </div>
-                    </div>
-                </div>
                 <div class="tournament-hub-options">
                     <div class="tournament-option-card">
                         <h3 data-i18n="tournament.play_online">Jogar Online</h3>
@@ -572,9 +550,51 @@
                 <p id="tournament-queue-countdown" style="font-size: 1.2rem; color: var(--accent-yellow); margin-top: 0.5rem;"></p>
                 <button id="tournament-cancel-queue-btn" class="control-button cancel" style="margin-top: 1rem;" data-i18n="common.cancel">Cancelar</button>
             </div>
+
+            <!-- Main Tournament View -->
+            <div id="tournament-main-view" class="hidden">
+                <h2 id="tournament-main-title" data-i18n="tournament.title">Torneio</h2>
+                <div class="tournament-main-grid">
+                    <div id="tournament-leaderboard"></div>
+                    <div id="tournament-matches"></div>
+                </div>
+                <div class="tournament-actions-container">
+                    <button id="tournament-continue-btn" class="control-button hidden" data-i18n="tournament.continue_to_match">Continuar para Partida</button>
+                </div>
+            </div>
+
+            <!-- Champion View -->
+            <div id="tournament-champion-view" class="hidden" style="text-align: center;">
+                <div id="tournament-champion-text"></div>
+            </div>
+
             <button id="tournament-close-btn" class="control-button" data-i18n="common.close">Fechar</button>
         </div>
     </div>
+
+    <!-- Tournament Rules Modal -->
+    <div id="tournament-rules-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 data-i18n="tournament.rules_title">Regras do Torneio</h2>
+            <p data-i18n="tournament.rules_explanation">Para este torneio, o objetivo é vencer as partidas (melhor de 3), não avançar no tabuleiro. As cartas Sobe, Desce e Pula têm efeitos especiais!</p>
+            <div class="tournament-card-rules">
+                <div class="card-rule-item">
+                    <img src="frente_sobe.png" alt="Carta Sobe">
+                    <p data-i18n="tournament.rule_sobe"><strong>Sobe:</strong> Soma +5 ao seu resultado final na rodada.</p>
+                </div>
+                <div class="card-rule-item">
+                    <img src="frente_desce.png" alt="Carta Desce">
+                    <p data-i18n="tournament.rule_desce"><strong>Desce:</strong> Subtrai -5 do seu resultado final na rodada.</p>
+                </div>
+                <div class="card-rule-item">
+                    <img src="frente_pula.png" alt="Carta Pula">
+                    <p data-i18n="tournament.rule_pula"><strong>Pula:</strong> Rouba o efeito 'Sobe' ou 'Desce' de um oponente.</p>
+                </div>
+            </div>
+            <button id="tournament-rules-understood-btn" class="control-button" data-i18n="common.understand">Entendido!</button>
+        </div>
+    </div>
+
 
     <div id="one-v-one-setup-modal" class="modal-overlay hidden">
         <div class="modal-content">
@@ -754,7 +774,7 @@
                 <img src="logo.png" alt="Reversus Logo" class="pvp-header-logo">
                 <h2 data-i18n="pvp.room_list_title">Salas PvP Online</h2>
             </div>
-            <div id="pvp-room-grid" class="room-grid">
+            <div class="room-grid">
                 <!-- Room cards will be rendered here -->
             </div>
              <div class="button-group" style="margin-top: 1rem;">

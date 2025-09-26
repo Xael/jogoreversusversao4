@@ -489,7 +489,7 @@ function checkGameEnd() {
  * Calculates final scores, determines winner, moves pawns, and checks for game over.
  */
 async function calculateScoresAndEndRound() {
-    const { gameState, tournamentState } = getState();
+    const { gameState } = getState();
     
     const finalScores = {};
 
@@ -574,8 +574,8 @@ async function calculateScoresAndEndRound() {
         updateLog("A rodada terminou em empate. Ninguém avança por pontuação.");
     }
     
-    // Always show summary for all modes except infinite challenge.
-    if (!gameState.isInfiniteChallenge) {
+    // Show summary for non-tournament games. Tournament handles its own flow.
+    if (!gameState.isInfiniteChallenge && !gameState.isTournamentMatch) {
         await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
     }
 
@@ -583,47 +583,44 @@ async function calculateScoresAndEndRound() {
     if (gameState.isTournamentMatch) {
         const match = gameState.tournamentMatch;
         if (!match) { console.error("Tournament match data is missing!"); return; }
-        
-        if (winners.length === 1) {
-            const winnerGameId = winners[0];
-            const winnerPlayerObject = gameState.players[winnerGameId];
 
-            if (winnerPlayerObject.dbId === match.p1.id) {
+        if (winners.length === 1) {
+            const winnerId = winners[0];
+            const player1_is_in_match = gameState.playerIdsInGame.includes(match.player1.playerId);
+            const player2_is_in_match = gameState.playerIdsInGame.includes(match.player2.playerId);
+
+            if (winnerId === match.player1.playerId && player1_is_in_match) {
                 match.score[0]++;
-            } else if (winnerPlayerObject.dbId === match.p2.id) {
+            } else if (winnerId === match.player2.playerId && player2_is_in_match) {
                 match.score[1]++;
             }
         } else {
-            match.draws = (match.draws || 0) + 1;
+            match.draws++;
         }
         
         renderTournamentMatchScore(match.score);
-        await new Promise(res => setTimeout(res, 3000));
+        await new Promise(res => setTimeout(res, 3000)); // Pause to show scores
 
         const [p1Score, p2Score] = match.score;
-        const matchIsOver = p1Score >= 2 || p2Score >= 2 || (p1Score + p2Score + (match.draws || 0) >= 3);
+        const matchIsOver = p1Score >= 2 || p2Score >= 2 || (p1Score + p2Score + match.draws >= 3);
 
         if (matchIsOver) {
-            let winnerName, loserName, winnerDbId = 'draw';
+            let winnerName, loserName;
             if (p1Score > p2Score) {
-                winnerDbId = match.p1.id;
-                winnerName = match.p1.username;
-                loserName = match.p2.username;
+                winnerName = match.player1.name;
+                loserName = match.player2.name;
             } else if (p2Score > p1Score) {
-                winnerDbId = match.p2.id;
-                winnerName = match.p2.username;
-                loserName = match.p1.username;
+                winnerName = match.player2.name;
+                loserName = match.player1.name;
+            } else { // Draw
+                 showGameOver(`A partida terminou em empate!`, "Fim da Partida", { action: 'tournament_continue' });
+                 return;
             }
-            
-            const message = winnerDbId === 'draw'
-                ? `A partida terminou em empate!`
-                : `${winnerName} venceu a partida contra ${loserName}!`;
-
-            showGameOver(message, "Fim da Partida", { action: 'tournament_continue', winnerId: winnerDbId });
-            return;
+             showGameOver(`${winnerName} venceu a partida contra ${loserName}!`, "Fim da Partida", { action: 'tournament_continue' });
+             return;
         } else {
             await startNewRound();
-            return;
+            return; // IMPORTANT: Prevent normal game logic from running after this
         }
     }
     

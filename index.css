@@ -1,4 +1,3 @@
-
 :root {
     --bg-main: #0b131a; 
     --bg-panel: rgba(29, 53, 87, 0.6);
@@ -928,8 +927,6 @@ body.screen-shaking {
     align-items: center;
     width: 100%;
     gap: 1rem;
-    flex-grow: 1; /* Allow it to take up space */
-    min-height: 0; /* Flexbox fix */
 }
 
 .side-score-box {
@@ -3977,34 +3974,16 @@ body.screen-shaking {
 }
 
 /* --- TOURNAMENT STYLES --- */
-#tournament-view-container {
-    flex-grow: 1;
-    min-height: 0;
-    width: 100%;
-    padding: 1rem;
-    background: var(--bg-panel);
-    border: 1px solid rgba(168, 218, 220, 0.2);
-    border-radius: 15px;
-    display: flex;
-    flex-direction: column;
-}
-
 .tournament-modal-content {
-    width: 800px;
+    width: 1000px;
     max-width: 95vw;
-}
-.tournament-rules-explanation {
-    background: rgba(0,0,0,0.2);
-    padding: 1rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
 }
 
 .tournament-hub-options {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
-    margin: 1rem 0;
+    margin: 2rem 0;
 }
 
 .tournament-option-card {
@@ -4037,12 +4016,10 @@ body.screen-shaking {
     display: grid;
     grid-template-columns: 1fr 350px;
     gap: 2rem;
-    flex-grow: 1;
-    min-height: 0;
-    overflow-y: auto;
+    margin-top: 1.5rem;
 }
 .tournament-actions-container {
-    flex-shrink: 0;
+    grid-column: 1 / -1;
     display: flex;
     justify-content: center;
     margin-top: 1rem;
@@ -4145,12 +4122,15 @@ body.screen-shaking {
     text-align: center;
 }
 
+#tournament-rules-modal .modal-content {
+    width: 800px;
+}
 .tournament-card-rules {
     display: flex;
     justify-content: space-around;
     align-items: flex-start;
     gap: 1.5rem;
-    margin: 1rem 0;
+    margin: 1.5rem 0;
     text-align: center;
 }
 .card-rule-item {
@@ -4161,45 +4141,11 @@ body.screen-shaking {
     flex: 1;
 }
 .card-rule-item img {
-    width: 91px;
-    height: 130px;
+    width: 105px; /* 1.5x of 70px */
+    height: 150px; /* 1.5x of 100px */
     border-radius: 9px;
 }
 .card-rule-item p {
     font-size: 0.95rem;
     line-height: 1.5;
-}
-
-/* --- IN-GAME TOURNAMENT VIEW --- */
-.app-container.in-tournament-match .board-and-scores-wrapper {
-    display: none;
-}
-
-.app-container.in-tournament-match .center-panel {
-    justify-content: space-between;
-}
-
-.app-container.in-tournament-match #player-1-area-container {
-    height: 38%;
-    flex-grow: 0;
-}
-
-.app-container.in-tournament-match #opponent-zones-container {
-    height: 38%;
-    flex-grow: 0;
-}
-
-.app-container.in-tournament-match .right-panel {
-    justify-content: center;
-}
-
-.app-container.in-tournament-match #tournament-view-container {
-    height: 40%;
-    flex-grow: 0;
-}
-
-.app-container.in-tournament-match .right-panel .player-area {
-    flex-basis: auto;
-    flex-grow: 0;
-    height: 100%; /* Take full height of the opponent container */
 }

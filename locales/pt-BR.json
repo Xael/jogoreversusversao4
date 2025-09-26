@@ -46,11 +46,6 @@
     },
     "tournament": {
         "title": "Torneio",
-        "rules_title": "Regras Especiais do Torneio",
-        "rules_explanation": "Neste modo, o objetivo é vencer duelos (melhor de 3), não avançar no tabuleiro. As cartas Sobe, Desce e Pula têm efeitos únicos!",
-        "rule_sobe": "<strong>Sobe:</strong> Soma +5 pontos ao seu resultado final na rodada.",
-        "rule_desce": "<strong>Desce:</strong> Subtrai -5 pontos do seu resultado final na rodada.",
-        "rule_pula": "<strong>Pula:</strong> Rouba o efeito 'Sobe' ou 'Desce' ativo de um oponente e o aplica a si mesmo.",
         "play_online": "Jogar Online",
         "play_offline": "Jogar Offline",
         "description_online": "Entre na fila para um torneio de 8 jogadores e dispute pela premiação em CoinVersus!",
