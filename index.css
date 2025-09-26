@@ -1,5 +1,3 @@
-
-
 :root {
     --bg-main: #0b131a; 
     --bg-panel: rgba(29, 53, 87, 0.6);
@@ -4055,56 +4053,34 @@ body.screen-shaking {
     margin-bottom: 1rem;
 }
 
-#tournament-leaderboard-container {
-    display: flex;
-    gap: 2rem;
-    justify-content: center;
-}
-.leaderboard-column {
-    flex: 1;
-}
-
 .tournament-table {
     width: 100%;
     border-collapse: collapse;
 }
 .tournament-table th, .tournament-table td {
-    padding: 8px 4px;
+    padding: 10px;
     text-align: left;
     border-bottom: 1px solid var(--card-border);
     vertical-align: middle;
-    font-size: 0.9rem;
 }
 .tournament-table th {
     font-weight: 600;
 }
-.tournament-table td:nth-child(1) {
+.tournament-table td:nth-child(1), .tournament-table td:nth-child(3) {
     text-align: center;
     font-weight: bold;
-    width: 25px;
-}
-.tournament-table th:not(:first-child),
-.tournament-table td:not(:first-child) {
-    text-align: center;
 }
 .tournament-player-cell {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 .tournament-player-avatar {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     object-fit: cover;
-    flex-shrink: 0;
 }
-.tournament-player-cell span {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
 
 .matches-grid {
     display: flex;

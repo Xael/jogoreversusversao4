@@ -20,21 +20,6 @@ import { renderTournamentMatchScore } from '../ui/torneio-renderer.js';
 
 
 /**
- * Helper function to get a player's display name, accounting for translation keys.
- * @param {object} player - The player object from the tournament or game state.
- * @returns {string} The display name of the player.
- */
-function getPlayerName(player) {
-    if (!player) return 'Desconhecido';
-    const name = player.username || player.name;
-    if (name && (name.startsWith('event_chars.') || name.startsWith('player_names.') || name.startsWith('avatars.'))) {
-        return t(name);
-    }
-    return name || 'Desconhecido';
-}
-
-
-/**
  * Displays the initial draw sequence for a PvP match based on server results.
  * @param {object} gameState - The initial game state from the server.
  */
@@ -501,14 +486,17 @@ function checkGameEnd() {
 
 
 /**
- * REFACTORED: Calculates final scores, determines winner, moves pawns, and checks for game over.
- * This version separates the logic for tournament and regular matches to prevent bugs.
+ * Calculates final scores, determines winner, moves pawns, and checks for game over.
  */
 async function calculateScoresAndEndRound() {
-    const { gameState } = getState();
-
-    // 1. Calculate final scores for all players
+    const { gameState, tournamentState } = getState();
+    
     const finalScores = {};
+
+    // 0. Reset Contravox flag before checking for new triggers
+    gameState.player1CardsObscured = false;
+
+    // 1. Calculate final scores including all effects
     gameState.playerIdsInGame.forEach(id => {
         const p = gameState.players[id];
         if (p.isEliminated) return;
@@ -516,12 +504,14 @@ async function calculateScoresAndEndRound() {
         let score = p.playedCards.value.reduce((sum, card) => sum + card.value, 0);
         let restoValue = p.resto?.value || 0;
 
+        // Check for field effects on resto
         if (gameState.activeFieldEffects.some(fe => fe.name === 'Resto Maior' && fe.appliesTo === id)) restoValue = 10;
         if (gameState.activeFieldEffects.some(fe => fe.name === 'Resto Menor' && fe.appliesTo === id)) restoValue = 2;
 
         if (p.effects.score === 'Mais') score += restoValue;
 
         let scoreModifier = 1;
+        // Check for Super Exposto before applying Menos
         if (gameState.activeFieldEffects.some(fe => fe.name === 'Super Exposto' && fe.appliesTo === id)) {
             scoreModifier = 2;
              updateLog(`Efeito 'Super Exposto' dobrou o efeito negativo em ${p.name}!`);
@@ -531,6 +521,7 @@ async function calculateScoresAndEndRound() {
         if (p.effects.score === 'NECRO X') score += 10;
         if (p.effects.score === 'NECRO X Invertido') score -= 10;
         
+        // Apply tournament score effects
         if (gameState.isTournamentMatch && p.tournamentScoreEffect) {
             if (p.tournamentScoreEffect.effect === 'Sobe') score += 5;
             if (p.tournamentScoreEffect.effect === 'Desce') score -= 5;
@@ -540,7 +531,7 @@ async function calculateScoresAndEndRound() {
         p.liveScore = score;
     });
 
-    // 2. Determine winner(s) of the round
+    // 2. Determine winner(s)
     let winners = [];
     if (gameState.playerIdsInGame.filter(pId => !gameState.players[pId].isEliminated).length > 0) {
         let highestScore = -Infinity;
@@ -557,7 +548,7 @@ async function calculateScoresAndEndRound() {
     }
 
     // 3. Handle tie logic
-    if (winners.length > 1) { 
+    if (winners.length > 1) { // A tie exists
         if (gameState.gameMode === 'duo') {
             const teamA_Ids = gameState.currentStoryBattle === 'necroverso_final' ? ['player-1', 'player-4'] : config.TEAM_A;
             const teamB_Ids = gameState.currentStoryBattle === 'necroverso_final' ? ['player-2', 'player-3'] : config.TEAM_B;
@@ -575,204 +566,230 @@ async function calculateScoresAndEndRound() {
         }
     }
     
-    // 4. Log winner
+    // 4. Log winner and show summary modal
     if (winners.length > 0) {
         const winnerNames = winners.map(id => gameState.players[id].name).join(' e ');
         updateLog(`Vencedor(es) da rodada: ${winnerNames}.`);
     } else {
         updateLog("A rodada terminou em empate. Ninguém avança por pontuação.");
     }
+    
+    // Show summary for non-tournament games. Tournament handles its own flow.
+    if (!gameState.isInfiniteChallenge && !gameState.isTournamentMatch) {
+        await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
+    }
 
-    // --- Divergent Logic: Tournament vs. Regular Game ---
+    // --- TOURNAMENT MATCH LOGIC ---
     if (gameState.isTournamentMatch) {
-        const match = gameState.tournamentMatch;
+        const match = gameState.gameOptions.tournamentMatch;
         if (!match) { console.error("Tournament match data is missing!"); return; }
-        
+
+        const player1_id = match.p1.id;
+        const player2_id = match.p2.id;
+        const player1_game_id = Object.keys(gameState.players).find(id => gameState.players[id].id === player1_id);
+        const player2_game_id = Object.keys(gameState.players).find(id => gameState.players[id].id === player2_id);
+
         if (winners.length === 1) {
-            const winnerGameId = winners[0];
-            const winnerPlayerObject = gameState.players[winnerGameId];
-            if (winnerPlayerObject.dbId === match.p1.id) match.score[0]++;
-            else if (winnerPlayerObject.dbId === match.p2.id) match.score[1]++;
+            const winnerId = gameState.players[winners[0]].id;
+            if (winnerId === player1_id) {
+                match.score[0]++;
+            } else if (winnerId === player2_id) {
+                match.score[1]++;
+            }
         } else {
             match.draws = (match.draws || 0) + 1;
         }
         
         renderTournamentMatchScore(match.score);
-        await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
+        await new Promise(res => setTimeout(res, 3000));
 
         const [p1Score, p2Score] = match.score;
         const matchIsOver = p1Score >= 2 || p2Score >= 2 || (p1Score + p2Score + (match.draws || 0) >= 3);
 
         if (matchIsOver) {
-            let winnerName, loserName, winnerDbId = 'draw';
+            let winnerName, loserName, winnerId = null;
             if (p1Score > p2Score) {
-                winnerDbId = match.p1.id;
-                winnerName = getPlayerName(match.p1);
-                loserName = getPlayerName(match.p2);
+                winnerId = player1_id;
+                winnerName = match.p1.username;
+                loserName = match.p2.username;
             } else if (p2Score > p1Score) {
-                winnerDbId = match.p2.id;
-                winnerName = getPlayerName(match.p2);
-                loserName = getPlayerName(match.p1);
+                winnerId = player2_id;
+                winnerName = match.p2.username;
+                loserName = match.p1.username;
+            } else {
+                 showGameOver(`A partida terminou em empate!`, "Fim da Partida", { action: 'tournament_continue', winnerId: 'draw' });
+                 return;
             }
-            const message = winnerDbId === 'draw' ? `A partida terminou em empate!` : `${winnerName} venceu a partida contra ${loserName}!`;
-            showGameOver(message, "Fim da Partida", { action: 'tournament_continue', winnerId: winnerDbId });
-            return;
+             showGameOver(`${winnerName} venceu a partida contra ${loserName}!`, "Fim da Partida", { action: 'tournament_continue', winnerId });
+             return;
         } else {
-            if (winners.length > 0) gameState.currentPlayer = winners[0];
             await startNewRound();
             return;
         }
-    } else {
-        // --- REGULAR/STORY/PVP MATCH LOGIC ---
-        if (!gameState.isInfiniteChallenge) {
-            await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
-        }
+    }
+    
+    // Handle INVERSUS heart loss & Infinite Challenge duel end
+    if (gameState.isInversusMode) {
+        const player1Won = winners.includes('player-1');
+        const opponentWon = winners.includes('player-2');
+        const player1 = gameState.players['player-1'];
+        const opponent = gameState.players['player-2'];
 
-        if (gameState.isInversusMode) {
-            const player1Won = winners.includes('player-1');
-            const opponentWon = winners.includes('player-2');
-            const player1 = gameState.players['player-1'];
-            const opponent = gameState.players['player-2'];
-            if (opponentWon && player1) {
-                player1.hearts = Math.max(0, player1.hearts - 1);
-                updateLog(`Você perdeu a rodada e 1 coração! Restam: ${player1.hearts}.`);
-                playSoundEffect('coracao');
-                announceEffect('💔', 'heartbreak', 1500);
-                if (player1.hearts <= 0) player1.isEliminated = true;
-            } else if (player1Won && opponent) {
-                opponent.hearts = Math.max(0, opponent.hearts - 1);
-                updateLog(`O oponente perdeu a rodada e 1 coração! Restam: ${opponent.hearts}.`);
-                playSoundEffect('coracao');
-                announceEffect('💔', 'heartbreak', 1500);
-                if (opponent.hearts <= 0) opponent.isEliminated = true;
-            }
-            if (gameState.isInfiniteChallenge) {
-                if (opponent.isEliminated) {
-                    gameState.infiniteChallengeLevel++;
-                    getState().infiniteChallengeOpponentQueue.shift();
-                    if (getState().infiniteChallengeOpponentQueue.length === 0) {
-                        document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
-                    } else {
-                        document.dispatchEvent(new Event('showBuffSelection'));
-                    }
-                    return; 
-                }
-                if (player1.isEliminated) {
-                    document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'loss' } }));
-                    return;
-                }
-            } else {
-                if (checkGameEnd()) return;
-            }
-        }
-        
-        if (gameState.isKingNecroBattle) {
-            const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
-            if (activePlayers.length > 1) {
-                let lowestScore = Infinity;
-                activePlayers.forEach(id => { if (finalScores[id] < lowestScore) lowestScore = finalScores[id]; });
-                const losers = activePlayers.filter(id => finalScores[id] === lowestScore);
-                if (losers.length > 0) {
-                    const loserNames = losers.map(id => gameState.players[id].name).join(', ');
-                    updateLog(`${loserNames} tiveram a menor pontuação e perdem 1 coração cada!`);
-                    for (const loserId of losers) {
-                        const loserPlayer = gameState.players[loserId];
-                        loserPlayer.hearts--;
-                        playSoundEffect('coracao');
-                        announceEffect('💔', 'heartbreak', 1500);
-                        updateLog(`Corações de ${loserPlayer.name}: ${loserPlayer.hearts}`);
-                        if (loserPlayer.hearts <= 0) {
-                            loserPlayer.hearts = 0;
-                            loserPlayer.isEliminated = true;
-                            updateLog(`${loserPlayer.name} foi eliminado da batalha!`);
-                        }
-                    }
-                }
-            }
-            if (checkGameEnd()) return;
-        }
-        
-        if (gameState.currentStoryBattle === 'necroverso_final' && winners.length > 0) {
-            const winningTeamIsA = (gameState.currentStoryBattle === 'necroverso_final' ? ['player-1', 'player-4'] : config.TEAM_A).includes(winners[0]);
-            if (winningTeamIsA) {
-                gameState.teamB_hearts--;
-                updateLog(`A equipe do Necroverso perdeu a rodada e 1 coração! Restam: ${gameState.teamB_hearts}`);
-            } else {
-                gameState.teamA_hearts--;
-                updateLog(`Sua equipe perdeu a rodada e 1 coração! Restam: ${gameState.teamA_hearts}`);
-            }
+        if (opponentWon && player1) {
+            player1.hearts = Math.max(0, player1.hearts - 1);
+            updateLog(`Você perdeu a rodada e 1 coração! Restam: ${player1.hearts}.`);
             playSoundEffect('coracao');
             announceEffect('💔', 'heartbreak', 1500);
+            if (player1.hearts <= 0) player1.isEliminated = true;
+        } else if (player1Won && opponent) {
+            opponent.hearts = Math.max(0, opponent.hearts - 1);
+            updateLog(`O oponente perdeu a rodada e 1 coração! Restam: ${opponent.hearts}.`);
+            playSoundEffect('coracao');
+            announceEffect('💔', 'heartbreak', 1500);
+            if (opponent.hearts <= 0) opponent.isEliminated = true;
+        }
+
+        if (gameState.isInfiniteChallenge) {
+            if (opponent.isEliminated) {
+                gameState.infiniteChallengeLevel++;
+                const opponentQueue = getState().infiniteChallengeOpponentQueue;
+                opponentQueue.shift();
+                if (opponentQueue.length === 0) {
+                    document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'win' } }));
+                } else {
+                    document.dispatchEvent(new Event('showBuffSelection'));
+                }
+                return; 
+            }
+            if (player1.isEliminated) {
+                document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'loss' } }));
+                return;
+            }
+        } else {
             if (checkGameEnd()) return;
         }
-        
-        if (!gameState.isInversusMode && !gameState.isKingNecroBattle) {
-            for (const id of gameState.playerIdsInGame) {
-                const p = gameState.players[id];
-                if (p.isEliminated) continue;
-
-                if (p.effects.movement === 'Pula' && p.targetPathForPula !== null) {
-                    p.pathId = p.targetPathForPula;
-                    updateLog(`${p.name} foi forçado a pular para o caminho ${p.targetPathForPula + 1}.`);
-                }
-
-                let netMovement = 0;
-                const isWinner = winners.includes(id);
-                const isLoser = !isWinner && winners.length > 0;
-
-                if (p.effects.movement === 'Sobe') netMovement++;
-                if (p.effects.movement === 'Desce') {
-                    let movementModifier = gameState.activeFieldEffects.some(fe => fe.name === 'Super Exposto' && fe.appliesTo === id) ? 2 : 1;
-                    netMovement -= (1 * movementModifier);
-                }
-
-                if (isWinner) {
-                    if (gameState.activeFieldEffects.some(fe => fe.name === 'Parada' && fe.appliesTo === id)) {
-                        updateLog(`Efeito 'Parada' impede ${p.name} de avançar.`);
-                    } else {
-                        let advanceAmount = 1;
-                        if (gameState.activeFieldEffects.some(fe => fe.name === 'Desafio' && fe.appliesTo === id) && p.effects.score !== 'Mais' && p.effects.movement !== 'Sobe') {
-                            advanceAmount = 3;
-                            updateLog(`Efeito 'Desafio' completo! ${p.name} ganha um bônus de avanço!`);
-                        }
-                        netMovement += advanceAmount;
-                    }
-                } else if (isLoser) {
-                    if (gameState.activeFieldEffects.some(fe => fe.name === 'Castigo' && fe.appliesTo === id)) {
-                        netMovement -= 3;
-                        updateLog(`Efeito 'Castigo' ativado para ${p.name}.`);
-                    }
-                    if (gameState.activeFieldEffects.some(fe => fe.name === 'Impulso' && fe.appliesTo === id)) {
-                        netMovement += 1;
-                        updateLog(`Efeito 'Impulso' ativado para ${p.name}.`);
-                    }
-                }
-
-                if (netMovement !== 0) {
-                    const oldPosition = p.position;
-                    p.position = Math.min(config.WINNING_POSITION, Math.max(1, p.position + netMovement));
-                    updateLog(`${p.name} ${netMovement > 0 ? 'avançou' : 'voltou'} de ${oldPosition} para ${p.position}.`);
-                }
-            }
-        }
-        
-        if (checkGameEnd()) return;
-
-        for (const id of gameState.playerIdsInGame) {
-            if (!gameState.players[id].isEliminated) {
-                await checkAndTriggerPawnLandingAbilities(gameState.players[id]);
-            }
-        }
-        
-        if (checkGameEnd()) return;
-
-        if (winners.length > 0) {
-            const winnerTurnOrder = gameState.playerIdsInGame.filter(pId => winners.includes(pId));
-            if (winnerTurnOrder.length > 0) gameState.currentPlayer = winnerTurnOrder[0];
-        }
-        
-        await startNewRound();
     }
+    
+    if (gameState.isKingNecroBattle) {
+        const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
+        if (activePlayers.length > 1) {
+            let lowestScore = Infinity;
+            activePlayers.forEach(id => {
+                if (finalScores[id] < lowestScore) {
+                    lowestScore = finalScores[id];
+                }
+            });
+            
+            const losers = activePlayers.filter(id => finalScores[id] === lowestScore);
+            
+            if (losers.length > 0) {
+                const loserNames = losers.map(id => gameState.players[id].name).join(', ');
+                updateLog(`${loserNames} tiveram a menor pontuação e perdem 1 coração cada!`);
+                
+                for (const loserId of losers) {
+                    const loserPlayer = gameState.players[loserId];
+                    loserPlayer.hearts--;
+                    playSoundEffect('coracao');
+                    announceEffect('💔', 'heartbreak', 1500);
+                    updateLog(`Corações de ${loserPlayer.name}: ${loserPlayer.hearts}`);
+                    
+                    if (loserPlayer.hearts <= 0) {
+                        loserPlayer.hearts = 0; // Prevent negative hearts
+                        loserPlayer.isEliminated = true;
+                        updateLog(`${loserPlayer.name} foi eliminado da batalha!`);
+                    }
+                }
+            }
+        }
+        if (checkGameEnd()) return; // Stop if game ended due to heart loss
+    }
+    
+    if (gameState.currentStoryBattle === 'necroverso_final' && winners.length > 0) {
+        const winningTeamIsA = (gameState.currentStoryBattle === 'necroverso_final' ? ['player-1', 'player-4'] : config.TEAM_A).includes(winners[0]);
+        if (winningTeamIsA) {
+            gameState.teamB_hearts--;
+            updateLog(`A equipe do Necroverso perdeu a rodada e 1 coração! Restam: ${gameState.teamB_hearts}`);
+        } else {
+            gameState.teamA_hearts--;
+            updateLog(`Sua equipe perdeu a rodada e 1 coração! Restam: ${gameState.teamA_hearts}`);
+        }
+        playSoundEffect('coracao');
+        announceEffect('💔', 'heartbreak', 1500);
+        if (checkGameEnd()) return; // Stop if game ended due to heart loss
+    }
+    
+    if (!gameState.isInversusMode && !gameState.isKingNecroBattle) {
+        for (const id of gameState.playerIdsInGame) {
+            const p = gameState.players[id];
+            if (p.isEliminated) continue;
+
+            if (p.effects.movement === 'Pula' && p.targetPathForPula !== null) {
+                p.pathId = p.targetPathForPula;
+                updateLog(`${p.name} foi forçado a pular para o caminho ${p.targetPathForPula + 1}.`);
+            }
+
+            let netMovement = 0;
+            const isWinner = winners.includes(id);
+            const isLoser = !isWinner && winners.length > 0;
+
+            if (p.effects.movement === 'Sobe') netMovement++;
+            if (p.effects.movement === 'Desce') {
+                let movementModifier = gameState.activeFieldEffects.some(fe => fe.name === 'Super Exposto' && fe.appliesTo === id) ? 2 : 1;
+                netMovement -= (1 * movementModifier);
+            }
+
+            if (isWinner) {
+                if (gameState.activeFieldEffects.some(fe => fe.name === 'Parada' && fe.appliesTo === id)) {
+                    updateLog(`Efeito 'Parada' impede ${p.name} de avançar.`);
+                } else {
+                    let advanceAmount = 1;
+                    if (gameState.activeFieldEffects.some(fe => fe.name === 'Desafio' && fe.appliesTo === id) && p.effects.score !== 'Mais' && p.effects.movement !== 'Sobe') {
+                        advanceAmount = 3;
+                        updateLog(`Efeito 'Desafio' completo! ${p.name} ganha um bônus de avanço!`);
+                    }
+                    netMovement += advanceAmount;
+                }
+            } else if (isLoser) {
+                if (gameState.activeFieldEffects.some(fe => fe.name === 'Castigo' && fe.appliesTo === id)) {
+                    netMovement -= 3;
+                    updateLog(`Efeito 'Castigo' ativado para ${p.name}.`);
+                }
+                if (gameState.activeFieldEffects.some(fe => fe.name === 'Impulso' && fe.appliesTo === id)) {
+                    netMovement += 1;
+                    updateLog(`Efeito 'Impulso' ativado para ${p.name}.`);
+                }
+            }
+
+            if (netMovement !== 0) {
+                const oldPosition = p.position;
+                p.position = Math.min(config.WINNING_POSITION, Math.max(1, p.position + netMovement));
+                updateLog(`${p.name} ${netMovement > 0 ? 'avançou' : 'voltou'} de ${oldPosition} para ${p.position}.`);
+            }
+        }
+    }
+    
+    if (checkGameEnd()) {
+        return;
+    }
+
+    for (const id of gameState.playerIdsInGame) {
+        if (!gameState.players[id].isEliminated) {
+            await checkAndTriggerPawnLandingAbilities(gameState.players[id]);
+        }
+    }
+    
+    if (checkGameEnd()) {
+        return;
+    }
+
+    if (winners.length > 0) {
+        const winnerTurnOrder = gameState.playerIdsInGame.filter(pId => winners.includes(pId));
+        if (winnerTurnOrder.length > 0) {
+            gameState.currentPlayer = winnerTurnOrder[0];
+        }
+    }
+    
+    await startNewRound();
 }
 
 

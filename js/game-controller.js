@@ -230,12 +230,13 @@ export const initializeGame = async (mode, options) => {
     dom.reversusTotalIndicatorEl.classList.add('hidden');
     dom.debugButton.classList.remove('hidden');
 
-    // --- CORRECTED TOURNAMENT UI LOGIC ---
-    // Toggle visibility of the board vs the tournament view directly
-    dom.boardAndScoresWrapper.classList.toggle('hidden', isTournamentMatch);
-    dom.tournamentViewContainer.classList.toggle('hidden', !isTournamentMatch);
-    if(isTournamentMatch) {
-         renderTournamentView(tournamentState);
+    // --- NEW TOURNAMENT VIEW LOGIC ---
+    if (isTournamentMatch) {
+        dom.boardAndScoresWrapper.classList.add('hidden');
+        dom.tournamentViewContainer.classList.remove('hidden');
+    } else {
+        dom.boardAndScoresWrapper.classList.remove('hidden');
+        dom.tournamentViewContainer.classList.add('hidden');
     }
 
     // Reset board classes
@@ -287,9 +288,8 @@ export const initializeGame = async (mode, options) => {
 
             const playerObject = {
                 ...playerConfig,
-                dbId: playerConfig.id, // Store the persistent ID
-                id: id, // Overwrite with the game-specific ID ('player-1', 'player-2')
                 name: playerName,
+                id: id, // Use the game-specific ID ('player-1', 'player-2')
                 isHuman: isHuman,
                 aiType: isHuman ? null : (playerConfig.aiType || 'default'),
                 pathId: index,
@@ -300,6 +300,7 @@ export const initializeGame = async (mode, options) => {
                 effects: { score: null, movement: null },
                 playedCards: { value: [], effect: [] },
                 playedValueCardThisTurn: false,
+                targetPathForPula: null,
                 liveScore: 0,
                 status: 'neutral', // neutral, winning, losing
                 isEliminated: false,

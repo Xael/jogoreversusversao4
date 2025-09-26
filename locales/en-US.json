@@ -46,11 +46,6 @@
     },
      "tournament": {
         "title": "Tournament",
-        "rules_title": "Special Tournament Rules",
-        "rules_explanation": "In this mode, the goal is to win duels (best of 3), not advance on the board. The Up, Down, and Jump cards have unique effects!",
-        "rule_sobe": "<strong>Up:</strong> Adds +5 points to your final score for the round.",
-        "rule_desce": "<strong>Down:</strong> Subtracts -5 points from your final score for the round.",
-        "rule_pula": "<strong>Jump:</strong> Steals an active 'Up' or 'Down' effect from an opponent and applies it to yourself.",
         "play_online": "Play Online",
         "play_offline": "Play Offline",
         "description_online": "Join the queue for an 8-player tournament and compete for the CoinVersus prize!",
@@ -659,7 +654,7 @@
         "troca_injusta": "Trade your highest value card for a random opponent's lowest value card.",
         "total_revesus_nada": "Discard all your effect cards."
     },
-       "achievement_names": {
+    "achievement_names": {
         "first_win": "1st Victory",
         "first_defeat": "1st Defeat",
         "versatrix_loss": "She's So Into You",
@@ -676,7 +671,7 @@
         "inversus_win": "100% Game Completion",
         "120%_unlocked": "120% Unlocked!",
         "infinite_challenge_win": "Eternally Reversus"
-     },
+    },
     "achievement_descriptions": {
         "first_win": "Congratulations, you won your first match.",
         "first_defeat": "Life is made of defeats... don't let it get to you, or the game is over.",
@@ -695,7 +690,7 @@
         "120%_unlocked": "The secret of the secret, the password is \"Final\"",
         "infinite_challenge_win": "Defeat every opponent in Infinite Challenge mode."
     },
-        "achievement_hints": {
+    "achievement_hints": {
         "first_win": "The first step to glory is simply... to win.",
         "first_defeat": "Sometimes, to learn how to win, you must first... lose.",
         "versatrix_loss": "Is a loss to the golden queen truly a defeat?",

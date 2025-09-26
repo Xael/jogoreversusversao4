@@ -171,19 +171,8 @@ export async function showRoundSummaryModal(summaryData) {
 
     dom.roundSummaryTitle.textContent = t('round_summary.title', { turn: gameState.turn });
     
-    let winnerText = winners.length > 0 
-        ? t('round_summary.winner_text', { winnerNames: winners.map(id => gameState.players[id].name).join(' e ') }) 
-        : t('round_summary.tie_text');
-    
-    if (gameState.isTournamentMatch) {
-        const match = gameState.tournamentMatch;
-        if (match && match.score) {
-            const scoreText = t('tournament.best_of_3_score') + `: ${match.score[0]} - ${match.score[1]}`;
-            winnerText = `<strong>${scoreText}</strong><br>${winnerText}`;
-        }
-    }
-    
-    dom.roundSummaryWinnerText.innerHTML = winnerText;
+    const winnerNames = winners.map(id => gameState.players[id].name).join(' e ');
+    dom.roundSummaryWinnerText.textContent = winners.length > 0 ? t('round_summary.winner_text', { winnerNames }) : t('round_summary.tie_text');
     
     const potTextEl = document.getElementById('round-summary-pot-text');
     if (potTextEl && potWon > 0) {

@@ -51,8 +51,6 @@ export const drawStartModal = document.getElementById('draw-start-modal');
 export const roundSummaryModal = document.getElementById('round-summary-modal');
 export const cardViewerModalEl = document.getElementById('card-viewer-modal');
 export const achievementsModal = document.getElementById('achievements-modal');
-export const turnAnnounceModal = document.getElementById('turn-announce-modal');
-
 
 // --- Modals (Confirmation & Choices) ---
 export const reversusTargetModal = document.getElementById('reversus-target-modal');
@@ -93,15 +91,6 @@ export const tournamentModal = document.getElementById('tournament-modal');
 export const eventModal = document.getElementById('event-modal');
 export const rankingModal = document.getElementById('ranking-modal');
 export const profileModal = document.getElementById('profile-modal');
-
-// Event Modal Elements
-export const eventCharacterImage = document.getElementById('event-character-image');
-export const eventCharacterName = document.getElementById('event-character-name');
-export const eventAbilityDescription = document.getElementById('event-ability-description');
-export const eventRewardText = document.getElementById('event-reward-text');
-export const eventStatusText = document.getElementById('event-status-text');
-export const eventProgressMarkers = document.getElementById('event-progress-markers');
-
 
 // --- Modal Content & Specific Buttons ---
 export const closeInfoButton = document.getElementById('close-info-button');
