@@ -671,15 +671,33 @@ export function initializeUiHandlers() {
     });
 
     dom.eventButton.addEventListener('click', () => {
+        // Robustly get elements directly inside the handler to prevent race conditions.
+        const eventModalEl = document.getElementById('event-modal');
+        const eventCharacterImageEl = document.getElementById('event-character-image');
+        const eventCharacterNameEl = document.getElementById('event-character-name');
+        const eventAbilityDescriptionEl = document.getElementById('event-ability-description');
+        const eventRewardTextEl = document.getElementById('event-reward-text');
+        const challengeEventButtonEl = document.getElementById('challenge-event-button');
+        const eventStatusTextEl = document.getElementById('event-status-text');
+        const eventProgressMarkersEl = document.getElementById('event-progress-markers');
+
+        // Safety check to ensure all required elements exist before proceeding.
+        if (!eventModalEl || !eventCharacterImageEl || !eventCharacterNameEl || !eventAbilityDescriptionEl || !eventRewardTextEl || !challengeEventButtonEl || !eventStatusTextEl || !eventProgressMarkersEl) {
+            console.error("One or more elements for the event modal are missing from the DOM.");
+            alert("Erro ao carregar o evento. Tente recarregar a página.");
+            return;
+        }
+
         const currentMonth = new Date().getMonth();
-        currentEventData = config.MONTHLY_EVENTS[currentMonth];
+        // Use .find() for more robust event lookup, even though array is ordered.
+        currentEventData = config.MONTHLY_EVENTS.find(event => event.month === currentMonth);
     
         if (currentEventData) {
             sound.playStoryMusic(`${currentEventData.ai}.ogg`);
-            dom.eventCharacterImage.src = `./${currentEventData.image}`;
-            dom.eventCharacterName.textContent = t(currentEventData.characterNameKey);
-            dom.eventAbilityDescription.textContent = t(currentEventData.abilityKey);
-            dom.eventRewardText.textContent = t('event.reward_text_placeholder', { rewardName: t(currentEventData.rewardTitleKey) });
+            eventCharacterImageEl.src = `./${currentEventData.image}`;
+            eventCharacterNameEl.textContent = t(currentEventData.characterNameKey);
+            eventAbilityDescriptionEl.textContent = t(currentEventData.abilityKey);
+            eventRewardTextEl.textContent = t('event.reward_text_placeholder', { rewardName: t(currentEventData.rewardTitleKey) });
     
             const progressKey = `reversus-event-progress-${currentMonth}`;
             const wins = parseInt(localStorage.getItem(progressKey) || '0', 10);
@@ -689,33 +707,33 @@ export function initializeUiHandlers() {
             const hasAttemptedToday = lastAttemptDate === today;
     
             if (wins >= 3) {
-                dom.challengeEventButton.disabled = false;
-                dom.eventStatusText.textContent = t('event.status_completed');
+                challengeEventButtonEl.disabled = false;
+                eventStatusTextEl.textContent = t('event.status_completed');
             } else {
-                dom.challengeEventButton.disabled = hasAttemptedToday;
-                dom.eventStatusText.textContent = hasAttemptedToday ? t('event.status_wait') : '';
+                challengeEventButtonEl.disabled = hasAttemptedToday;
+                eventStatusTextEl.textContent = hasAttemptedToday ? t('event.status_wait') : '';
             }
     
-            dom.eventProgressMarkers.innerHTML = '';
+            eventProgressMarkersEl.innerHTML = '';
             for (let i = 0; i < 3; i++) {
                 const marker = document.createElement('div');
                 marker.className = 'progress-marker';
                 if (i < wins) {
                     marker.classList.add('completed');
                 }
-                dom.eventProgressMarkers.appendChild(marker);
+                eventProgressMarkersEl.appendChild(marker);
             }
     
        } else {
             sound.playStoryMusic('tela.ogg');
-            dom.eventCharacterImage.src = '';
-            dom.eventCharacterName.textContent = 'Nenhum Evento Ativo';
-            dom.eventAbilityDescription.textContent = 'Volte mais tarde para novos desafios.';
-            dom.challengeEventButton.disabled = true;
-            dom.eventStatusText.textContent = '';
+            eventCharacterImageEl.src = '';
+            eventCharacterNameEl.textContent = 'Nenhum Evento Ativo';
+            eventAbilityDescriptionEl.textContent = 'Volte mais tarde para novos desafios.';
+            challengeEventButtonEl.disabled = true;
+            eventStatusTextEl.textContent = '';
             currentEventData = null;
         }
-        dom.eventModal.classList.remove('hidden');
+        eventModalEl.classList.remove('hidden');
     });
 
     dom.challengeEventButton.addEventListener('click', () => {

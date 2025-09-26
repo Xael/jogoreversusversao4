@@ -94,6 +94,15 @@ export const eventModal = document.getElementById('event-modal');
 export const rankingModal = document.getElementById('ranking-modal');
 export const profileModal = document.getElementById('profile-modal');
 
+// Event Modal Elements
+export const eventCharacterImage = document.getElementById('event-character-image');
+export const eventCharacterName = document.getElementById('event-character-name');
+export const eventAbilityDescription = document.getElementById('event-ability-description');
+export const eventRewardText = document.getElementById('event-reward-text');
+export const eventStatusText = document.getElementById('event-status-text');
+export const eventProgressMarkers = document.getElementById('event-progress-markers');
+
+
 // --- Modal Content & Specific Buttons ---
 export const closeInfoButton = document.getElementById('close-info-button');
 export const solo2pButton = document.getElementById('solo-2p-button');
