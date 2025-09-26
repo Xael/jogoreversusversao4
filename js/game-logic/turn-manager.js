@@ -18,6 +18,7 @@ import { t } from '../core/i18n.js';
 import { createDeck } from './deck.js';
 import { renderTournamentMatchScore } from '../ui/torneio-renderer.js';
 
+
 /**
  * Helper function to get a player's display name, accounting for translation keys.
  * @param {object} player - The player object from the tournament or game state.
@@ -498,6 +499,7 @@ function checkGameEnd() {
     return false; // Game continues
 }
 
+
 /**
  * REFACTORED: Calculates final scores, determines winner, moves pawns, and checks for game over.
  * This version separates the logic for tournament and regular matches to prevent bugs.
@@ -556,7 +558,21 @@ async function calculateScoresAndEndRound() {
 
     // 3. Handle tie logic
     if (winners.length > 1) { 
-        winners = [];
+        if (gameState.gameMode === 'duo') {
+            const teamA_Ids = gameState.currentStoryBattle === 'necroverso_final' ? ['player-1', 'player-4'] : config.TEAM_A;
+            const teamB_Ids = gameState.currentStoryBattle === 'necroverso_final' ? ['player-2', 'player-3'] : config.TEAM_B;
+
+            const firstWinnerTeam = teamA_Ids.includes(winners[0]) ? 'A' : 'B';
+            const allWinnersOnSameTeam = winners.every(id => 
+                (firstWinnerTeam === 'A' && teamA_Ids.includes(id)) || 
+                (firstWinnerTeam === 'B' && teamB_Ids.includes(id))
+            );
+            if (!allWinnersOnSameTeam) {
+                winners = []; // Tie between teams
+            }
+        } else { // Solo mode tie
+            winners = []; 
+        }
     }
     
     // 4. Log winner

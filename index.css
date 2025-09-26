@@ -4192,29 +4192,3 @@ body.screen-shaking {
     font-size: 0.95rem;
     line-height: 1.5;
 }
-
-/* --- IN-GAME TOURNAMENT VIEW --- */
-.app-container.in-tournament-match .board-and-scores-wrapper {
-    display: flex; /* Re-enable for tournament matches */
-}
-
-/* Remove problematic layout overrides */
-.app-container.in-tournament-match .center-panel {
-    justify-content: flex-start; /* Revert to default */
-}
-
-.app-container.in-tournament-match #tournament-view-container,
-.app-container.in-tournament-match .right-panel .player-area {
-    /* Let the default grid layout handle sizing */
-    height: auto;
-    flex-grow: 1;
-    flex-basis: auto;
-}
-
-.app-container.in-tournament-match #tournament-view-container {
-    display: none; /* Hide the bracket during the match */
-}
-
-.app-container.in-tournament-match .board-and-scores-wrapper {
-    display: none; /* Hide the board for tournament matches */
-}

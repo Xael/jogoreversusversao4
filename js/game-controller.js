@@ -230,10 +230,13 @@ export const initializeGame = async (mode, options) => {
     dom.reversusTotalIndicatorEl.classList.add('hidden');
     dom.debugButton.classList.remove('hidden');
 
-    // --- NEW TOURNAMENT VIEW LOGIC ---
-    dom.appContainerEl.classList.toggle('in-tournament-match', isTournamentMatch);
+    // --- CORRECTED TOURNAMENT UI LOGIC ---
+    // Toggle visibility of the board vs the tournament view directly
+    dom.boardAndScoresWrapper.classList.toggle('hidden', isTournamentMatch);
     dom.tournamentViewContainer.classList.toggle('hidden', !isTournamentMatch);
-
+    if(isTournamentMatch) {
+         renderTournamentView(tournamentState);
+    }
 
     // Reset board classes
     dom.boardEl.classList.remove('inverted', 'board-rotating', 'board-rotating-fast', 'board-rotating-super-fast'); 
@@ -297,7 +300,6 @@ export const initializeGame = async (mode, options) => {
                 effects: { score: null, movement: null },
                 playedCards: { value: [], effect: [] },
                 playedValueCardThisTurn: false,
-                targetPathForPula: null,
                 liveScore: 0,
                 status: 'neutral', // neutral, winning, losing
                 isEliminated: false,

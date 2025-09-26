@@ -798,41 +798,24 @@ export function initializeUiHandlers() {
         }
     });
 
-    if (dom.rankingContainer) {
-        dom.rankingContainer.addEventListener('click', (e) => {
-            const target = e.target.closest('.rank-name.clickable');
-            if (target) {
-                const googleId = target.dataset.googleId;
-                if (googleId) {
-                    network.emitViewProfile({ googleId });
+    const rankContainers = [
+        dom.rankingModal.querySelector('#ranking-container'),
+        dom.rankingModal.querySelector('#infinite-ranking-container'),
+        dom.rankingModal.querySelector('#tournament-ranking-container')
+    ];
+    rankContainers.forEach(container => {
+        if (container) {
+            container.addEventListener('click', (e) => {
+                const target = e.target.closest('.rank-name.clickable');
+                if (target) {
+                    const googleId = target.dataset.googleId;
+                    if (googleId) {
+                        network.emitViewProfile({ googleId });
+                    }
                 }
-            }
-        });
-    }
-
-    if (dom.infiniteRankingContainer) {
-        dom.infiniteRankingContainer.addEventListener('click', (e) => {
-            const target = e.target.closest('.rank-name.clickable');
-            if (target) {
-                const googleId = target.dataset.googleId;
-                if (googleId) {
-                    network.emitViewProfile({ googleId });
-                }
-            }
-        });
-    }
-
-    if(dom.tournamentRankingContainer) {
-        dom.tournamentRankingContainer.addEventListener('click', (e) => {
-            const target = e.target.closest('.rank-name.clickable');
-            if (target) {
-                const googleId = target.dataset.googleId;
-                if (googleId) {
-                    network.emitViewProfile({ googleId });
-                }
-            }
-        });
-    }
+            });
+        }
+    });
 
     if (dom.pvpLobbyModal) {
         dom.pvpLobbyModal.addEventListener('click', (e) => {
@@ -1605,8 +1588,6 @@ export function initializeUiHandlers() {
             dom.chatInput.value = '';
         }
     };
-    
-    if(dom.chatSendButton) dom.chatSendButton.addEventListener('click', sendChatMessage);
     
     dom.chatInput.addEventListener('keypress', (e) => { 
         if (e.key === 'Enter') {
