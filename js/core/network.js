@@ -1,6 +1,6 @@
 // js/core/network.js
 import { getState, updateState } from './state.js';
-import * as dom from '../core/dom.js';
+import * as dom from './dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
 import { renderRoomList, renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
@@ -11,10 +11,9 @@ import { showPvpDrawSequence } from '../game-logic/turn-manager.js';
 import { t } from './i18n.js';
 import { animateCardPlay } from '../ui/animations.js';
 import { showCoinRewardNotification } from '../ui/toast-renderer.js';
-import { playSoundEffect, announceEffect } from '../core/sound.js';
 import * as sound from './sound.js';
 import { renderShopAvatars, updateCoinVersusDisplay } from '../ui/shop-renderer.js';
-import { renderTournamentView, renderTournamentRankingTable, renderTournamentMatchScore, clearTournamentMatchScore } from '../ui/torneio-renderer.js';
+import { renderTournamentView, renderTournamentRankingTable } from '../ui/torneio-renderer.js';
 import { executeAiTurn } from '../ai/ai-controller.js';
 
 
@@ -495,16 +494,15 @@ export function connectToServer() {
              setTimeout(() => executeAiTurn(firstPlayer), 1500);
         }
         
-        clearTournamentMatchScore();
-        renderTournamentMatchScore([0, 0]);
+        // No longer needed, renderAll handles the header.
     });
 
     socket.on('tournamentMatchScoreUpdate', (score) => {
-        renderTournamentMatchScore(score);
+        // The new UI shows the full leaderboard, which is updated via 'gameStateUpdate'.
+        // This specific score update is no longer needed.
     });
 
     socket.on('tournamentMatchEnd', () => {
-        clearTournamentMatchScore();
         dom.appContainerEl.classList.add('hidden');
         dom.tournamentModal.classList.remove('hidden');
     });
