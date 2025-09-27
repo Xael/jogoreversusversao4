@@ -14,113 +14,17 @@ export async function applyEffect(card, targetId, casterId, effectTypeToReverse,
     const caster = gameState.players[casterId];
     if (!target || !caster) return;
 
-    // --- TOURNAMENT MODE LOGIC ---
-    if (gameState.isTournamentMatch) {
-        const cardName = card.name;
-        const allPlayers = Object.values(gameState.players);
-        
-        // Helper to play sound and announce tournament-specific effects
-        const playTournamentEffectSound = (name) => {
-            const soundToPlay = name.toLowerCase().replace(/\s/g, '');
-            setTimeout(() => playSoundEffect(soundToPlay), 100);
-            setTimeout(() => announceEffect(name), 150);
-        };
-
-        switch (cardName) {
-            case 'Sobe':
-            case 'Desce':
-                // The last effect played is the one that counts.
-                // Clear any effect previously cast by this caster on any player.
-                allPlayers.forEach(p => {
-                    if (p.tournamentScoreEffect && p.tournamentScoreEffect.casterId === casterId) {
-                        p.tournamentScoreEffect = null;
-                    }
-                });
-                // Apply new effect to the target
-                target.tournamentScoreEffect = { effect: cardName, casterId };
-                updateLog(`${caster.name} usou ${cardName} em ${target.name}.`);
-                playTournamentEffectSound(cardName);
-                return; // End execution here for these cards in tournament mode
-
-            case 'Pula':
-                if (target.tournamentScoreEffect) {
-                    const stolenEffect = { ...target.tournamentScoreEffect };
-                    target.tournamentScoreEffect = null; // Remove effect from target
-                    
-                    // Clear any previous effect cast by the caster of Pula
-                    allPlayers.forEach(p => {
-                        if (p.tournamentScoreEffect && p.tournamentScoreEffect.casterId === casterId) {
-                            p.tournamentScoreEffect = null;
-                        }
-                    });
-
-                    // Give the stolen effect to the caster of Pula
-                    caster.tournamentScoreEffect = { effect: stolenEffect.effect, casterId: casterId };
-                    updateLog(`${caster.name} usou Pula e roubou o efeito '${stolenEffect.effect}' de ${target.name}!`);
-                } else {
-                    updateLog(`${caster.name} usou Pula em ${target.name}, mas não havia efeito para roubar.`);
-                }
-                playTournamentEffectSound(cardName);
-                return;
-
-            case 'Reversus':
-                if (target.tournamentScoreEffect) {
-                    const effectToReverse = target.tournamentScoreEffect;
-                    
-                    // Special case: reclaim stolen effect
-                    if (effectToReverse.casterId !== targetId && casterId === effectToReverse.casterId) {
-                        target.tournamentScoreEffect = null; // Remove from target
-                        // Clear any previous effect cast by caster
-                        allPlayers.forEach(p => {
-                            if (p.tournamentScoreEffect && p.tournamentScoreEffect.casterId === casterId) {
-                                p.tournamentScoreEffect = null;
-                            }
-                        });
-                        caster.tournamentScoreEffect = { effect: effectToReverse.effect, casterId: casterId }; // Reclaim it
-                        updateLog(`${caster.name} usou Reversus e recuperou seu efeito '${effectToReverse.effect}' de ${target.name}!`);
-                    } else {
-                        // Standard inversion
-                        const newEffect = effectToReverse.effect === 'Sobe' ? 'Desce' : 'Sobe';
-                        effectToReverse.effect = newEffect;
-                        updateLog(`${caster.name} usou Reversus e inverteu o efeito em ${target.name} para '${newEffect}'!`);
-                    }
-                } else {
-                    updateLog(`${caster.name} usou Reversus em ${target.name}, mas não havia efeito para reverter.`);
-                }
-                playTournamentEffectSound(cardName);
-                return;
-            
-            case 'Mais':
-            case 'Menos':
-            case 'Reversus Total':
-                // These cards have no effect in tournament mode as per the new rules.
-                updateLog(`A carta ${cardName} não tem efeito especial no modo Torneio.`);
-                // We still need to discard it from hand, which happens outside this function.
-                // The animation will play, but the game state won't change.
-                return;
-        }
-    }
-    // --- END OF TOURNAMENT MODE LOGIC ---
-
-    let effectName;
-    // Correctly determine the effect name, especially for locked Reversus Total
-    if (card.isLocked) {
-        effectName = card.lockedEffect;
-    } else {
-        effectName = card.name;
-    }
-
     // --- Habilidades de Evento Passivas ---
     // Habilidade do Dragão Dourado: Ignora 1 efeito negativo por turno.
-    if (target.isEventBoss && target.aiType === 'dragaodourado' && !target.eventAbilityUsedThisTurn && ['Menos', 'Desce', 'Pula'].includes(effectName)) {
-        updateLog(`Dragão Dourado usou sua habilidade e ignorou o efeito de ${effectName}!`);
+    if (target.isEventBoss && target.aiType === 'dragaodourado' && !target.eventAbilityUsedThisTurn && ['Menos', 'Desce', 'Pula'].includes(card.name)) {
+        updateLog(`Dragão Dourado usou sua habilidade e ignorou o efeito de ${card.name}!`);
         target.eventAbilityUsedThisTurn = true;
         return; // Efeito é ignorado
     }
 
     // Check for field effect immunity AND the player's own immunity buff from Infinite Challenge
-    if (((gameState.activeFieldEffects || []).some(fe => fe.name === 'Imunidade' && fe.appliesTo === targetId) || target.isImmuneToNegativeEffects) && (effectName === 'Menos' || effectName === 'Desce')) {
-        updateLog(`${target.name} está imune a ${effectName} nesta rodada!`);
+    if (((gameState.activeFieldEffects || []).some(fe => fe.name === 'Imunidade' && fe.appliesTo === targetId) || target.isImmuneToNegativeEffects) && (card.name === 'Menos' || card.name === 'Desce')) {
+        updateLog(`${target.name} está imune a ${card.name} nesta rodada!`);
         return; // Buff lasts for the whole duel, so we don't consume it here.
     }
 
@@ -129,6 +33,14 @@ export async function applyEffect(card, targetId, casterId, effectTypeToReverse,
         const map = { 'Mais': 'Menos', 'Menos': 'Mais', 'Sobe': 'Desce', 'Desce': 'Sobe', 'NECRO X': 'NECRO X Invertido', 'NECRO X Invertido': 'NECRO X' };
         return map[effect] || null;
     };
+
+    let effectName;
+    // Correctly determine the effect name, especially for locked Reversus Total
+    if (card.isLocked) {
+        effectName = card.lockedEffect;
+    } else {
+        effectName = card.name;
+    }
 
     if (gameState.reversusTotalActive && effectName !== 'Reversus Total') {
         const inverted = getInverseEffect(effectName);
