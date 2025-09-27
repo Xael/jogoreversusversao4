@@ -193,11 +193,12 @@ export async function startOfflineTournament() {
  * @param {object} tournament - O objeto completo do torneio.
  */
 async function initializeTournamentMatch(matchData, tournament) {
-    const player1Data = matchData.p1;
-    const player2Data = matchData.p2;
+    // FIX: Identifica o jogador humano e o IA para garantir que o humano seja sempre o 'player-1'
+    const humanData = matchData.p1.isAI ? matchData.p2 : matchData.p1;
+    const aiData = matchData.p1.isAI ? matchData.p1 : matchData.p2;
 
-    const player1 = { ...player1Data, playerId: 'player-1', isHuman: !player1Data.isAI };
-    const player2 = { ...player2Data, playerId: 'player-2', isHuman: !player2Data.isAI };
+    const player1 = { ...humanData, playerId: 'player-1', isHuman: true };
+    const player2 = { ...aiData, playerId: 'player-2', isHuman: false };
     
     const valueDeck = shuffle(createDeck([{ value: 2, count: 12 }, { value: 4, count: 10 }, { value: 6, count: 8 }, { value: 8, count: 6 }, { value: 10, count: 4 }], 'value'));
     const effectDeck = shuffle(createDeck([{ name: 'Mais', count: 4 }, { name: 'Menos', count: 4 }, { name: 'Sobe', count: 4 }, { name: 'Desce', count: 4 }, { name: 'Pula', count: 4 }, { name: 'Reversus', count: 4 }, { name: 'Reversus Total', count: 1 }], 'effect'));

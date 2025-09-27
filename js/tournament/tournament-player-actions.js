@@ -21,7 +21,8 @@ export async function playTournamentCard(player, card, targetId, effectTypeToRev
     
     gameState.consecutivePasses = 0;
     
-    const animationTargetPlayerId = card.type === 'value' ? player.id : targetId;
+    // FIX: Use player.playerId for value cards, as targetId is not relevant for the player's own play zone.
+    const animationTargetPlayerId = card.type === 'value' ? player.playerId : targetId;
     const cardDestinationPlayer = gameState.players[animationTargetPlayerId];
 
     let targetSlotLabel;
@@ -34,7 +35,7 @@ export async function playTournamentCard(player, card, targetId, effectTypeToRev
         }
     }
 
-    const startElement = document.querySelector(`#hand-${player.id} [data-card-id="${card.id}"]`);
+    const startElement = document.querySelector(`#hand-${player.playerId} [data-card-id="${card.id}"]`);
     const startRect = gameState.animationStartRect; 
     
     if (startElement || startRect) {
@@ -69,7 +70,7 @@ export async function playTournamentCard(player, card, targetId, effectTypeToRev
     }
 
     if (card.type === 'effect') {
-        await applyTournamentEffect(card, targetId, player.id);
+        await applyTournamentEffect(card, targetId, player.playerId);
     }
     
     gameState.selectedCard = null;
