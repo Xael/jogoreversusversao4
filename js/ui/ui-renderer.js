@@ -9,6 +9,7 @@ import { showSplashScreen } from './splash-screen.js';
 import { updateLog } from '../core/utils.js';
 import { t } from '../core/i18n.js';
 import { resetGameEffects } from './animations.js';
+import { renderTournamentBracket, renderCurrentMatchScore } from './torneio-renderer.js';
 
 /**
  * Updates the UI for the chat filter and mute/unmute buttons.
@@ -106,26 +107,28 @@ function renderTournamentHeader(gameState) {
         return player.username;
     };
     
-    // Create a compact 2-column layout
-    const columns = [[], []];
-    sortedLeaderboard.forEach((player, index) => {
-        const playerAvatarUrl = player.avatar_url ? (player.avatar_url.startsWith('http') ? player.avatar_url : `./${player.avatar_url}`) : './aleatorio1.png';
-        const playerHtml = `
-            <div class="leaderboard-player">
-                <div class="leaderboard-player-info">
-                    <img src="${playerAvatarUrl}" class="leaderboard-header-avatar" alt="Avatar">
-                    <span>${index + 1}. ${getPlayerName(player)}</span>
-                </div>
-                <span class="leaderboard-player-points">${player.points} pts</span>
-            </div>
-        `;
-        columns[index % 2].push(playerHtml);
-    });
-
     const headerHTML = `
         <div class="tournament-header-leaderboard">
-            <div class="leaderboard-column">${columns[0].join('')}</div>
-            <div class="leaderboard-column">${columns[1].join('')}</div>
+            <div class="leaderboard-header-item" style="grid-column: 1 / 3;"><b>${t('ranking.header_player')}</b></div>
+            <div class="leaderboard-header-item"><b>${t('tournament.header_points')}</b></div>
+            <div class="leaderboard-header-item"><b>${t('tournament.header_wins')}</b></div>
+            <div class="leaderboard-header-item"><b>${t('tournament.header_draws')}</b></div>
+            <div class="leaderboard-header-item"><b>${t('tournament.header_losses')}</b></div>
+
+            ${sortedLeaderboard.map((player, index) => {
+                const playerAvatarUrl = player.avatar_url ? (player.avatar_url.startsWith('http') ? player.avatar_url : `./${player.avatar_url}`) : './aleatorio1.png';
+                return `
+                    <div class="leaderboard-player-item" style="justify-self: center;">${index + 1}.</div>
+                    <div class="leaderboard-player-info">
+                        <img src="${playerAvatarUrl}" class="leaderboard-header-avatar" alt="Avatar">
+                        <span class="player-name-text">${getPlayerName(player)}</span>
+                    </div>
+                    <div class="leaderboard-player-item">${player.points}</div>
+                    <div class="leaderboard-player-item">${player.wins}</div>
+                    <div class="leaderboard-player-item">${player.draws}</div>
+                    <div class="leaderboard-player-item">${player.losses}</div>
+                `;
+            }).join('')}
         </div>
     `;
 
@@ -145,9 +148,12 @@ export const renderAll = () => {
     
     if (gameState.isTournamentMatch) {
         renderTournamentHeader(gameState);
+        if (dom.boardEl) {
+             dom.boardEl.innerHTML = renderTournamentBracket() + renderCurrentMatchScore();
+        }
     } else {
         renderPvpPot();
-        // Here you could also render team scores if applicable
+        renderBoard();
     }
     
     // Render each player's area
@@ -156,11 +162,6 @@ export const renderAll = () => {
             renderPlayerArea(gameState.players[id]);
         }
     });
-
-    // Render the game board and pawns
-    if (!gameState.isTournamentMatch) {
-        renderBoard();
-    }
 
     // CRITICAL FIX: Re-render the log from the authoritative game state
     updateLog();
@@ -194,7 +195,7 @@ export const updateActionButtons = () => {
     const myPlayer = gameState.isPvp ? gameState.players[playerId] : gameState.players['player-1'];
     if (!myPlayer || !currentPlayer) return; 
 
-    const isMyTurn = currentPlayer.playerId === myPlayer.playerId && gameState.gamePhase === 'playing';
+    const isMyTurn = currentPlayer.id === myPlayer.id && gameState.gamePhase === 'playing';
 
     dom.cardsButton.disabled = !isMyTurn;
     dom.endTurnButton.disabled = !isMyTurn;

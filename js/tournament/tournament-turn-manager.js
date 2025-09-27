@@ -6,7 +6,6 @@ import { renderAll, showTurnIndicator, showGameOver } from '../ui/ui-renderer.js
 import { renderCard } from '../ui/card-renderer.js';
 import { executeAiTurn } from '../ai/ai-controller.js';
 import { updateLog, dealCard, shuffle } from '../core/utils.js';
-import { updateTournamentLiveScores } from './tournament-score.js';
 import { t } from '../core/i18n.js';
 import { handleMatchCompletion } from './tournament-controller.js';
 
@@ -20,13 +19,16 @@ export function endTournamentMatch() {
 
     let winnerId = null;
     let message;
+    
+    const p1Name = getPlayerName(match.p1);
+    const p2Name = getPlayerName(match.p2);
 
     if (p1Score > p2Score) {
-        winnerId = match.player1.id;
-        message = `${match.player1.name} venceu a partida contra ${match.player2.name}!`;
+        winnerId = match.p1.id;
+        message = `${p1Name} venceu a partida contra ${p2Name}!`;
     } else if (p2Score > p1Score) {
-        winnerId = match.player2.id;
-        message = `${match.player2.name} venceu a partida contra ${match.player1.name}!`;
+        winnerId = match.p2.id;
+        message = `${p2Name} venceu a partida contra ${p1Name}!`;
     } else {
         message = 'A partida terminou em empate!';
     }
@@ -35,7 +37,6 @@ export function endTournamentMatch() {
 
     handleMatchCompletion(winnerId);
 }
-
 
 /**
  * Verifica se a partida do torneio terminou.
@@ -101,8 +102,7 @@ async function drawToStartTournament() {
     
     if (drawnCards[sortedPlayers[0]].value > drawnCards[sortedPlayers[1]].value) {
         const winner = gameState.players[sortedPlayers[0]];
-        // FIX: Use playerId ('player-1') instead of database id for currentPlayer state.
-        gameState.currentPlayer = winner.playerId;
+        gameState.currentPlayer = sortedPlayers[0]; // FIX: Correctly assign player ID
         dom.drawStartResultMessage.textContent = `${winner.name} tirou a carta mais alta e começa!`;
         
         await new Promise(res => setTimeout(res, 2000));
@@ -200,7 +200,6 @@ export async function startTournamentNewRound(isFirstRound = false) {
     const currentPlayer = gameState.players[gameState.currentPlayer];
     if (!currentPlayer) {
         console.error("Critical error: currentPlayer is undefined at the start of a round.", gameState.currentPlayer, gameState.players);
-        // Handle error gracefully, maybe end the match
         return;
     }
     updateLog(`É a vez de ${currentPlayer.name}.`);
@@ -220,13 +219,22 @@ async function calculateScoresAndEndTournamentRound() {
     const { gameState } = getState();
     const finalScores = {};
 
+    // 1. Calculate final scores including all effects
     gameState.playerIdsInGame.forEach(id => {
         const p = gameState.players[id];
         let score = p.playedCards.value.reduce((sum, card) => sum + card.value, 0);
+        
+        // Apply tournament-specific effects (+5/-5)
         if (p.tournamentScoreEffect) {
             if (p.tournamentScoreEffect.effect === 'Sobe') score += 5;
             if (p.tournamentScoreEffect.effect === 'Desce') score -= 5;
         }
+        
+        // Apply standard Mais/Menos effects
+        let restoValue = p.resto?.value || 0;
+        if (p.effects.score === 'Mais') score += restoValue;
+        if (p.effects.score === 'Menos') score -= restoValue;
+
         finalScores[id] = score;
     });
 
@@ -244,17 +252,22 @@ async function calculateScoresAndEndTournamentRound() {
     if (winners.length > 1) winners = [];
 
     const match = gameState.tournamentMatch;
+    const player1Id = gameState.players['player-1'].id;
+
     if (winners.length === 1) {
         const winnerId = winners[0];
         updateLog(`Vencedor da rodada: ${gameState.players[winnerId].name}.`);
-        if (winnerId === match.p1.playerId) match.score[0]++;
-        else match.score[1]++;
+        if (gameState.players[winnerId].id === player1Id) {
+            match.score[0]++;
+        } else {
+            match.score[1]++;
+        }
     } else {
         updateLog("A rodada terminou em empate.");
         match.draws++;
     }
-
-    updateTournamentLiveScores(); 
+    
+    renderAll();
     await new Promise(res => setTimeout(res, 3000));
 
     if (checkTournamentMatchEnd()) {
@@ -262,4 +275,12 @@ async function calculateScoresAndEndTournamentRound() {
     } else {
         await startTournamentNewRound();
     }
+}
+
+function getPlayerName(player) {
+    if (!player) return "Jogador";
+    if (player.name && (player.name.startsWith('event_chars.') || player.name.startsWith('player_names.') || player.name.startsWith('avatars.'))) {
+        return t(player.name);
+    }
+    return player.name;
 }
