@@ -7,7 +7,7 @@ import { updateLog, shuffle } from '../core/utils.js';
 import { createDeck } from '../game-logic/deck.js';
 import { initiateTournamentMatchStartSequence } from './tournament-turn-manager.js';
 import { t } from '../core/i18n.js';
-import { AI_OPPONENTS_POOL } from '../core/config.js';
+import { INFINITE_CHALLENGE_OPPONENTS } from '../core/config.js';
 
 /**
  * Inicia uma partida de torneio offline contra um oponente de IA.
@@ -27,7 +27,7 @@ export async function startOfflineTournament() {
     });
 
     const humanPlayer = getState().userProfile;
-    const aiOpponentData = shuffle([...AI_OPPONENTS_POOL])[0];
+    const aiOpponentData = shuffle([...INFINITE_CHALLENGE_OPPONENTS])[0];
 
     const player1 = {
         id: 'player-1',
