@@ -8,6 +8,48 @@ import { executeAiTurn } from '../ai/ai-controller.js';
 import { updateLog, dealCard, shuffle } from '../core/utils.js';
 import { updateTournamentLiveScores } from './tournament-score.js';
 import { t } from '../core/i18n.js';
+import { handleMatchCompletion } from './tournament-controller.js';
+
+/**
+ * Finaliza uma partida de torneio e comunica o resultado ao controlador principal.
+ */
+function endTournamentMatch() {
+    const { gameState } = getState();
+    const match = gameState.tournamentMatch;
+    const [p1Score, p2Score] = match.score;
+
+    let winnerId = null;
+    let message;
+
+    if (p1Score > p2Score) {
+        winnerId = match.player1.id;
+        message = `${match.player1.name} venceu a partida contra ${match.player2.name}!`;
+    } else if (p2Score > p1Score) {
+        winnerId = match.player2.id;
+        message = `${match.player2.name} venceu a partida contra ${match.player1.name}!`;
+    } else {
+        message = 'A partida terminou em empate!';
+    }
+    
+    showGameOver(message, "Fim da Partida", { action: 'menu', text: t('game_over.back_to_menu') });
+
+    handleMatchCompletion(winnerId);
+}
+
+
+/**
+ * Verifica se a partida do torneio terminou.
+ * @returns {boolean} True se a partida terminou.
+ */
+function checkTournamentMatchEnd() {
+    const { gameState } = getState();
+    const match = gameState.tournamentMatch;
+    if (!match) return false;
+
+    const [p1Score, p2Score] = match.score;
+    // A partida termina se um jogador vencer 2 rodadas, ou após 3 rodadas no total.
+    return p1Score >= 2 || p2Score >= 2 || (p1Score + p2Score + match.draws >= 3);
+}
 
 /**
  * Inicia a sequência de início de uma partida de torneio com o sorteio de cartas.
@@ -166,19 +208,6 @@ export async function startTournamentNewRound(isFirstRound = false) {
 }
 
 /**
- * Verifica se a partida do torneio terminou.
- * @returns {boolean} True se a partida terminou.
- */
-function checkTournamentMatchEnd() {
-    const { gameState } = getState();
-    const match = gameState.tournamentMatch;
-    if (!match) return false;
-
-    const [p1Score, p2Score] = match.score;
-    return p1Score >= 2 || p2Score >= 2 || (p1Score + p2Score + match.draws >= 3);
-}
-
-/**
  * Calcula os resultados da rodada do torneio e avança a partida.
  */
 async function calculateScoresAndEndTournamentRound() {
@@ -219,20 +248,11 @@ async function calculateScoresAndEndTournamentRound() {
         match.draws++;
     }
 
-    updateTournamentLiveScores(); // Atualiza a UI com o placar da partida
+    updateTournamentLiveScores(); 
     await new Promise(res => setTimeout(res, 3000));
 
     if (checkTournamentMatchEnd()) {
-        const [p1Score, p2Score] = match.score;
-        let message;
-        if (p1Score > p2Score) {
-            message = `${match.player1.name} venceu a partida contra ${match.player2.name}!`;
-        } else if (p2Score > p1Score) {
-            message = `${match.player2.name} venceu a partida contra ${match.player1.name}!`;
-        } else {
-            message = 'A partida terminou em empate!';
-        }
-        showGameOver(message, "Fim da Partida", { action: 'menu', text: t('game_over.back_to_menu') });
+        endTournamentMatch();
     } else {
         await startTournamentNewRound();
     }

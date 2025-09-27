@@ -4149,3 +4149,39 @@ body.screen-shaking {
     font-size: 0.95rem;
     line-height: 1.5;
 }
+
+.tournament-header-leaderboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    gap: 2px 15px;
+    font-size: 0.8rem;
+    padding: 0 10px;
+    align-items: center;
+    color: var(--text-secondary);
+}
+
+.leaderboard-column {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.leaderboard-player {
+    display: flex;
+    justify-content: space-between;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.leaderboard-player span:first-child {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 600;
+}
+.leaderboard-player span:last-child {
+    font-weight: bold;
+    color: var(--text-primary);
+}

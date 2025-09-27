@@ -89,6 +89,45 @@ function renderTurnTimer() {
     }
 }
 
+/**
+ * Renders the tournament header with the live leaderboard.
+ * @param {object} gameState The current game state.
+ */
+function renderTournamentHeader(gameState) {
+    if (!dom.centerPanelHeader || !gameState.tournament) return;
+
+    const { leaderboard } = gameState.tournament;
+    const sortedLeaderboard = [...leaderboard].sort((a, b) => b.points - a.points || b.wins - a.wins);
+
+    const getPlayerName = (player) => {
+        if (player.username && (player.username.startsWith('event_chars.') || player.username.startsWith('player_names.') || player.username.startsWith('avatars.'))) {
+            return t(player.username);
+        }
+        return player.username;
+    };
+    
+    // Create a compact 2-column layout
+    const columns = [[], []];
+    sortedLeaderboard.forEach((player, index) => {
+        const playerHtml = `
+            <div class="leaderboard-player">
+                <span>${index + 1}. ${getPlayerName(player)}</span>
+                <span>${player.points} pts</span>
+            </div>
+        `;
+        columns[index % 2].push(playerHtml);
+    });
+
+    const headerHTML = `
+        <div class="tournament-header-leaderboard">
+            <div class="leaderboard-column">${columns[0].join('')}</div>
+            <div class="leaderboard-column">${columns[1].join('')}</div>
+        </div>
+    `;
+
+    dom.centerPanelHeader.innerHTML = headerHTML;
+}
+
 
 /**
  * Renders all dynamic UI components of the game.
@@ -96,6 +135,16 @@ function renderTurnTimer() {
 export const renderAll = () => {
     const { gameState } = getState();
     if (!gameState) return;
+
+    // Clear and render appropriate header
+    if (dom.centerPanelHeader) dom.centerPanelHeader.innerHTML = ''; // Clear header first
+    
+    if (gameState.isTournamentMatch) {
+        renderTournamentHeader(gameState);
+    } else {
+        renderPvpPot();
+        // Here you could also render team scores if applicable
+    }
     
     // Render each player's area
     gameState.playerIdsInGame.forEach(id => {
@@ -115,9 +164,6 @@ export const renderAll = () => {
 
     // Update live scores and side panel statuses
     updateLiveScoresAndWinningStatus();
-
-    // Render the PvP pot if applicable
-    renderPvpPot();
 
     // Render the turn timer for PvP
     renderTurnTimer();

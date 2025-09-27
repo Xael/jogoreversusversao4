@@ -1,7 +1,6 @@
 // js/tournament/tournament-score.js
 
 import { getState } from '../core/state.js';
-import { renderTournamentMatchScore } from '../ui/torneio-renderer.js';
 
 /**
  * Calcula as pontuações ao vivo para os jogadores em uma partida de torneio e atualiza a UI.
@@ -26,8 +25,5 @@ export function updateTournamentLiveScores() {
         player.liveScore = score;
     });
 
-    // Renderiza o placar da partida (ex: 1 - 0)
-    if (gameState.tournamentMatch) {
-        renderTournamentMatchScore(gameState.tournamentMatch.score);
-    }
+    // A renderização do placar foi movida para ui-renderer.js para mostrar a tabela de classificação.
 }
