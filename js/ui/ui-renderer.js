@@ -109,10 +109,14 @@ function renderTournamentHeader(gameState) {
     // Create a compact 2-column layout
     const columns = [[], []];
     sortedLeaderboard.forEach((player, index) => {
+        const playerAvatarUrl = player.avatar_url ? (player.avatar_url.startsWith('http') ? player.avatar_url : `./${player.avatar_url}`) : './aleatorio1.png';
         const playerHtml = `
             <div class="leaderboard-player">
-                <span>${index + 1}. ${getPlayerName(player)}</span>
-                <span>${player.points} pts</span>
+                <div class="leaderboard-player-info">
+                    <img src="${playerAvatarUrl}" class="leaderboard-header-avatar" alt="Avatar">
+                    <span>${index + 1}. ${getPlayerName(player)}</span>
+                </div>
+                <span class="leaderboard-player-points">${player.points} pts</span>
             </div>
         `;
         columns[index % 2].push(playerHtml);
@@ -154,7 +158,9 @@ export const renderAll = () => {
     });
 
     // Render the game board and pawns
-    renderBoard();
+    if (!gameState.isTournamentMatch) {
+        renderBoard();
+    }
 
     // CRITICAL FIX: Re-render the log from the authoritative game state
     updateLog();
@@ -188,7 +194,7 @@ export const updateActionButtons = () => {
     const myPlayer = gameState.isPvp ? gameState.players[playerId] : gameState.players['player-1'];
     if (!myPlayer || !currentPlayer) return; 
 
-    const isMyTurn = currentPlayer.id === myPlayer.id && gameState.gamePhase === 'playing';
+    const isMyTurn = currentPlayer.playerId === myPlayer.playerId && gameState.gamePhase === 'playing';
 
     dom.cardsButton.disabled = !isMyTurn;
     dom.endTurnButton.disabled = !isMyTurn;

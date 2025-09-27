@@ -10,16 +10,18 @@ import { t } from '../core/i18n.js';
  * @param {object} player - The player object to render.
  */
 export const renderPlayerArea = (player) => {
-    const playerEl = document.getElementById(`player-area-${player.id}`);
+    // FIX: Use player.playerId ('player-1') instead of player.id (database ID) for DOM elements
+    const playerEl = document.getElementById(`player-area-${player.playerId}`);
     if (!playerEl) return;
     
     const { gameState, playerId: myPlayerId } = getState();
-    const pIdNum = parseInt(player.id.split('-')[1]);
+    // FIX: Use playerId for parsing
+    const pIdNum = parseInt(player.playerId.split('-')[1]);
 
     // Apply classes for styling
     playerEl.className = 'player-area'; // Reset
     playerEl.classList.add(`p${pIdNum}-bg`);
-    if (player.id === gameState.currentPlayer) playerEl.classList.add('active');
+    if (player.playerId === gameState.currentPlayer) playerEl.classList.add('active');
     if (player.isEliminated) playerEl.classList.add('eliminated');
 
     // Special AI glow effects
@@ -44,13 +46,14 @@ export const renderPlayerArea = (player) => {
         playerEl.classList.add('xael-portrait-bg');
     }
 
-    const isMyArea = (gameState.isPvp && player.id === myPlayerId) || (!gameState.isPvp && player.isHuman);
+    const isMyArea = (gameState.isPvp && player.playerId === myPlayerId) || (!gameState.isPvp && player.isHuman);
     
     let handHTML = '';
     // Only render the hand area for opponents. The main player's hand is now in the floating overlay.
     if (!isMyArea) {
         const context = 'opponent-hand';
-        handHTML = `<div class="player-hand" id="hand-${player.id}">${player.hand.map(card => renderCard(card, context, player.id)).join('')}</div>`;
+        // FIX: Use player.playerId for hand ID and renderCard context
+        handHTML = `<div class="player-hand" id="hand-${player.playerId}">${player.hand.map(card => renderCard(card, context, player.playerId)).join('')}</div>`;
     }
 
     const playZoneSlots = [
@@ -65,7 +68,7 @@ export const renderPlayerArea = (player) => {
         <div class="play-zone">
             ${playZoneSlots.map(slot => `
                 <div class="play-zone-slot" data-label="${slot.label}">
-                    ${slot.card ? renderCard(slot.card, 'play-zone', player.id) : ''}
+                    ${slot.card ? renderCard(slot.card, 'play-zone', player.playerId) : ''}
                 </div>
             `).join('')}
         </div>`;
@@ -141,15 +144,16 @@ function renderPlayerHeader(player) {
     const restoValue = player.resto ? player.resto.value : 'N/A';
     const scoreValue = (player.aiType === 'oespectro' && gameState.gamePhase === 'playing') ? '??' : (player.liveScore || 0);
 
-    const activeFieldEffect = (gameState.activeFieldEffects || []).find(fe => fe.appliesTo === player.id);
+    const activeFieldEffect = (gameState.activeFieldEffects || []).find(fe => fe.appliesTo === player.playerId);
 
-    const nameClasses = ['player-name', `player-${player.id.split('-')[1]}`];
+    // FIX: Use playerId for class names
+    const nameClasses = ['player-name', `player-${player.playerId.split('-')[1]}`];
     if (player.aiType === 'necroverso') nameClasses.push('necro');
     if (player.aiType === 'xael') nameClasses.push('xael');
     if (player.aiType === 'necroverso_final') nameClasses.push('final-boss-glow');
     if (gameState.isInversusMode && !player.isHuman) nameClasses.push('inversus-name-glow');
 
-    const revealedIcon = (gameState.revealedHands || []).includes(player.id) ? '<div class="revealed-icon" title="Mão revelada"></div>' : '';
+    const revealedIcon = (gameState.revealedHands || []).includes(player.playerId) ? '<div class="revealed-icon" title="Mão revelada"></div>' : '';
 
     let heartsOrStarsHTML = '';
     if (gameState.isInversusMode) {
@@ -163,7 +167,7 @@ function renderPlayerHeader(player) {
     }
 
     const fieldEffectHTML = activeFieldEffect ? `
-        <div class="field-effect-indicator" title="${t('game.field_effect_indicator_title', { effectName: activeFieldEffect.name })}" data-player-id="${player.id}">
+        <div class="field-effect-indicator" title="${t('game.field_effect_indicator_title', { effectName: activeFieldEffect.name })}" data-player-id="${player.playerId}">
             <div class="field-effect-square" style="background-color: ${activeFieldEffect.type === 'positive' ? 'var(--accent-blue)' : 'var(--accent-red)'};"></div>
             <span>${t('game.field_effect_indicator')}</span>
         </div>

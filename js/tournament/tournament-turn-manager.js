@@ -101,7 +101,8 @@ async function drawToStartTournament() {
     
     if (drawnCards[sortedPlayers[0]].value > drawnCards[sortedPlayers[1]].value) {
         const winner = gameState.players[sortedPlayers[0]];
-        gameState.currentPlayer = winner.id;
+        // FIX: Use playerId ('player-1') instead of database id for currentPlayer state.
+        gameState.currentPlayer = winner.playerId;
         dom.drawStartResultMessage.textContent = `${winner.name} tirou a carta mais alta e começa!`;
         
         await new Promise(res => setTimeout(res, 2000));
@@ -197,6 +198,11 @@ export async function startTournamentNewRound(isFirstRound = false) {
     
     gameState.gamePhase = 'playing';
     const currentPlayer = gameState.players[gameState.currentPlayer];
+    if (!currentPlayer) {
+        console.error("Critical error: currentPlayer is undefined at the start of a round.", gameState.currentPlayer, gameState.players);
+        // Handle error gracefully, maybe end the match
+        return;
+    }
     updateLog(`É a vez de ${currentPlayer.name}.`);
     renderAll();
 
@@ -241,7 +247,7 @@ async function calculateScoresAndEndTournamentRound() {
     if (winners.length === 1) {
         const winnerId = winners[0];
         updateLog(`Vencedor da rodada: ${gameState.players[winnerId].name}.`);
-        if (winnerId === match.player1.playerId) match.score[0]++;
+        if (winnerId === match.p1.playerId) match.score[0]++;
         else match.score[1]++;
     } else {
         updateLog("A rodada terminou em empate.");

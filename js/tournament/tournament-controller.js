@@ -166,6 +166,7 @@ export async function startOfflineTournament() {
         leaderboard: allPlayers.map(p => ({
             id: p.id,
             username: p.name,
+            avatar_url: p.avatar_url,
             points: 0, wins: 0, draws: 0, losses: 0
         })),
         schedule: generateTournamentSchedule([...allPlayers]) // Passa uma cópia
@@ -228,6 +229,7 @@ async function initializeTournamentMatch(matchData, tournament) {
     
     dom.splashScreenEl.classList.add('hidden');
     dom.appContainerEl.classList.remove('hidden');
+    dom.boardEl.classList.add('hidden'); // Oculta o tabuleiro para o torneio
 
     if(dom.leftScoreBox) dom.leftScoreBox.classList.add('hidden');
     if(dom.rightScoreBox) dom.rightScoreBox.classList.add('hidden');
