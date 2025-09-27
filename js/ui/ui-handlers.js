@@ -24,11 +24,6 @@ import { renderShopAvatars } from './shop-renderer.js';
 import { renderCard } from './card-renderer.js';
 import { renderTournamentView } from './torneio-renderer.js';
 
-// --- NEW TOURNAMENT IMPORTS ---
-import { startOfflineTournament } from '../tournament/tournament-controller.js';
-import { playTournamentCard } from '../tournament/tournament-player-actions.js';
-import { advanceToNextPlayer as advanceTournamentPlayer } from '../tournament/tournament-turn-manager.js';
-
 
 let currentEventData = null;
 let infiniteChallengeIntroHandler = null;
@@ -126,15 +121,11 @@ async function initiatePlayCardSequence(player, card) {
         gameState.gamePhase = 'paused';
     }
     
-    // --- ISOLATION LOGIC ---
-    // Use the appropriate playCard function based on the game mode.
-    const playCardFn = gameState.isTournamentMatch ? playTournamentCard : playCard;
-
     if (card.type === 'value') {
         if (gameState.isPvp) {
             network.emitPlayCard({ cardId: card.id, targetId: player.id });
         } else {
-            await playCardFn(player, card, player.id);
+            await playCard(player, card, player.id);
             gameState.gamePhase = 'playing';
             renderAll();
         }
@@ -159,7 +150,7 @@ async function initiatePlayCardSequence(player, card) {
         if (gameState.isPvp) {
              network.emitPlayCard({ cardId: card.id, targetId: player.id });
         } else {
-             await playCardFn(player, card, player.id);
+             await playCard(player, card, player.id);
              gameState.gamePhase = 'playing';
              renderAll();
         }
@@ -350,13 +341,7 @@ function handleEndTurnButtonClick() {
     } else {
         updateLog(`${player.name} passou o turno.`);
         gameState.consecutivePasses++;
-        
-        // --- ISOLATION LOGIC ---
-        if (gameState.isTournamentMatch) {
-            advanceTournamentPlayer();
-        } else {
-            advanceToNextPlayer();
-        }
+        advanceToNextPlayer();
     }
 }
 
@@ -472,14 +457,7 @@ async function startInfiniteChallengeIntro() {
 }
 
 export function initializeUiHandlers() {
-    document.addEventListener('aiTurnEnded', () => {
-        const { gameState } = getState();
-        if (gameState.isTournamentMatch) {
-            advanceTournamentPlayer();
-        } else {
-            advanceToNextPlayer();
-        }
-    });
+    document.addEventListener('aiTurnEnded', advanceToNextPlayer);
     
     initializeChatHandlers();
 
@@ -1055,15 +1033,7 @@ export function initializeUiHandlers() {
             } else {
                  showSplashScreen();
             }
-        } else if (action === 'tournament_continue') {
-            const { gameState } = getState();
-            if (gameState && gameState.isPvp) {
-                 network.emit('tournamentMatchFinished'); // Let server know
-            }
-            dom.appContainerEl.classList.add('hidden');
-            dom.tournamentModal.classList.remove('hidden');
-        }
-        else {
+        } else {
             showSplashScreen();
         }
     });
@@ -1083,8 +1053,6 @@ export function initializeUiHandlers() {
             cancelPlayerAction();
             return;
         }
-
-        const playCardFn = gameState.isTournamentMatch ? playTournamentCard : playCard;
 
         if (reversusTotalIndividualFlow && card.name === 'Reversus Total') {
             gameState.reversusTarget = targetId;
@@ -1110,7 +1078,7 @@ export function initializeUiHandlers() {
             if (gameState.isPvp) {
                 network.emitPlayCard({ cardId: card.id, targetId: targetId });
             } else {
-                await playCardFn(player, card, targetId);
+                await playCard(player, card, targetId);
                 gameState.gamePhase = 'playing';
                 renderAll();
             }
@@ -1138,8 +1106,7 @@ export function initializeUiHandlers() {
         if (gameState.isPvp) {
             network.emitPlayCard({ cardId: card.id, targetId, options: { pulaPath: pathId } });
         } else {
-            const playCardFn = gameState.isTournamentMatch ? playTournamentCard : playCard;
-            await playCardFn(player, card, targetId);
+            await playCard(player, card, targetId);
             gameState.gamePhase = 'playing';
             gameState.pulaTarget = null;
             renderAll();
@@ -1159,8 +1126,7 @@ export function initializeUiHandlers() {
         if (gameState.isPvp) {
             network.emitPlayCard({ cardId: card.id, targetId, options: { effectType: 'score' } });
         } else {
-            const playCardFn = gameState.isTournamentMatch ? playTournamentCard : playCard;
-            await playCardFn(player, card, targetId, 'score');
+            await playCard(player, card, targetId, 'score');
             gameState.gamePhase = 'playing';
             renderAll();
         }
@@ -1177,8 +1143,7 @@ export function initializeUiHandlers() {
         if (gameState.isPvp) {
             network.emitPlayCard({ cardId: card.id, targetId, options: { effectType: 'movement' } });
         } else {
-            const playCardFn = gameState.isTournamentMatch ? playTournamentCard : playCard;
-            await playCardFn(player, card, targetId, 'movement');
+            await playCard(player, card, targetId, 'movement');
             gameState.gamePhase = 'playing';
             renderAll();
         }
@@ -1195,8 +1160,7 @@ export function initializeUiHandlers() {
         if (gameState.isPvp) {
             network.emitPlayCard({ cardId: card.id, targetId: player.id, options: { isGlobal: true } });
         } else {
-            const playCardFn = gameState.isTournamentMatch ? playTournamentCard : playCard;
-            await playCardFn(player, card, player.id, null, { isGlobal: true });
+            await playCard(player, card, player.id, null, { isGlobal: true });
             gameState.gamePhase = 'playing';
             renderAll();
         }
@@ -1244,8 +1208,7 @@ export function initializeUiHandlers() {
         if (gameState.isPvp) {
              network.emitPlayCard({ cardId: card.id, targetId, options });
         } else {
-            const playCardFn = gameState.isTournamentMatch ? playTournamentCard : playCard;
-            await playCardFn(player, card, targetId, null, options);
+            await playCard(player, card, targetId, null, options);
             updateState('reversusTotalIndividualFlow', false);
             gameState.gamePhase = 'playing';
             renderAll();
@@ -1771,9 +1734,7 @@ export function initializeUiHandlers() {
     });
 
     dom.tournamentPlayOfflineButton.addEventListener('click', () => {
-        // --- ISOLATION LOGIC ---
-        // This now calls the new, isolated tournament controller.
-        startOfflineTournament();
+        network.emitJoinTournamentQueue({ type: 'offline' });
     });
 
     dom.tournamentCancelQueueButton.addEventListener('click', () => {
