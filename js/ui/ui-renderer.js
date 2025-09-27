@@ -9,7 +9,6 @@ import { showSplashScreen } from './splash-screen.js';
 import { updateLog } from '../core/utils.js';
 import { t } from '../core/i18n.js';
 import { resetGameEffects } from './animations.js';
-import { renderTournamentBracket, renderCurrentMatchScore } from './torneio-renderer.js';
 
 /**
  * Updates the UI for the chat filter and mute/unmute buttons.
@@ -90,51 +89,6 @@ function renderTurnTimer() {
     }
 }
 
-/**
- * Renders the tournament header with the live leaderboard.
- * @param {object} gameState The current game state.
- */
-function renderTournamentHeader(gameState) {
-    if (!dom.centerPanelHeader || !gameState.tournament) return;
-
-    const { leaderboard } = gameState.tournament;
-    const sortedLeaderboard = [...leaderboard].sort((a, b) => b.points - a.points || b.wins - a.wins);
-
-    const getPlayerName = (player) => {
-        if (player.username && (player.username.startsWith('event_chars.') || player.username.startsWith('player_names.') || player.username.startsWith('avatars.'))) {
-            return t(player.username);
-        }
-        return player.username;
-    };
-    
-    const headerHTML = `
-        <div class="tournament-header-leaderboard">
-            <div class="leaderboard-header-item" style="grid-column: 1 / 3;"><b>${t('ranking.header_player')}</b></div>
-            <div class="leaderboard-header-item"><b>${t('tournament.header_points')}</b></div>
-            <div class="leaderboard-header-item"><b>${t('tournament.header_wins')}</b></div>
-            <div class="leaderboard-header-item"><b>${t('tournament.header_draws')}</b></div>
-            <div class="leaderboard-header-item"><b>${t('tournament.header_losses')}</b></div>
-
-            ${sortedLeaderboard.map((player, index) => {
-                const playerAvatarUrl = player.avatar_url ? (player.avatar_url.startsWith('http') ? player.avatar_url : `./${player.avatar_url}`) : './aleatorio1.png';
-                return `
-                    <div class="leaderboard-player-item" style="justify-self: center;">${index + 1}.</div>
-                    <div class="leaderboard-player-info">
-                        <img src="${playerAvatarUrl}" class="leaderboard-header-avatar" alt="Avatar">
-                        <span class="player-name-text">${getPlayerName(player)}</span>
-                    </div>
-                    <div class="leaderboard-player-item">${player.points}</div>
-                    <div class="leaderboard-player-item">${player.wins}</div>
-                    <div class="leaderboard-player-item">${player.draws}</div>
-                    <div class="leaderboard-player-item">${player.losses}</div>
-                `;
-            }).join('')}
-        </div>
-    `;
-
-    dom.centerPanelHeader.innerHTML = headerHTML;
-}
-
 
 /**
  * Renders all dynamic UI components of the game.
@@ -142,19 +96,6 @@ function renderTournamentHeader(gameState) {
 export const renderAll = () => {
     const { gameState } = getState();
     if (!gameState) return;
-
-    // Clear and render appropriate header
-    if (dom.centerPanelHeader) dom.centerPanelHeader.innerHTML = ''; // Clear header first
-    
-    if (gameState.isTournamentMatch) {
-        renderTournamentHeader(gameState);
-        if (dom.boardEl) {
-             dom.boardEl.innerHTML = renderTournamentBracket() + renderCurrentMatchScore();
-        }
-    } else {
-        renderPvpPot();
-        renderBoard();
-    }
     
     // Render each player's area
     gameState.playerIdsInGame.forEach(id => {
@@ -162,6 +103,9 @@ export const renderAll = () => {
             renderPlayerArea(gameState.players[id]);
         }
     });
+
+    // Render the game board and pawns
+    renderBoard();
 
     // CRITICAL FIX: Re-render the log from the authoritative game state
     updateLog();
@@ -171,6 +115,9 @@ export const renderAll = () => {
 
     // Update live scores and side panel statuses
     updateLiveScoresAndWinningStatus();
+
+    // Render the PvP pot if applicable
+    renderPvpPot();
 
     // Render the turn timer for PvP
     renderTurnTimer();

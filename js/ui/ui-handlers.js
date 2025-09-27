@@ -45,7 +45,7 @@ function getLocalPlayerId() {
     if (!gameState) return null;
     if (gameState.isPvp) return playerId;
     const humanPlayer = Object.values(gameState.players).find(p => p.isHuman);
-    return humanPlayer ? (humanPlayer.playerId || humanPlayer.id) : null;
+    return humanPlayer ? humanPlayer.id : null;
 }
 
 /**
@@ -76,7 +76,7 @@ function showFloatingHand() {
     if (!player) return;
 
     dom.floatingHandContainer.innerHTML = player.hand.map(card => {
-        const cardHTML = renderCard(card, 'floating-hand', player.playerId || player.id);
+        const cardHTML = renderCard(card, 'floating-hand', player.id);
         
         // Simplified wrapper, clicking the card itself is the action
         return `
@@ -131,11 +131,10 @@ async function initiatePlayCardSequence(player, card) {
     const playCardFn = gameState.isTournamentMatch ? playTournamentCard : playCard;
 
     if (card.type === 'value') {
-        const playerGameId = player.playerId || player.id;
         if (gameState.isPvp) {
-            network.emitPlayCard({ cardId: card.id, targetId: playerGameId });
+            network.emitPlayCard({ cardId: card.id, targetId: player.id });
         } else {
-            await playCardFn(player, card, playerGameId);
+            await playCardFn(player, card, player.id);
             gameState.gamePhase = 'playing';
             renderAll();
         }
@@ -157,11 +156,10 @@ async function initiatePlayCardSequence(player, card) {
     } else if (card.name === 'Reversus Total') {
         dom.reversusTotalChoiceModal.classList.remove('hidden');
     } else if (card.name === 'Carta da Versatrix') {
-        const playerGameId = player.playerId || player.id;
         if (gameState.isPvp) {
-             network.emitPlayCard({ cardId: card.id, targetId: playerGameId });
+             network.emitPlayCard({ cardId: card.id, targetId: player.id });
         } else {
-             await playCardFn(player, card, playerGameId);
+             await playCardFn(player, card, player.id);
              gameState.gamePhase = 'playing';
              renderAll();
         }
@@ -1195,10 +1193,10 @@ export function initializeUiHandlers() {
         const card = gameState.selectedCard;
         dom.reversusTotalChoiceModal.classList.add('hidden');
         if (gameState.isPvp) {
-            network.emitPlayCard({ cardId: card.id, targetId: (player.playerId || player.id), options: { isGlobal: true } });
+            network.emitPlayCard({ cardId: card.id, targetId: player.id, options: { isGlobal: true } });
         } else {
             const playCardFn = gameState.isTournamentMatch ? playTournamentCard : playCard;
-            await playCardFn(player, card, (player.playerId || player.id), null, { isGlobal: true });
+            await playCardFn(player, card, player.id, null, { isGlobal: true });
             gameState.gamePhase = 'playing';
             renderAll();
         }
@@ -1378,7 +1376,7 @@ export function initializeUiHandlers() {
                     p.aiType === 'reversum' || p.aiType === 'contravox' || p.aiType === 'versatrix'
                 );
                 const shatterPromises = kingAIs.map(boss => {
-                    const bossArea = document.getElementById(`player-area-${(boss.playerId || boss.id)}`);
+                    const bossArea = document.getElementById(`player-area-${boss.id}`);
                     const bossImage = bossArea?.querySelector('.player-area-character-portrait');
                     if (bossImage) {
                         return shatterImage(bossImage);
@@ -1389,7 +1387,7 @@ export function initializeUiHandlers() {
             } else {
                 const bossPlayer = Object.values(gameState.players).find(p => p.aiType === battle);
                 if (bossPlayer) {
-                    const bossArea = document.getElementById(`player-area-${(bossPlayer.playerId || bossPlayer.id)}`);
+                    const bossArea = document.getElementById(`player-area-${bossPlayer.id}`);
                     const bossImage = bossArea?.querySelector('.player-area-character-portrait');
                     if (bossImage) {
                         await shatterImage(bossImage);

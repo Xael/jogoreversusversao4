@@ -1,5 +1,4 @@
 
-
 {
     "document": {
         "title": "Reversus - Online Game"
@@ -70,12 +69,7 @@
         "runner_up_title": "Runner-up",
         "prize_champion": "Prize: 560 🪙",
         "prize_runner_up": "Prize: 240 🪙",
-        "best_of_3_score": "Best of 3",
-        "rules_title": "Special Tournament Rules",
-        "rules_explanation": "In the tournament, the goal is to win matches (best of 3), not advance on the board. The Up, Down, and Jump cards have special scoring effects!",
-        "rule_sobe": "<strong>Up:</strong> Adds <strong>+5</strong> to your final score for the round.",
-        "rule_desce": "<strong>Down:</strong> Subtracts <strong>-5</strong> from your final score for the round.",
-        "rule_pula": "<strong>Jump:</strong> Steals the 'Up' or 'Down' scoring effect from an opponent."
+        "best_of_3_score": "Best of 3"
     },
     "infinite_challenge": {
         "intro_1": "THIS WILL BE MY FIRST AND LAST WARNING TO THOSE WHO DARE TO CHALLENGE THE INFINITE.",

@@ -7,7 +7,6 @@ import { playCard } from '../game-logic/player-actions.js';
 import { tryToSpeak, triggerNecroX } from '../story/story-abilities.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
 import * as config from '../core/config.js';
-import { playTournamentCard } from '../tournament/tournament-player-actions.js';
 
 /**
  * Helper function to get the inverse of a card effect.
@@ -70,8 +69,6 @@ export async function executeAiTurn(player) {
     let specialAbilityUsed = false;
 
     try {
-        const playCardFn = gameState.isTournamentMatch ? playTournamentCard : playCard;
-
         // --- Part 1: Story & Event Boss Special Abilities ---
         if (player.aiType === 'versatrix' && gameState.currentStoryBattle === 'versatrix' && !gameState.versatrixSwapActive) {
             const player1 = gameState.players['player-1'];
@@ -189,7 +186,7 @@ export async function executeAiTurn(player) {
                 }
             } else { // Easy and Medium Logic
                 const otherScores = gameState.playerIdsInGame
-                    .filter(id => id !== (player.playerId || player.id) && !gameState.players[id].isEliminated)
+                    .filter(id => id !== player.id && !gameState.players[id].isEliminated)
                     .map(id => gameState.players[id].liveScore || 0);
                 
                 const maxOtherScore = otherScores.length > 0 ? Math.max(...otherScores) : -Infinity;
@@ -206,7 +203,7 @@ export async function executeAiTurn(player) {
             }
             
             updateLog(`AI ${player.name}: Jogando a carta de valor ${cardToPlay.name}.`);
-            await playCardFn(player, cardToPlay, (player.playerId || player.id));
+            await playCard(player, cardToPlay, player.id);
             await new Promise(res => setTimeout(res, 800));
             playedACard = true;
         }
@@ -224,36 +221,36 @@ export async function executeAiTurn(player) {
         
         // --- AI PERSONALITY LOGIC ---
         if (gameState.gameMode === 'duo' && !player.isHuman && !gameState.isFinalBoss) { // Generic Duo Partner Logic
-            const playerTeamIds = config.TEAM_A.includes((player.playerId || player.id)) ? config.TEAM_A : config.TEAM_B;
-            const ally = gameState.players[playerTeamIds.find(id => id !== (player.playerId || player.id))];
+            const playerTeamIds = config.TEAM_A.includes(player.id) ? config.TEAM_A : config.TEAM_B;
+            const ally = gameState.players[playerTeamIds.find(id => id !== player.id)];
             const opponentTeamIds = playerTeamIds === config.TEAM_A ? config.TEAM_B : config.TEAM_A;
             const opponents = opponentTeamIds.map(id => gameState.players[id]).filter(p => p && !p.isEliminated);
             const leader = opponents.length > 0 ? [...opponents].sort((a, b) => b.liveScore - a.liveScore)[0] : null;
 
             for (const card of effectCards) {
                 if (['Mais', 'Sobe'].includes(card.name) && ally && 50 > bestMove.score) {
-                     bestMove = { card, target: (ally.playerId || ally.id), score: 50, reason: "para ajudar seu aliado" };
+                     bestMove = { card, target: ally.id, score: 50, reason: "para ajudar seu aliado" };
                 }
                 else if (['Mais', 'Sobe'].includes(card.name) && 40 > bestMove.score) {
-                    bestMove = { card, target: (player.playerId || player.id), score: 40, reason: "para se fortalecer" };
+                    bestMove = { card, target: player.id, score: 40, reason: "para se fortalecer" };
                 }
                 else if (['Menos', 'Desce', 'Pula'].includes(card.name) && leader && 60 > bestMove.score) {
                     if (card.name === 'Pula') {
                         const availablePaths = gameState.boardPaths.filter(p => !Object.values(gameState.players).map(pl => pl.pathId).includes(p.id));
                         if (availablePaths.length > 0) {
-                            bestMove = { card, target: (leader.playerId || leader.id), score: 60, reason: "para atrapalhar o oponente líder" };
+                            bestMove = { card, target: leader.id, score: 60, reason: "para atrapalhar o oponente líder" };
                         }
                     } else {
-                        bestMove = { card, target: (leader.playerId || leader.id), score: 60, reason: "para atacar o oponente líder" };
+                        bestMove = { card, target: leader.id, score: 60, reason: "para atacar o oponente líder" };
                     }
                 }
                 else if (card.name === 'Reversus') {
                     if (ally && (ally.effects.score === 'Menos' || ally.effects.movement === 'Desce') && 70 > bestMove.score) {
                         const effectType = ally.effects.score === 'Menos' ? 'score' : 'movement';
-                        bestMove = { card, target: (ally.playerId || ally.id), effectType, score: 70, reason: "para defender seu aliado" };
+                        bestMove = { card, target: ally.id, effectType, score: 70, reason: "para defender seu aliado" };
                     } else if (leader && (leader.effects.score === 'Mais' || leader.effects.movement === 'Sobe') && 65 > bestMove.score) {
                         const effectType = leader.effects.score === 'Mais' ? 'score' : 'movement';
-                        bestMove = { card, target: (leader.playerId || leader.id), effectType, score: 65, reason: "para anular a vantagem do oponente" };
+                        bestMove = { card, target: leader.id, effectType, score: 65, reason: "para anular a vantagem do oponente" };
                     }
                 }
             }
@@ -266,20 +263,20 @@ export async function executeAiTurn(player) {
 
             for (const card of effectCards) {
                 if (['Mais', 'Sobe'].includes(card.name) && player1.effects.score !== 'Mais' && 50 > bestMove.score) {
-                    bestMove = { card, target: (player1.playerId || player1.id), score: 50, reason: "para ajudar seu aliado" };
+                    bestMove = { card, target: player1.id, score: 50, reason: "para ajudar seu aliado" };
                 }
                 if (['Menos', 'Desce'].includes(card.name) && leader && leader.effects.score !== 'Menos' && 40 > bestMove.score) {
-                    bestMove = { card, target: (leader.playerId || leader.id), score: 40, reason: "para atacar o inimigo" };
+                    bestMove = { card, target: leader.id, score: 40, reason: "para atacar o inimigo" };
                 }
             }
         } else { // DEFAULT, REVERSUM, and other LOGIC with difficulty scaling
-            const opponents = Object.values(gameState.players).filter(p => (p.playerId || p.id) !== (player.playerId || player.id) && !p.isEliminated);
+            const opponents = Object.values(gameState.players).filter(p => p.id !== player.id && !p.isEliminated);
             const leader = opponents.length > 0 ? [...opponents].sort((a, b) => b.liveScore - a.liveScore)[0] : null;
 
             // Reversum Ability
             if (player.aiType === 'reversum' && !gameState.reversumAbilityUsedThisRound) {
                 if (selfDefenseReversusCondition(player) || (leader && opponentOffenseReversusCondition(leader))) {
-                    bestMove = { card: { id: 'ability_reversus_total', name: 'Reversus Total', type: 'effect' }, target: (player.playerId || player.id), score: 110, reason: "usando sua habilidade real", isReversumAbility: true };
+                    bestMove = { card: { id: 'ability_reversus_total', name: 'Reversus Total', type: 'effect' }, target: player.id, score: 110, reason: "usando sua habilidade real", isReversumAbility: true };
                 }
             }
             
@@ -294,7 +291,7 @@ export async function executeAiTurn(player) {
                                 return; // Redundant move
                             }
                         }
-                        bestMove = { card, target: (target.playerId || target.id), score, reason };
+                        bestMove = { card, target: target.id, score, reason };
                     };
                     
                     if (card.name === 'Reversus Total') {
@@ -302,10 +299,10 @@ export async function executeAiTurn(player) {
                     } else if (card.name === 'Reversus') {
                         if (leader && opponentOffenseReversusCondition(leader)) {
                             const effectType = isReversusTotalActive ? (leader.effects.score === 'Menos' ? 'score' : 'movement') : (leader.effects.score === 'Mais' ? 'score' : 'movement');
-                            if (85 > bestMove.score) bestMove = { card, target: (leader.playerId || leader.id), effectType, score: 85, reason: "para anular a vantagem do oponente" };
+                            if (85 > bestMove.score) bestMove = { card, target: leader.id, effectType, score: 85, reason: "para anular a vantagem do oponente" };
                         } else if (selfDefenseReversusCondition(player)) {
                             const effectType = isReversusTotalActive ? (player.effects.score === 'Mais' ? 'score' : 'movement') : (player.effects.score === 'Menos' ? 'score' : 'movement');
-                            if (60 > bestMove.score) bestMove = { card, target: (player.playerId || player.id), effectType, score: 60, reason: "para se defender" };
+                            if (60 > bestMove.score) bestMove = { card, target: player.id, effectType, score: 60, reason: "para se defender" };
                         }
                     } else if (card.name === 'Pula' && leader) {
                         const availablePaths = gameState.boardPaths.filter(p => !Object.values(gameState.players).map(pl => pl.pathId).includes(p.id));
@@ -336,10 +333,10 @@ export async function executeAiTurn(player) {
                 const availablePaths = gameState.boardPaths.filter(p => !Object.values(gameState.players).some(pl => pl.pathId === p.id && !pl.isEliminated));
                 if (availablePaths.length > 0) {
                     targetPlayer.targetPathForPula = availablePaths[0].id;
-                    await playCardFn(player, bestMove.card, bestMove.target);
+                    await playCard(player, bestMove.card, bestMove.target);
                 }
             } else {
-                await playCardFn(player, bestMove.card, bestMove.target, bestMove.effectType);
+                await playCard(player, bestMove.card, bestMove.target, bestMove.effectType);
             }
             playedACard = true;
             await new Promise(res => setTimeout(res, 800));

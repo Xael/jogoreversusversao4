@@ -69,12 +69,7 @@
         "runner_up_title": "Vice-campeão",
         "prize_champion": "Prêmio: 560 🪙",
         "prize_runner_up": "Prêmio: 240 🪙",
-        "best_of_3_score": "Melhor de 3",
-        "rules_title": "Regras Especiais do Torneio",
-        "rules_explanation": "No torneio, o objetivo é vencer partidas (melhor de 3), não avançar no tabuleiro. As cartas Sobe, Desce e Pula têm efeitos especiais de pontuação!",
-        "rule_sobe": "<strong>Sobe:</strong> Adiciona <strong>+5</strong> à sua pontuação final na rodada.",
-        "rule_desce": "<strong>Desce:</strong> Subtrai <strong>-5</strong> da sua pontuação final na rodada.",
-        "rule_pula": "<strong>Pula:</strong> Rouba o efeito de pontuação 'Sobe' ou 'Desce' de um oponente."
+        "best_of_3_score": "Melhor de 3"
     },
     "infinite_challenge": {
         "intro_1": "ESTE SERÁ MEU PRIMEIRO E ÚLTIMO AVISO PARA QUEM OUSAR DESAFIAR O INFINITO.",
@@ -552,7 +547,7 @@
         "infinite_challenge_toast": "Recompensa Infinita! Você ganhou +{amount} CoinVersus e o título '{titleName}'!"
     },
     "log": {
-        "welcome": "Welcome to Reversus! Mode: {modeText}.",
+        "welcome": "Bem-vindo ao Reversus! Modo: {modeText}.",
         "duo_teams": "Equipe Azul/Verde (Você & Jogador 3) vs. Equipe Vermelho/Amarelo (Jogador 2 & Jogador 4)",
         "save_only_story": "Apenas o progresso do Modo História pode ser salvo.",
         "game_saved": "Jogo salvo com sucesso!",
