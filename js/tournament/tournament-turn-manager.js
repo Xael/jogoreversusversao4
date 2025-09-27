@@ -13,7 +13,7 @@ import { handleMatchCompletion } from './tournament-controller.js';
 /**
  * Finaliza uma partida de torneio e comunica o resultado ao controlador principal.
  */
-function endTournamentMatch() {
+export function endTournamentMatch() {
     const { gameState } = getState();
     const match = gameState.tournamentMatch;
     const [p1Score, p2Score] = match.score;
@@ -89,7 +89,7 @@ async function drawToStartTournament() {
             setTimeout(() => {
                 if(cardEl) cardEl.outerHTML = renderCard(card, 'modal');
                 res();
-            }, 500 * cardPromises.length);
+            }, 500 * (cardPromises.length));
         });
         cardPromises.push(promise);
     }
