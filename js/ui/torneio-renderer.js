@@ -18,10 +18,23 @@ function clearViews() {
  * @returns {string} The translated or original username.
  */
 function getPlayerName(player) {
-    if (player.username && (player.username.startsWith('event_chars.') || player.username.startsWith('player_names.') || player.username.startsWith('avatars.'))) {
+    if (!player || !player.username) return 'Jogador';
+    if (player.username.startsWith('event_chars.') || player.username.startsWith('player_names.') || player.username.startsWith('avatars.')) {
         return t(player.username);
     }
     return player.username;
+}
+
+export function renderInGameTournamentView(state) {
+    if (!dom.tournamentViewContainer || !state) return;
+
+    const leaderboardHTML = renderLeaderboard(state.leaderboard, true); // true for in-game context
+    const matchesHTML = renderMatches(state.schedule, state.currentRound, true); // true for in-game context
+
+    dom.tournamentViewContainer.innerHTML = `
+        <div class="tournament-section">${leaderboardHTML}</div>
+        <div class="tournament-section">${matchesHTML}</div>
+    `;
 }
 
 
@@ -43,7 +56,6 @@ export function renderTournamentView(state) {
             renderChampionView(state);
             break;
         default:
-            // Fallback to hub if state is unknown
             renderHubView();
             break;
     }
@@ -83,8 +95,8 @@ function renderQueueView(state) {
 
 function renderMainView(state) {
     dom.tournamentMainView.classList.remove('hidden');
-    renderLeaderboard(state.leaderboard);
-    renderMatches(state.schedule, state.currentRound);
+    dom.tournamentLeaderboardContainer.innerHTML = renderLeaderboard(state.leaderboard);
+    dom.tournamentMatchesContainer.innerHTML = renderMatches(state.schedule, state.currentRound);
 }
 
 function renderChampionView(state) {
@@ -104,12 +116,11 @@ function renderChampionView(state) {
     }
 }
 
-function renderLeaderboard(leaderboard) {
-    if (!dom.tournamentLeaderboardContainer) return;
-
+function renderLeaderboard(leaderboard, inGame = false) {
+    if (!leaderboard) return '';
     const sortedLeaderboard = [...leaderboard].sort((a, b) => b.points - a.points || b.wins - a.wins);
 
-    dom.tournamentLeaderboardContainer.innerHTML = `
+    return `
         <h3 class="tournament-section-title">${t('tournament.leaderboard')}</h3>
         <table class="tournament-table">
             <thead>
@@ -126,7 +137,12 @@ function renderLeaderboard(leaderboard) {
                 ${sortedLeaderboard.map((player, index) => `
                     <tr>
                         <td>${index + 1}</td>
-                        <td>${getPlayerName(player)}</td>
+                        <td>
+                            <div class="tournament-player-cell">
+                                <img src="${player.avatar_url || './aleatorio1.png'}" alt="Avatar" class="tournament-player-avatar">
+                                <span>${getPlayerName(player)}</span>
+                            </div>
+                        </td>
                         <td>${player.points}</td>
                         <td>${player.wins}</td>
                         <td>${player.draws}</td>
@@ -138,17 +154,17 @@ function renderLeaderboard(leaderboard) {
     `;
 }
 
-function renderMatches(schedule, currentRound) {
-    if (!dom.tournamentMatchesContainer) return;
+function renderMatches(schedule, currentRound, inGame = false) {
+    if (!schedule) return '';
     const { userProfile } = getState();
 
     const roundMatches = schedule.find(round => round.round === currentRound)?.matches || [];
 
-    dom.tournamentMatchesContainer.innerHTML = `
+    return `
         <h3 class="tournament-section-title">${t('tournament.current_round', { round: currentRound })}</h3>
         <div class="matches-grid">
             ${roundMatches.map(match => {
-                const isMyMatch = match.p1.id === userProfile.id || match.p2.id === userProfile.id;
+                const isMyMatch = userProfile && (match.p1.id === userProfile.id || match.p2.id === userProfile.id);
                 const isFinished = match.result !== null;
                 
                 let resultText = '';
@@ -164,15 +180,22 @@ function renderMatches(schedule, currentRound) {
 
                 return `
                     <div class="match-card ${isMyMatch ? 'my-match' : ''} ${isFinished ? 'finished' : ''}">
-                        <div class="match-player">${getPlayerName(match.p1)}</div>
+                        <div class="match-player">
+                            <img src="${match.p1.avatar_url || './aleatorio1.png'}" alt="Avatar" class="match-player-avatar">
+                            <span>${getPlayerName(match.p1)}</span>
+                        </div>
                         <div class="match-result">${isFinished ? resultText : 'vs'}</div>
-                        <div class="match-player">${getPlayerName(match.p2)}</div>
+                        <div class="match-player">
+                            <img src="${match.p2.avatar_url || './aleatorio1.png'}" alt="Avatar" class="match-player-avatar">
+                            <span>${getPlayerName(match.p2)}</span>
+                        </div>
                     </div>
                 `;
             }).join('')}
         </div>
     `;
 }
+
 
 export function renderTournamentRankingTable(rankingData) {
     const { players, currentPage, totalPages } = rankingData;

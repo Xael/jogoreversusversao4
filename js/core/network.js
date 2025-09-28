@@ -14,7 +14,7 @@ import { showCoinRewardNotification } from '../ui/toast-renderer.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
 import * as sound from './sound.js';
 import { renderShopAvatars, updateCoinVersusDisplay } from '../ui/shop-renderer.js';
-import { renderTournamentView, renderTournamentRankingTable, renderTournamentMatchScore, clearTournamentMatchScore } from '../ui/torneio-renderer.js';
+import { renderTournamentView, renderTournamentRankingTable, renderTournamentMatchScore, clearTournamentMatchScore, renderInGameTournamentView } from '../ui/torneio-renderer.js';
 import { executeAiTurn } from '../ai/ai-controller.js';
 
 
@@ -451,8 +451,12 @@ export function connectToServer() {
     });
 
     socket.on('tournamentStateUpdate', (tournamentState) => {
-        if (tournamentState.status === 'active' || tournamentState.status === 'finished') {
-            renderTournamentView(tournamentState);
+        updateState('currentTournamentState', tournamentState);
+        const { gameState } = getState();
+        if (!gameState || !gameState.isTournamentMatch) {
+            if (tournamentState.status === 'active' || tournamentState.status === 'finished') {
+                renderTournamentView(tournamentState);
+            }
         }
     });
 
@@ -460,15 +464,11 @@ export function connectToServer() {
         dom.tournamentModal.classList.add('hidden');
         dom.splashScreenEl.classList.add('hidden');
         
-        // This is a tournament match, not a lobby-based one, so we need to find our player ID.
-        // We assume the server sends 'player-1' for the human player in offline mode.
-        // In online mode, we need to check against our user profile ID.
         const { userProfile } = getState();
         const myPlayerEntry = Object.values(initialGameState.players).find(p => p.name === userProfile.username);
         if (myPlayerEntry) {
             updateState('playerId', myPlayerEntry.id);
         } else {
-             // Fallback for offline mode
             updateState('playerId', 'player-1');
         }
 
@@ -483,15 +483,25 @@ export function connectToServer() {
         updateGameTimer();
         updateState('gameTimerInterval', setInterval(updateGameTimer, 1000));
         
+        // UI Switch for Tournament Match
+        dom.boardEl.classList.add('hidden');
+        dom.leftScoreBox.classList.add('hidden');
+        dom.rightScoreBox.classList.add('hidden');
+        dom.teamScoresContainer.classList.add('hidden');
+        dom.tournamentViewContainer.classList.remove('hidden');
+        
+        const { currentTournamentState } = getState();
+        if (currentTournamentState) {
+            renderInGameTournamentView(currentTournamentState);
+        }
+
         setupPlayerPerspective();
         renderAll();
 
         const firstPlayer = state.gameState.players[state.gameState.currentPlayer];
         const myPlayerId = state.playerId;
         
-        // Trigger AI turn if it starts and is not the human player
         if (firstPlayer && !firstPlayer.isHuman && state.gameState.currentPlayer !== myPlayerId) {
-             console.log(`Tournament match started. It's AI's turn: ${firstPlayer.name}. Triggering AI logic.`);
              setTimeout(() => executeAiTurn(firstPlayer), 1500);
         }
         
@@ -506,7 +516,22 @@ export function connectToServer() {
     socket.on('tournamentMatchEnd', () => {
         clearTournamentMatchScore();
         dom.appContainerEl.classList.add('hidden');
-        dom.tournamentModal.classList.remove('hidden');
+        
+        // Revert UI switch
+        dom.tournamentViewContainer.classList.add('hidden');
+        dom.boardEl.classList.remove('hidden');
+        dom.leftScoreBox.classList.remove('hidden');
+        dom.rightScoreBox.classList.remove('hidden');
+        
+        updateState('gameState', null);
+        const { currentTournamentState } = getState();
+        
+        if (currentTournamentState) {
+            renderTournamentView(currentTournamentState);
+        } else {
+            dom.tournamentModal.classList.remove('hidden');
+            renderTournamentView({ status: 'hub' });
+        }
     });
 
     socket.on('tournamentRankingData', (rankingData) => {
