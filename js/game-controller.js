@@ -13,6 +13,7 @@ import { generateBoardPaths } from './game-logic/board.js';
 import { executeAiTurn } from './ai/ai-controller.js';
 import { createSpiralStarryBackground, resetGameEffects } from './ui/animations.js';
 import { t } from './core/i18n.js';
+import { renderTournamentMatchScore, clearTournamentMatchScore } from '../ui/torneio-renderer.js';
 
 
 /**
@@ -95,6 +96,7 @@ const showFullscreenAnnounce = async (text, imageSrc) => {
  * The core game state creation is now handled by the server for PvP.
  */
 export const initializeGame = async (mode, options) => {
+    clearTournamentMatchScore();
     const { isChatMuted, infiniteChallengeOpponentQueue } = getState();
     dom.chatInput.disabled = isChatMuted;
     dom.chatInput.placeholder = t(isChatMuted ? 'chat.chat_muted_message' : 'game.chat_placeholder');
