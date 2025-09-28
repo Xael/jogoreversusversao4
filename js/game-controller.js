@@ -13,7 +13,7 @@ import { generateBoardPaths } from './game-logic/board.js';
 import { executeAiTurn } from './ai/ai-controller.js';
 import { createSpiralStarryBackground, resetGameEffects } from './ui/animations.js';
 import { t } from './core/i18n.js';
-import { renderTournamentMatchScore, clearTournamentMatchScore } from '../ui/torneio-renderer.js';
+import { renderTournamentMatchScore, clearTournamentMatchScore } from './ui/torneio-renderer.js';
 
 
 /**
