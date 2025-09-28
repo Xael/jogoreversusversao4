@@ -9,6 +9,14 @@ export const renderBoard = () => {
     const { gameState } = getState();
     if (!gameState || !gameState.boardPaths) return;
     
+    // Hide board for tournament matches
+    if (gameState.isTournamentMatch) {
+        dom.boardEl.innerHTML = '';
+        dom.boardEl.classList.add('hidden');
+        return;
+    }
+    dom.boardEl.classList.remove('hidden');
+
     dom.boardEl.innerHTML = ''; // Clear previous board state
     const centerPawnsContainer = document.createElement('div');
     centerPawnsContainer.className = 'board-center-pawns';

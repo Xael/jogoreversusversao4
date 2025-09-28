@@ -1729,17 +1729,28 @@ export function initializeUiHandlers() {
         renderTournamentView({ status: 'hub' });
     });
 
-    dom.tournamentPlayOnlineButton.addEventListener('click', () => {
-        network.emitJoinTournamentQueue({ type: 'online' });
-    });
+    const setupTournamentButton = (button, type) => {
+        if (button) {
+            button.addEventListener('click', () => {
+                const rulesModal = document.getElementById('tournament-rules-modal');
+                rulesModal.classList.remove('hidden');
+                const understoodBtn = document.getElementById('tournament-rules-understood-btn');
+                const handler = () => {
+                    rulesModal.classList.add('hidden');
+                    network.emitJoinTournamentQueue({ type });
+                    understoodBtn.removeEventListener('click', handler);
+                };
+                understoodBtn.addEventListener('click', handler);
+            });
+        }
+    };
 
-    dom.tournamentPlayOfflineButton.addEventListener('click', () => {
-        network.emitJoinTournamentQueue({ type: 'offline' });
-    });
+    setupTournamentButton(dom.tournamentPlayOnlineButton, 'online');
+    setupTournamentButton(dom.tournamentPlayOfflineButton, 'offline');
 
     dom.tournamentCancelQueueButton.addEventListener('click', () => {
         network.emitCancelTournamentQueue();
-        renderTournamentView({ status: 'hub' }); // Go back to hub
+        renderTournamentView({ status: 'hub' });
     });
 
     dom.tournamentCloseButton.addEventListener('click', () => {
