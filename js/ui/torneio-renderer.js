@@ -230,23 +230,17 @@ export function renderTournamentRankingTable(rankingData) {
 }
 
 export function renderTournamentMatchScore(score) {
-    if (!dom.centerPanelHeader) return;
-    
-    // Remove existing score container to prevent duplicates
-    clearTournamentMatchScore();
-
-    const container = document.createElement('div');
-    container.id = 'tournament-match-score-container'; // Use a consistent ID
+    const container = document.getElementById('tournament-match-score-container');
+    if (!container) return;
     
     container.innerHTML = `
         <span class="tournament-match-score">${t('tournament.best_of_3_score')}: ${score[0]} - ${score[1]}</span>
     `;
-    dom.centerPanelHeader.appendChild(container);
 }
 
 export function clearTournamentMatchScore() {
-    const existingContainer = document.getElementById('tournament-match-score-container');
-    if (existingContainer) {
-        existingContainer.remove();
+    const container = document.getElementById('tournament-match-score-container');
+    if (container) {
+        container.innerHTML = '';
     }
 }

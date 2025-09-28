@@ -69,7 +69,12 @@
         "runner_up_title": "Vice-campeão",
         "prize_champion": "Prêmio: 560 🪙",
         "prize_runner_up": "Prêmio: 240 🪙",
-        "best_of_3_score": "Melhor de 3"
+        "best_of_3_score": "Melhor de 3",
+        "rules_title": "Regras do Torneio",
+        "rules_explanation": "Para este torneio, o objetivo é vencer as partidas (melhor de 3), não avançar no tabuleiro. As cartas Sobe, Desce e Pula têm efeitos especiais!",
+        "rule_sobe": "<strong>Sobe:</strong> Soma +5 ao seu resultado final na rodada.",
+        "rule_desce": "<strong>Desce:</strong> Subtrai -5 do seu resultado final na rodada.",
+        "rule_pula": "<strong>Pula:</strong> Rouba o efeito 'Sobe' ou 'Desce' de um oponente."
     },
     "infinite_challenge": {
         "intro_1": "ESTE SERÁ MEU PRIMEIRO E ÚLTIMO AVISO PARA QUEM OUSAR DESAFIAR O INFINITO.",

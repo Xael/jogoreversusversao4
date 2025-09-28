@@ -69,7 +69,12 @@
         "runner_up_title": "Runner-up",
         "prize_champion": "Prize: 560 🪙",
         "prize_runner_up": "Prize: 240 🪙",
-        "best_of_3_score": "Best of 3"
+        "best_of_3_score": "Best of 3",
+        "rules_title": "Tournament Rules",
+        "rules_explanation": "For this tournament, the goal is to win matches (best of 3), not advance on the board. The Up, Down, and Jump cards have special effects!",
+        "rule_sobe": "<strong>Up:</strong> Adds +5 to your final result in the round.",
+        "rule_desce": "<strong>Down:</strong> Subtracts -5 from your final result in the round.",
+        "rule_pula": "<strong>Jump:</strong> Steals the 'Up' or 'Down' effect from an opponent."
     },
     "infinite_challenge": {
         "intro_1": "THIS WILL BE MY FIRST AND LAST WARNING TO THOSE WHO DARE TO CHALLENGE THE INFINITE.",

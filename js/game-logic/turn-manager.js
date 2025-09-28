@@ -269,6 +269,12 @@ async function endRound() {
     const { gameState } = getState();
     if (gameState.gamePhase !== 'playing') return;
     
+    // For PvP, the server handles round end. Client does nothing.
+    if (gameState.isPvp) {
+        console.log("Client skipping endRound logic for PvP match.");
+        return;
+    }
+    
     gameState.gamePhase = 'resolution';
     renderAll(); // Update UI to show "Fim da rodada!"
     updateLog('Todos os jogadores passaram. Resolvendo a rodada...');
@@ -491,6 +497,10 @@ function checkGameEnd() {
 async function calculateScoresAndEndRound() {
     const { gameState } = getState();
     
+    // The server is the source of truth for all PvP matches, including tournaments.
+    // The client should not run this logic for those games.
+    if (gameState.isPvp) return;
+    
     const finalScores = {};
 
     // 0. Reset Contravox flag before checking for new triggers
@@ -577,51 +587,6 @@ async function calculateScoresAndEndRound() {
     // Show summary for non-tournament games. Tournament handles its own flow.
     if (!gameState.isInfiniteChallenge && !gameState.isTournamentMatch) {
         await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
-    }
-
-    // --- TOURNAMENT MATCH LOGIC ---
-    if (gameState.isTournamentMatch) {
-        const match = gameState.tournamentMatch;
-        if (!match) { console.error("Tournament match data is missing!"); return; }
-
-        if (winners.length === 1) {
-            const winnerId = winners[0];
-            const player1_is_in_match = gameState.playerIdsInGame.includes(match.player1.playerId);
-            const player2_is_in_match = gameState.playerIdsInGame.includes(match.player2.playerId);
-
-            if (winnerId === match.player1.playerId && player1_is_in_match) {
-                match.score[0]++;
-            } else if (winnerId === match.player2.playerId && player2_is_in_match) {
-                match.score[1]++;
-            }
-        } else {
-            match.draws++;
-        }
-        
-        renderTournamentMatchScore(match.score);
-        await new Promise(res => setTimeout(res, 3000)); // Pause to show scores
-
-        const [p1Score, p2Score] = match.score;
-        const matchIsOver = p1Score >= 2 || p2Score >= 2 || (p1Score + p2Score + match.draws >= 3);
-
-        if (matchIsOver) {
-            let winnerName, loserName;
-            if (p1Score > p2Score) {
-                winnerName = match.player1.name;
-                loserName = match.player2.name;
-            } else if (p2Score > p1Score) {
-                winnerName = match.player2.name;
-                loserName = match.player1.name;
-            } else { // Draw
-                 showGameOver(`A partida terminou em empate!`, "Fim da Partida", { action: 'tournament_continue' });
-                 return;
-            }
-             showGameOver(`${winnerName} venceu a partida contra ${loserName}!`, "Fim da Partida", { action: 'tournament_continue' });
-             return;
-        } else {
-            await startNewRound();
-            return; // IMPORTANT: Prevent normal game logic from running after this
-        }
     }
     
     // Handle INVERSUS heart loss & Infinite Challenge duel end
