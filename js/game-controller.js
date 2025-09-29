@@ -423,6 +423,10 @@ export const initializeGame = async (mode, options) => {
             dom.rightScoreBox.classList.remove('hidden');
         }
     }
+
+    if (dom.centerPanelHeader) {
+        dom.centerPanelHeader.classList.toggle('hidden', isTournamentMatch);
+    }
     
     const player1Container = document.getElementById('player-1-area-container');
     const opponentsContainer = document.getElementById('opponent-zones-container');
