@@ -8,6 +8,7 @@ import { tryToSpeak, triggerNecroX } from '../story/story-abilities.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
 import * as config from '../core/config.js';
 import * as network from '../core/network.js';
+import { t } from '../core/i18n.js';
 
 /**
  * Helper function to get the inverse of a card effect.
@@ -312,7 +313,8 @@ export async function executeAiTurn(player) {
         }
 
         if (bestMove.score > -1) {
-            updateLog(`AI ${player.name}: Jogando ${bestMove.card.name} ${bestMove.reason}.`);
+            const translatedPlayerName = t(player.name);
+            updateLog(`AI ${translatedPlayerName}: Jogando ${bestMove.card.name} ${bestMove.reason}.`);
             playedACard = true;
             await new Promise(res => setTimeout(res, 800));
         }
@@ -335,17 +337,16 @@ export async function executeAiTurn(player) {
                         emitOptions.options.pulaPath = availablePaths[0].id;
                         network.emitPlayCard(emitOptions);
                     } else {
-                        // Cannot play Pula, so pass instead. This prevents a hang.
-                        updateLog(`AI ${player.name}: Tentou usar Pula mas não havia caminhos. Passando o turno.`);
+                        const translatedPlayerName = t(player.name);
+                        updateLog(`AI ${translatedPlayerName}: Tentou usar Pula mas não havia caminhos. Passando o turno.`);
                         network.emitEndTurn();
                     }
                 } else {
                     network.emitPlayCard(emitOptions);
                 }
-                // AI's turn ends after its single action.
-                network.emitEndTurn();
             } else {
-                updateLog(`AI ${player.name}: Passando o turno.`);
+                const translatedPlayerName = t(player.name);
+                updateLog(`AI ${translatedPlayerName}: Passando o turno.`);
                 network.emitEndTurn();
             }
         } else {
@@ -372,7 +373,8 @@ export async function executeAiTurn(player) {
                 }
             }
             if (!playedACard && !specialAbilityUsed) {
-                updateLog(`AI ${player.name}: Passando o turno.`);
+                const translatedPlayerName = t(player.name);
+                updateLog(`AI ${translatedPlayerName}: Passando o turno.`);
             }
             gameState.consecutivePasses = playedACard ? 0 : gameState.consecutivePasses + 1;
             gameState.gamePhase = 'playing';
