@@ -469,15 +469,26 @@ export function connectToServer() {
         if (myPlayerEntry) {
             updateState('playerId', myPlayerEntry.id);
         } else {
+            // Fallback for offline/AI matches
             updateState('playerId', 'player-1');
         }
 
         updateState('gameState', initialGameState);
         
+        const state = getState();
+        
+        // Reconstruct draw results for the visual sequence
+        if (initialGameState.players['player-1'].resto && initialGameState.players['player-2'].resto) {
+            initialGameState.drawResults = {
+                'player-1': initialGameState.players['player-1'].resto,
+                'player-2': initialGameState.players['player-2'].resto
+            };
+            await showPvpDrawSequence(initialGameState);
+        }
+        
         dom.appContainerEl.classList.remove('hidden');
         dom.nextTrackButton.disabled = false;
         
-        const state = getState();
         if (state.gameTimerInterval) clearInterval(state.gameTimerInterval);
         updateState('gameStartTime', Date.now());
         updateGameTimer();

@@ -119,6 +119,8 @@ function renderChampionView(state) {
 function renderLeaderboard(leaderboard, inGame = false) {
     if (!leaderboard) return '';
     const sortedLeaderboard = [...leaderboard].sort((a, b) => b.points - a.points || b.wins - a.wins);
+    const { currentTournamentState } = getState();
+    const allPlayers = currentTournamentState ? currentTournamentState.players : [];
 
     return `
         <h3 class="tournament-section-title">${t('tournament.leaderboard')}</h3>
@@ -134,21 +136,25 @@ function renderLeaderboard(leaderboard, inGame = false) {
                 </tr>
             </thead>
             <tbody>
-                ${sortedLeaderboard.map((player, index) => `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>
-                            <div class="tournament-player-cell">
-                                <img src="${player.avatar_url || './aleatorio1.png'}" alt="Avatar" class="tournament-player-avatar">
-                                <span>${getPlayerName(player)}</span>
-                            </div>
-                        </td>
-                        <td>${player.points}</td>
-                        <td>${player.wins}</td>
-                        <td>${player.draws}</td>
-                        <td>${player.losses}</td>
-                    </tr>
-                `).join('')}
+                ${sortedLeaderboard.map((player, index) => {
+                    const fullPlayer = allPlayers.find(p => p.id === player.id);
+                    const avatarUrl = fullPlayer ? fullPlayer.avatar_url : 'aleatorio1.png';
+                    return `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>
+                                <div class="tournament-player-cell">
+                                    <img src="${avatarUrl || './aleatorio1.png'}" alt="Avatar" class="tournament-player-avatar">
+                                    <span>${getPlayerName(player)}</span>
+                                </div>
+                            </td>
+                            <td>${player.points}</td>
+                            <td>${player.wins}</td>
+                            <td>${player.draws}</td>
+                            <td>${player.losses}</td>
+                        </tr>
+                    `;
+                }).join('')}
             </tbody>
         </table>
     `;
