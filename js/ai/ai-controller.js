@@ -335,11 +335,15 @@ export async function executeAiTurn(player) {
                         emitOptions.options.pulaPath = availablePaths[0].id;
                         network.emitPlayCard(emitOptions);
                     } else {
-                        network.emitEndTurn(); // Cannot play Pula, so pass instead.
+                        // Cannot play Pula, so pass instead. This prevents a hang.
+                        updateLog(`AI ${player.name}: Tentou usar Pula mas não havia caminhos. Passando o turno.`);
+                        network.emitEndTurn();
                     }
                 } else {
                     network.emitPlayCard(emitOptions);
                 }
+                // AI's turn ends after its single action.
+                network.emitEndTurn();
             } else {
                 updateLog(`AI ${player.name}: Passando o turno.`);
                 network.emitEndTurn();
