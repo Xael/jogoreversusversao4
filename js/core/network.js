@@ -464,6 +464,10 @@ export function connectToServer() {
         dom.tournamentModal.classList.add('hidden');
         dom.splashScreenEl.classList.add('hidden');
         
+        if (dom.centerPanelHeader) {
+            dom.centerPanelHeader.classList.add('hidden');
+        }
+        
         const { userProfile } = getState();
         const myPlayerEntry = Object.values(initialGameState.players).find(p => p.name === userProfile.username);
         if (myPlayerEntry) {
@@ -528,6 +532,10 @@ export function connectToServer() {
         clearTournamentMatchScore();
         dom.appContainerEl.classList.add('hidden');
         
+        if (dom.centerPanelHeader) {
+            dom.centerPanelHeader.classList.remove('hidden');
+        }
+
         // Revert UI switch
         dom.tournamentViewContainer.classList.add('hidden');
         dom.boardEl.classList.remove('hidden');
