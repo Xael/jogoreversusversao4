@@ -260,6 +260,24 @@ export const initializeGame = async (mode, options) => {
         updateState('gameTimerInterval', timerInterval);
     }
 
+    const boardAndScoresWrapper = document.querySelector('.board-and-scores-wrapper');
+
+    // Restore header visibility (for "Melhor de 3" score).
+    if (dom.centerPanelHeader) {
+        dom.centerPanelHeader.classList.remove('hidden');
+    }
+    
+    // Hide the main board/scores area only for tournament matches.
+    if (boardAndScoresWrapper) {
+        boardAndScoresWrapper.classList.toggle('hidden', isTournamentMatch);
+    }
+
+    // Handle side scores for other special modes (when not a tournament).
+    if (dom.leftScoreBox && dom.rightScoreBox && !isTournamentMatch) {
+        const shouldHide = isInversusMode || isKingNecroBattle || isInfiniteChallenge;
+        dom.leftScoreBox.classList.toggle('hidden', shouldHide);
+        dom.rightScoreBox.classList.toggle('hidden', shouldHide);
+    }
     
     const valueDeck = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
     const effectDeck = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
@@ -412,20 +430,6 @@ export const initializeGame = async (mode, options) => {
             }
         }, 2000);
         updateState('inversusAnimationInterval', intervalId);
-    }
-
-    if (dom.leftScoreBox && dom.rightScoreBox) {
-        if (isInversusMode || isKingNecroBattle || isInfiniteChallenge || isTournamentMatch) {
-            dom.leftScoreBox.classList.add('hidden');
-            dom.rightScoreBox.classList.add('hidden');
-        } else {
-            dom.leftScoreBox.classList.remove('hidden');
-            dom.rightScoreBox.classList.remove('hidden');
-        }
-    }
-
-    if (dom.centerPanelHeader) {
-        dom.centerPanelHeader.classList.toggle('hidden', isTournamentMatch);
     }
     
     const player1Container = document.getElementById('player-1-area-container');

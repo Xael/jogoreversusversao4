@@ -453,7 +453,10 @@ export function connectToServer() {
     socket.on('tournamentStateUpdate', (tournamentState) => {
         updateState('currentTournamentState', tournamentState);
         const { gameState } = getState();
-        if (!gameState || !gameState.isTournamentMatch) {
+        // This is the fix: only render the tournament hub if a game is NOT active.
+        // The 'tournamentMatchEnd' event will handle showing the hub between matches.
+        // This prevents the hub from flashing on screen for a moment before the match actually starts.
+        if (gameState === null) {
             if (tournamentState.status === 'active' || tournamentState.status === 'finished') {
                 renderTournamentView(tournamentState);
             }
@@ -465,7 +468,7 @@ export function connectToServer() {
         dom.splashScreenEl.classList.add('hidden');
         
         if (dom.centerPanelHeader) {
-            dom.centerPanelHeader.classList.add('hidden');
+            dom.centerPanelHeader.classList.remove('hidden');
         }
         
         const { userProfile } = getState();
@@ -499,10 +502,8 @@ export function connectToServer() {
         updateState('gameTimerInterval', setInterval(updateGameTimer, 1000));
         
         // UI Switch for Tournament Match
-        dom.boardEl.classList.add('hidden');
-        dom.leftScoreBox.classList.add('hidden');
-        dom.rightScoreBox.classList.add('hidden');
-        dom.teamScoresContainer.classList.add('hidden');
+        const boardAndScoresWrapper = document.querySelector('.board-and-scores-wrapper');
+        if (boardAndScoresWrapper) boardAndScoresWrapper.classList.add('hidden');
         dom.tournamentViewContainer.classList.remove('hidden');
         
         const { currentTournamentState } = getState();
@@ -538,9 +539,8 @@ export function connectToServer() {
 
         // Revert UI switch
         dom.tournamentViewContainer.classList.add('hidden');
-        dom.boardEl.classList.remove('hidden');
-        dom.leftScoreBox.classList.remove('hidden');
-        dom.rightScoreBox.classList.remove('hidden');
+        const boardAndScoresWrapper = document.querySelector('.board-and-scores-wrapper');
+        if (boardAndScoresWrapper) boardAndScoresWrapper.classList.remove('hidden');
         
         updateState('gameState', null);
         const { currentTournamentState } = getState();
