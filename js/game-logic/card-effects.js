@@ -89,15 +89,6 @@ export async function applyEffect(card, targetId, casterId, effectTypeToReverse,
                 }
                 playTournamentEffectSound(cardName);
                 return;
-            
-            case 'Mais':
-            case 'Menos':
-            case 'Reversus Total':
-                // These cards have no effect in tournament mode as per the new rules.
-                updateLog(`A carta ${cardName} não tem efeito especial no modo Torneio.`);
-                // We still need to discard it from hand, which happens outside this function.
-                // The animation will play, but the game state won't change.
-                return;
         }
     }
     // --- END OF TOURNAMENT MODE LOGIC ---
