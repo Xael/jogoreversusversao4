@@ -330,7 +330,7 @@ function handleEndTurnButtonClick() {
 
     const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length;
     if (valueCardsInHandCount > 1 && !player.playedValueCardThisTurn) {
-        updateLog("Você deve jogar uma carta de valor antes de passar o turno.");
+        updateLog(t('log.must_play_value_card'));
         return;
     }
     
@@ -339,7 +339,7 @@ function handleEndTurnButtonClick() {
     if (gameState.isPvp) {
         network.emitEndTurn();
     } else {
-        updateLog(`${player.name} passou o turno.`);
+        updateLog(t('log.passed_turn', { playerName: player.name }));
         gameState.consecutivePasses++;
         advanceToNextPlayer();
     }
