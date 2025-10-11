@@ -230,6 +230,61 @@ async function finalizeGameStart() {
 };
 
 /**
+ * Displays the initial card draw sequence for a PvP match.
+ * @param {object} initialGameState - The game state received from the server.
+ */
+export async function showPvpDrawSequence(initialGameState) {
+    const { gameState } = getState(); // gameState is already set in network.js
+    const drawnCards = initialGameState.drawResults;
+    const startingPlayerId = initialGameState.currentPlayer;
+    const startingPlayer = initialGameState.players[startingPlayerId];
+
+    dom.drawStartTitle.textContent = t('draw.title');
+    dom.drawStartResultMessage.textContent = t('draw.message_drawing');
+
+    const translatedPlayerNames = {};
+    initialGameState.playerIdsInGame.forEach(id => {
+        const player = initialGameState.players[id];
+        // Ensure player name is translated if it's a key
+        translatedPlayerNames[id] = (player.name.startsWith('avatars.') || player.name.startsWith('player_names.')) ? t(player.name) : player.name;
+    });
+
+    dom.drawStartCardsContainerEl.innerHTML = initialGameState.playerIdsInGame.map(id => `
+        <div class="draw-start-player-slot">
+            <span class="player-name ${id}">${translatedPlayerNames[id]}</span>
+            <div class="card modal-card" style="background-image: url('./verso_valor.png');" id="draw-card-${id}"></div>
+        </div>
+    `).join('');
+
+    dom.drawStartModal.classList.remove('hidden');
+    await new Promise(res => setTimeout(res, 1500));
+
+    const cardPromises = initialGameState.playerIdsInGame.map((id, index) => {
+        return new Promise(res => {
+            setTimeout(() => {
+                const cardEl = document.getElementById(`draw-card-${id}`);
+                if (cardEl && drawnCards[id]) {
+                    cardEl.outerHTML = renderCard(drawnCards[id], 'modal', id);
+                }
+                res();
+            }, 500 * index);
+        });
+    });
+
+    await Promise.all(cardPromises);
+    await new Promise(res => setTimeout(res, 1500));
+
+    if (startingPlayer) {
+        dom.drawStartResultMessage.textContent = t('draw.message_winner', { winnerName: translatedPlayerNames[startingPlayerId] });
+    }
+    
+    // This timeout should align with the server's timeout before it sends the first 'playing' state update
+    await new Promise(res => setTimeout(res, 2000));
+    dom.drawStartModal.classList.add('hidden');
+}
+
+
+/**
  * Advances the game to the next player's turn or ends the round.
  */
 export async function advanceToNextPlayer() {
