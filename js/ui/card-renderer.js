@@ -30,6 +30,14 @@ export const getCardImageUrl = (card, isHidden) => {
  */
 export const renderCard = (card, context, playerId) => {
     const { gameState, playerId: myPlayerId } = getState();
+
+    // Defensive guard: If gameState is null (e.g., between tournament matches),
+    // render a generic card back to prevent crashes.
+    if (!gameState) {
+        const cardBack = card.type === 'value' ? 'verso_valor.png' : 'verso_efeito.png';
+        return `<div class="card" data-card-id="${card.id}" style="background-image: url('./${cardBack}');"></div>`;
+    }
+
     const classList = ['card', card.type];
     const player = gameState.players[playerId];
 

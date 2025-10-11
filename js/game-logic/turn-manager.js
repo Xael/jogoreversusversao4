@@ -95,431 +95,6 @@ const showFullscreenAnnounce = async (text, imageSrc) => {
 };
 
 /**
- * Initializes a new SINGLE PLAYER game with the specified mode and options.
- * The core game state creation is now handled by the server for PvP.
- */
-export const initializeGame = async (mode, options) => {
-    clearTournamentMatchScore();
-    const { isChatMuted, infiniteChallengeOpponentQueue } = getState();
-    dom.chatInput.disabled = isChatMuted;
-    dom.chatInput.placeholder = t(isChatMuted ? 'chat.chat_muted_message' : 'game.chat_placeholder');
-
-    // This function now ONLY handles non-PvP game setup.
-    // The server will create and manage the gameState for PvP.
-    Object.assign(config.PLAYER_CONFIG, structuredClone(config.originalPlayerConfig));
-    updateState('reversusTotalIndividualFlow', false); // Reset flow state
-    
-    let playerIdsInGame, numPlayers, modeText, isStoryMode = false, isFinalBoss = false, storyBattle = null, storyBattleType = null, isInversusMode = false, isXaelChallenge = false, isInfiniteChallenge = false, isTournamentMatch = false;
-    let isKingNecroBattle = false;
-    let eventData = null;
-
-    // Clean up special background effects from previous games
-    dom.cosmicGlowOverlay.classList.add('hidden');
-    resetGameEffects();
-    const { inversusAnimationInterval } = getState();
-    if (inversusAnimationInterval) clearInterval(inversusAnimationInterval);
-    if(dom.storyStarsBackgroundEl) dom.storyStarsBackgroundEl.innerHTML = '';
-
-    if (mode === 'inversus') {
-        isInversusMode = true;
-        numPlayers = 2;
-        playerIdsInGame = config.MASTER_PLAYER_IDS.slice(0, numPlayers);
-        modeText = 'Modo Inversus';
-        await playStoryMusic('inversus.ogg');
-        // Ensure the correct AI type is set for the Inversus opponent
-        options.overrides = { 'player-2': { name: 'Inversus', aiType: 'inversus' } };
-    } else if (mode === 'infinite_challenge') {
-        isInfiniteChallenge = true;
-        isInversusMode = true; // Use Inversus mechanics
-        numPlayers = 2;
-        playerIdsInGame = ['player-1', 'player-2'];
-        modeText = 'Desafio Infinito';
-        await playStoryMusic('oprofetasombrio.ogg');
-        const nextOpponent = infiniteChallengeOpponentQueue[0];
-        const opponentName = nextOpponent.name || (nextOpponent.nameKey ? t(nextOpponent.nameKey) : 'Opponent');
-        options.overrides = { 'player-2': { name: opponentName, aiType: nextOpponent.aiType, avatar_url: nextOpponent.avatar_url } };
-    } else if (mode === 'tournament') {
-        isTournamentMatch = true;
-        numPlayers = 2;
-        playerIdsInGame = options.playerIds;
-        modeText = 'Partida de Torneio';
-        // Music might be set already, don't override
-    }
-    else if (options.story) { // Covers both Story Mode and Events
-        isStoryMode = true; // We use the story mode flag to handle shared logic like win/loss events.
-        storyBattle = options.story.battle;
-        updateState('xaelChallengeOffered', false); // Reset Xael challenge for new story game
-        updateState('xaelChallengeStarted', false);
-
-        if (storyBattle.startsWith('event_')) {
-            eventData = options.story.eventData;
-            modeText = `Evento: ${eventData.name}`;
-            playerIdsInGame = ['player-1', 'player-2'];
-            numPlayers = 2;
-            await playStoryMusic(`${eventData.ai}.ogg`);
-        } else { // Regular Story Mode logic
-             if (options.story.playerIds) {
-                playerIdsInGame = options.story.playerIds;
-            } else {
-                playerIdsInGame = config.MASTER_PLAYER_IDS.slice(0, options.numPlayers);
-            }
-            numPlayers = playerIdsInGame.length;
-            storyBattleType = options.story.type || null;
-            isFinalBoss = storyBattle === 'necroverso_final' || storyBattle === 'necroverso_king';
-            isKingNecroBattle = storyBattle === 'necroverso_king';
-            isXaelChallenge = storyBattle === 'xael_challenge';
-            
-            switch(storyBattle) {
-                case 'contravox': modeText = 'Modo História: Contravox'; await playStoryMusic('contravox.ogg'); break;
-                case 'versatrix': modeText = 'Modo História: Versatrix'; await playStoryMusic('versatrix.ogg'); break;
-                case 'reversum': modeText = 'Modo História: Rei Reversum'; await playStoryMusic('reversum.ogg'); break;
-                case 'necroverso_king': modeText = 'Modo História: Rei Necroverso'; await playStoryMusic('necroverso.ogg'); break;
-                case 'necroverso_final':
-                    modeText = 'Modo História: Necroverso Final';
-                    await playStoryMusic('necroversofinal.ogg');
-                    createSpiralStarryBackground(dom.storyStarsBackgroundEl);
-                    break;
-                case 'narrador': modeText = 'Batalha Secreta: Narrador'; await playStoryMusic('narrador.ogg'); break;
-                case 'xael_challenge': modeText = 'Desafio: Xael'; await playStoryMusic('xaeldesafio.ogg'); break;
-                default: modeText = `Modo História: ${storyBattle}`; stopStoryMusic();
-            }
-        }
-    } else {
-        numPlayers = options.numPlayers;
-        playerIdsInGame = config.MASTER_PLAYER_IDS.slice(0, numPlayers);
-        modeText = mode === 'solo' ? `Solo (${numPlayers}p)` : 'Duplas';
-        
-        // Check if the opponent is Inversus from a random match
-        const isRandomInversus = options.overrides && options.overrides['player-2']?.aiType === 'inversus';
-
-        if (isRandomInversus) {
-            isInversusMode = true;
-            await playStoryMusic('inversus.ogg');
-        } else {
-            stopStoryMusic();
-        }
-    }
-
-    // Handle overrides from either PvP lobby or Story Mode
-    const overrides = options.story ? options.story.overrides : options.overrides;
-    if (overrides) {
-        for (const id in overrides) {
-            if (config.PLAYER_CONFIG[id]) {
-                Object.assign(config.PLAYER_CONFIG[id], overrides[id]);
-            }
-        }
-    }
-    
-    // Clear any leftover complex state
-    updateState('pathSelectionResolver', null);
-    
-    // Announce final boss battles before showing the game screen
-    if (storyBattle === 'necroverso_king') {
-        await showFullscreenAnnounce("Será capaz de vencer este desafio contra nós três?", 'necroversorevelado.png');
-    } else if (storyBattle === 'necroverso_final') {
-        await showFullscreenAnnounce("Nem mesmo com ajuda da Versatrix poderá me derrotar, eu dominarei o Inversum e consumirei TUDO", 'necroversorevelado.png');
-    }
-
-    // Universal UI cleanup for starting any game
-    dom.splashScreenEl.classList.add('hidden');
-    dom.gameSetupModal.classList.add('hidden');
-    dom.storyModeModalEl.classList.add('hidden');
-    dom.storyStartOptionsModal.classList.add('hidden');
-    dom.eventModal.classList.add('hidden');
-    dom.pvpRoomListModal.classList.add('hidden');
-    dom.pvpLobbyModal.classList.add('hidden');
-    dom.appContainerEl.classList.remove('blurred', 'hidden');
-    dom.reversusTotalIndicatorEl.classList.add('hidden');
-    dom.debugButton.classList.remove('hidden');
-
-    // Reset board classes
-    dom.boardEl.classList.remove('inverted', 'board-rotating', 'board-rotating-fast', 'board-rotating-super-fast'); 
-    
-    dom.boardEl.classList.toggle('final-battle-board', isFinalBoss);
-    dom.boardEl.classList.toggle('board-rotating', isFinalBoss); // Slow rotation for final bosses
-    dom.boardEl.classList.toggle('board-rotating-super-fast', isInversusMode || isInfiniteChallenge); // Fast rotation for Inversus
-    
-    // Apply narrator monitor effect
-    dom.appContainerEl.classList.toggle('effect-monitor', storyBattle === 'narrador');
-
-    const state = getState();
-    if (!isStoryMode && !isInversusMode && !isTournamentMatch) {
-        stopStoryMusic();
-        updateState('currentTrackIndex', 0);
-        dom.musicPlayer.src = config.MUSIC_TRACKS[state.currentTrackIndex];
-    }
-    
-    dom.gameTimerContainerEl.classList.remove('countdown-warning');
-    if (storyBattle === 'necroverso_final' || isInfiniteChallenge) {
-        dom.gameTimerContainerEl.classList.add('countdown-warning');
-    }
-    if (state.gameTimerInterval) clearInterval(state.gameTimerInterval);
-    updateState('gameStartTime', Date.now());
-    updateGameTimer();
-    const timerInterval = setInterval(updateGameTimer, 1000);
-    if (isInfiniteChallenge) {
-        updateState('infiniteChallengeTimerInterval', timerInterval);
-    } else {
-        updateState('gameTimerInterval', timerInterval);
-    }
-
-    const boardAndScoresWrapper = document.querySelector('.board-and-scores-wrapper');
-
-    // Restore header visibility (for "Melhor de 3" score).
-    if (dom.centerPanelHeader) {
-        dom.centerPanelHeader.classList.remove('hidden');
-    }
-    
-    // Hide the main board/scores area only for tournament matches.
-    if (boardAndScoresWrapper) {
-        boardAndScoresWrapper.classList.toggle('hidden', isTournamentMatch);
-    }
-
-    // Handle side scores for other special modes (when not a tournament).
-    if (dom.leftScoreBox && dom.rightScoreBox && !isTournamentMatch) {
-        const shouldHide = isInversusMode || isKingNecroBattle || isInfiniteChallenge;
-        dom.leftScoreBox.classList.toggle('hidden', shouldHide);
-        dom.rightScoreBox.classList.toggle('hidden', shouldHide);
-    }
-    
-    const valueDeck = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
-    const effectDeck = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
-
-    const players = Object.fromEntries(
-        playerIdsInGame.map((id, index) => {
-            const playerConfig = options.tournamentMatch ? (id === options.tournamentMatch.player1.playerId ? options.tournamentMatch.player1 : options.tournamentMatch.player2) : config.PLAYER_CONFIG[id];
-            
-            const playerName = playerConfig.name || (playerConfig.nameKey ? t(playerConfig.nameKey) : `Player ${index + 1}`);
-
-            const playerObject = {
-                ...playerConfig,
-                name: playerName,
-                id,
-                aiType: playerConfig.aiType || 'default',
-                pathId: index,
-                position: 1,
-                hand: [],
-                resto: null,
-                nextResto: null,
-                effects: { score: null, movement: null },
-                playedCards: { value: [], effect: [] },
-                playedValueCardThisTurn: false,
-                targetPathForPula: null,
-                liveScore: 0,
-                status: 'neutral', // neutral, winning, losing
-                isEliminated: false,
-                tournamentScoreEffect: null
-            };
-            if (eventData && id === 'player-2') {
-                playerObject.isEventBoss = true;
-                playerObject.eventAbilityUsedThisMatch = false;
-            }
-             // Correct heart logic
-            if (isInfiniteChallenge) {
-                playerObject.hearts = 1;
-                playerObject.maxHearts = 1;
-            } else if (isInversusMode) {
-                playerObject.hearts = 10;
-                playerObject.maxHearts = 10;
-            }
-            if (isKingNecroBattle) {
-                playerObject.hearts = 6;
-                playerObject.maxHearts = 6;
-            }
-             if (storyBattle === 'narrador' && id === 'player-2') {
-                playerObject.narratorAbilities = {
-                    confusion: true,
-                    reversus: true,
-                    necroX: true
-                };
-            }
-            if (isXaelChallenge) {
-                playerObject.stars = 0;
-            }
-            if (id === 'player-1' && isStoryMode && getState().achievements.has('xael_win')) {
-                playerObject.hasXaelStarPower = true;
-                playerObject.xaelStarPowerCooldown = 0;
-            }
-            return [id, playerObject];
-        })
-    );
-    
-    const boardPaths = generateBoardPaths({ storyBattle, isFinalBoss, isXaelChallenge, isKingNecroBattle });
-    if (!isFinalBoss && !isXaelChallenge && !isTournamentMatch) {
-        playerIdsInGame.forEach((id, index) => { 
-            if(boardPaths[index]) boardPaths[index].playerId = id; 
-        });
-    }
-
-    const gameState = {
-        players,
-        playerIdsInGame,
-        decks: { value: valueDeck, effect: effectDeck },
-        discardPiles: { value: [], effect: [] },
-        boardPaths,
-        gamePhase: 'setup',
-        gameMode: mode,
-        isPvp: false, 
-        isTournamentMatch,
-        tournamentMatch: options.tournamentMatch || null,
-        gameOptions: options,
-        isStoryMode,
-        isInversusMode,
-        isInfiniteChallenge,
-        infiniteChallengeLevel: 1,
-        isFinalBoss,
-        isKingNecroBattle,
-        isXaelChallenge,
-        necroversoHearts: 3,
-        currentStoryBattle: storyBattle,
-        storyBattleType: storyBattleType,
-        currentPlayer: 'player-1',
-        reversusTotalActive: false,
-        inversusTotalAbilityActive: false,
-        turn: 1,
-        selectedCard: null,
-        reversusTarget: null,
-        pulaTarget: null,
-        fieldEffectTargetingInfo: null,
-        log: [],
-        activeFieldEffects: [],
-        revealedHands: [],
-        consecutivePasses: 0,
-        initialDrawCards: null,
-        contravoxAbilityUses: 3,
-        versatrixSwapActive: false,
-        versatrixPowerDisabled: false,
-        reversumAbilityUsedThisRound: false,
-        necroXUsedThisRound: false,
-        eventBossAbilityUsedThisRound: false,
-        dialogueState: { spokenLines: new Set() },
-        player1CardsObscured: false,
-        xaelChallengeOffered: false,
-        xaelChallengeStarted: false,
-        elapsedSeconds: 0,
-    };
-    
-    if (storyBattle === 'necroverso_final') {
-        gameState.teamA_hearts = 10;
-        gameState.teamB_hearts = 10;
-    }
-
-    if (isKingNecroBattle) {
-        gameState.kingBattlePathColors = ['blue', 'red', 'green', 'yellow', 'black', 'white'];
-    }
-    
-    const isKingOrFinalNecro = gameState.currentStoryBattle === 'necroverso_king' || gameState.currentStoryBattle === 'necroverso_final';
-    if (isKingOrFinalNecro && getState().achievements.has('versatrix_win')) {
-        const versatrixCard = { id: Date.now() + Math.random(), type: 'effect', name: 'Carta da Versatrix', cooldown: 0 };
-        players['player-1'].hand.push(versatrixCard);
-        updateLog("A bênção da Versatrix está com você. Uma carta especial foi adicionada à sua mão.");
-    }
-
-    updateState('gameState', gameState);
-
-    // Start Inversus animation if needed, regardless of mode.
-    const player2IsRandomInversus = players['player-2'] && players['player-2'].aiType === 'inversus';
-    if (gameState.isInversusMode || player2IsRandomInversus) {
-        const { inversusAnimationInterval } = getState();
-        if (inversusAnimationInterval) clearInterval(inversusAnimationInterval); // Clear old one before starting new
-
-        const inversusImages = ['INVERSUM1.png', 'INVERSUM2.png', 'INVERSUM3.png'];
-        let imageIndex = 0;
-        const intervalId = setInterval(() => {
-            const imgEl = document.getElementById('inversus-character-portrait');
-            if (imgEl) {
-                imageIndex = (imageIndex + 1) % inversusImages.length;
-                imgEl.src = inversusImages[imageIndex];
-            }
-        }, 2000);
-        updateState('inversusAnimationInterval', intervalId);
-    }
-    
-    const player1Container = document.getElementById('player-1-area-container');
-    const opponentsContainer = document.getElementById('opponent-zones-container');
-    const createPlayerAreaHTML = (id) => `<div class="player-area" id="player-area-${id}"></div>`;
-    player1Container.innerHTML = createPlayerAreaHTML('player-1');
-    opponentsContainer.innerHTML = playerIdsInGame.filter(id => id !== 'player-1').map(id => createPlayerAreaHTML(id)).join('');
-
-    updateLog(`Bem-vindo ao Reversus! Modo: ${modeText}.`);
-    if(mode === 'duo' && !isStoryMode) updateLog("Equipe Azul/Verde (Você & Jogador 3) vs. Equipe Vermelho/Amarelo (Jogador 2 & Jogador 4)");
-    
-    renderAll();
-    
-    await initiateGameStartSequence();
-};
-
-export function restartLastDuel() {
-    const { lastStoryGameOptions } = getState();
-    if (!lastStoryGameOptions) {
-        console.error("No last duel info found to restart from.");
-        showSplashScreen();
-        return;
-    }
-    updateLog("Retornando ao duelo anterior...");
-    // Clear modals and overlays before restarting
-    dom.gameOverModal.classList.add('hidden');
-    dom.cosmicGlowOverlay.classList.add('hidden');
-
-    // Call initializeGame with the saved options (robust access)
-    const mode = lastStoryGameOptions.mode;
-    const options = lastStoryGameOptions.options;
-    initializeGame(mode, options);
-}
-
-export function setupPvpRooms() {
-    // This function is now obsolete as rooms are managed by the server.
-    // Kept here to avoid breaking old calls, but it does nothing.
-}
-
-/**
- * Displays the initial draw sequence for a PvP match based on server results.
- * @param {object} gameState - The initial game state from the server.
- */
-export async function showPvpDrawSequence(gameState) {
-    const { drawResults, currentPlayer: startingPlayerId } = gameState;
-
-    dom.drawStartTitle.textContent = t('draw.title');
-    dom.drawStartResultMessage.textContent = t('draw.message_drawing');
-
-    dom.drawStartCardsContainerEl.innerHTML = gameState.playerIdsInGame.map(id => {
-        const player = gameState.players[id];
-        return `
-            <div class="draw-start-player-slot">
-                <span class="player-name ${id}">${t(player.name)}</span>
-                <div class="card modal-card" style="background-image: url('./verso_valor.png');" id="draw-card-${id}"></div>
-            </div>
-        `;
-    }).join('');
-
-    dom.drawStartModal.classList.remove('hidden');
-    await new Promise(res => setTimeout(res, 1500));
-
-    const cardPromises = [];
-    for (const id of gameState.playerIdsInGame) {
-        const card = drawResults[id];
-        const cardEl = document.getElementById(`draw-card-${id}`);
-        const promise = new Promise(res => {
-            setTimeout(() => {
-                if (cardEl) cardEl.outerHTML = renderCard(card, 'modal');
-                res();
-            }, 500 * (cardPromises.length));
-        });
-        cardPromises.push(promise);
-    }
-    
-    await Promise.all(cardPromises);
-    await new Promise(res => setTimeout(res, 1500));
-
-    const winner = gameState.players[startingPlayerId];
-    dom.drawStartResultMessage.textContent = t('draw.message_winner', { winnerName: t(winner.name) });
-
-    await new Promise(res => setTimeout(res, 2000));
-    dom.drawStartModal.classList.add('hidden');
-}
-
-
-/**
  * Initiates the sequence to start a game, beginning with the initial draw.
  */
 export async function initiateGameStartSequence() {
@@ -550,7 +125,7 @@ export async function initiateGameStartSequence() {
         const player = gameState.players[id];
         return `
             <div class="draw-start-player-slot">
-                <span class="player-name ${id}">${player.name}</span>
+                <span class="player-name ${id}">${t(player.name)}</span>
                 <div class="card modal-card" style="background-image: url('./verso_valor.png');" id="draw-card-${id}"></div>
             </div>
         `;
@@ -580,7 +155,7 @@ async function drawToStart() {
         
         const promise = new Promise(res => {
             setTimeout(() => {
-                if(cardEl) cardEl.outerHTML = renderCard(card, 'modal');
+                if(cardEl) cardEl.outerHTML = renderCard(card, 'modal', id);
                 res();
             }, 500 * (cardPromises.length));
         });
@@ -604,14 +179,14 @@ async function drawToStart() {
         return cardB - cardA;
     });
     
-    const logParts = gameState.playerIdsInGame.map(id => `${gameState.players[id].name} sacou ${drawnCards[id].name}`);
+    const logParts = gameState.playerIdsInGame.map(id => `${t(gameState.players[id].name)} sacou ${drawnCards[id].name}`);
     updateLog(`Sorteio: ${logParts.join(', ')}.`);
     
     if (sortedPlayers.length < 2 || (drawnCards[sortedPlayers[0]]?.value > drawnCards[sortedPlayers[1]]?.value)) {
         const winner = gameState.players[sortedPlayers[0]];
         gameState.currentPlayer = winner.id;
         gameState.initialDrawCards = drawnCards;
-        dom.drawStartResultMessage.textContent = `${winner.name} tirou a carta mais alta e começa!`;
+        dom.drawStartResultMessage.textContent = `${t(winner.name)} tirou a carta mais alta e começa!`;
         
         await new Promise(res => setTimeout(res, 2000));
         dom.drawStartModal.classList.add('hidden');
@@ -631,7 +206,7 @@ async function finalizeGameStart() {
     if (gameState.initialDrawCards) {
         gameState.playerIdsInGame.forEach(id => {
             gameState.players[id].resto = gameState.initialDrawCards[id];
-            updateLog(`Resto inicial de ${gameState.players[id].name} é ${gameState.initialDrawCards[id].name}.`);
+            updateLog(`Resto inicial de ${t(gameState.players[id].name)} é ${gameState.initialDrawCards[id].name}.`);
         });
     }
 
@@ -647,6 +222,10 @@ async function finalizeGameStart() {
         }
     }
     
+    // Add a delay to prevent AI from playing too fast after the draw.
+    if (!gameState.isPvp) {
+        await new Promise(res => setTimeout(res, 2000));
+    }
     await startNewRound(true);
 };
 
@@ -659,18 +238,10 @@ export async function advanceToNextPlayer() {
 
     const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
     
-    // New round end condition: 2 full rounds of passes
-    const endRoundPassCount = activePlayers.length * 2;
-
-    // The round ends if everyone has passed consecutively twice.
-    if (activePlayers.length > 0 && gameState.consecutivePasses >= endRoundPassCount) {
+    // If all active players have passed consecutively, end the round.
+    if (activePlayers.length > 0 && gameState.consecutivePasses >= activePlayers.length) {
         await endRound();
         return;
-    }
-    
-    // Announce the "last call" when one full round of passes is complete.
-    if (activePlayers.length > 0 && gameState.consecutivePasses === activePlayers.length) {
-        updateLog("ÚLTIMA CHAMADA! Todos os jogadores passaram. A rodada terminará se todos passarem novamente.");
     }
 
     // --- Find next active player (robustly) ---
@@ -850,7 +421,7 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
     currentPlayer.playedValueCardThisTurn = false; // Reset for the first player of the round
 
     if (autoStartTurn) {
-        updateLog(`É a vez de ${currentPlayer.name}.`);
+        updateLog(`É a vez de ${t(currentPlayer.name)}.`);
         renderAll();
 
         if (currentPlayer.isHuman) {
@@ -1390,7 +961,7 @@ export async function startNextInfiniteChallengeDuel() {
     // 5. Manually start the first turn now that buffs are applied.
     const currentPlayer = updatedGameState.players[updatedGameState.currentPlayer];
     announceEffect(t('log.new_round_announcement', { turn: updatedGameState.isInfiniteChallenge ? updatedGameState.infiniteChallengeLevel : updatedGameState.turn }), 'default', 2000);
-    updateLog(`É a vez de ${currentPlayer.name}.`);
+    updateLog(`É a vez de ${t(currentPlayer.name)}.`);
     renderAll(); // Re-render to show buffed hand
 
     if (currentPlayer.isHuman) {

@@ -96,6 +96,9 @@ function renderTurnTimer() {
 export const renderAll = () => {
     const { gameState } = getState();
     if (!gameState) return;
+
+    // Update live scores first to ensure all subsequent renders have the latest data.
+    updateLiveScoresAndWinningStatus();
     
     // Render each player's area
     gameState.playerIdsInGame.forEach(id => {
@@ -112,9 +115,6 @@ export const renderAll = () => {
 
     // Update the action buttons based on the current state
     updateActionButtons();
-
-    // Update live scores and side panel statuses
-    updateLiveScoresAndWinningStatus();
 
     // Render the PvP pot if applicable
     renderPvpPot();

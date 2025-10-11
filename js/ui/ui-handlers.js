@@ -142,7 +142,7 @@ async function initiatePlayCardSequence(player, card) {
             return;
         }
         dom.targetModalCardName.textContent = card.name;
-        dom.targetPlayerButtonsEl.innerHTML = allPlayers.map(id => `<button class="control-button target-player-${id.split('-')[1]}" data-player-id="${id}">${gameState.players[id].name}</button>`).join('');
+        dom.targetPlayerButtonsEl.innerHTML = allPlayers.map(id => `<button class="control-button target-player-${id.split('-')[1]}" data-player-id="${id}">${t(gameState.players[id].name)}</button>`).join('');
         dom.targetModal.classList.remove('hidden');
     } else if (card.name === 'Reversus Total') {
         dom.reversusTotalChoiceModal.classList.remove('hidden');
