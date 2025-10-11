@@ -11,6 +11,20 @@ import { t } from '../core/i18n.js';
 import { resetGameEffects } from './animations.js';
 
 /**
+ * Translates a player's name if it's a translation key.
+ * @param {object} player - The player object.
+ * @returns {string} The translated or original name.
+ */
+function getTranslatedPlayerName(player) {
+    if (!player || !player.name) return '';
+    const name = player.name;
+    if (name.startsWith('avatars.') || name.startsWith('event_chars.') || name.startsWith('player_names.')) {
+        return t(name);
+    }
+    return name;
+}
+
+/**
  * Updates the UI for the chat filter and mute/unmute buttons.
  */
 export function updateChatControls() {
@@ -171,7 +185,7 @@ export async function showRoundSummaryModal(summaryData) {
 
     dom.roundSummaryTitle.textContent = t('round_summary.title', { turn: gameState.turn });
     
-    const winnerNames = winners.map(id => gameState.players[id].name).join(' e ');
+    const winnerNames = winners.map(id => getTranslatedPlayerName(gameState.players[id])).join(' e ');
     dom.roundSummaryWinnerText.textContent = winners.length > 0 ? t('round_summary.winner_text', { winnerNames }) : t('round_summary.tie_text');
     
     const potTextEl = document.getElementById('round-summary-pot-text');
@@ -185,9 +199,10 @@ export async function showRoundSummaryModal(summaryData) {
     dom.roundSummaryScoresEl.innerHTML = gameState.playerIdsInGame.map(id => {
         const player = gameState.players[id];
         if (!player) return '';
+        const playerName = getTranslatedPlayerName(player);
         return `
             <div class="summary-player-score ${winners.includes(id) ? 'is-winner' : ''}">
-                <span class="summary-player-name">${player.name}</span>
+                <span class="summary-player-name">${playerName}</span>
                 <span class="summary-player-final-score">${finalScores[id] || 0}</span>
             </div>
         `;

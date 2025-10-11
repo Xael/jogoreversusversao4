@@ -95,9 +95,11 @@ export async function executeAiTurn(player) {
                 network.emitPlayCard({ cardId: cardToPlay.id, targetId: player.id });
             } else {
                 await playCard(player, cardToPlay, player.id);
-                await executeAiTurn(gameState.players[player.id]);
+                // After playing a card, re-evaluate the turn after a delay.
+                // This allows animations and re-renders to complete.
+                setTimeout(() => executeAiTurn(gameState.players[player.id]), 1200);
             }
-            return; // Exit and let the update loop continue the turn.
+            return;
         }
     }
 
@@ -144,23 +146,25 @@ export async function executeAiTurn(player) {
         }
         
         if (bestEffectMove.score > -1) {
-            if (isServerGame) {
-                const { card, target, effectType } = bestEffectMove;
-                const options = { effectType };
-                if (card.name === 'Pula') {
-                    const availablePaths = gameState.boardPaths.filter(p => !Object.values(gameState.players).map(pl => pl.pathId).includes(p.id));
-                    if (availablePaths.length > 0) {
-                        options.pulaPath = availablePaths[0].id;
-                        network.emitPlayCard({ cardId: card.id, targetId: target, options });
-                        return; // Exit and wait for update
-                    }
+            const { card, target, effectType } = bestEffectMove;
+            let options = { effectType };
+
+            if (card.name === 'Pula') {
+                const availablePaths = gameState.boardPaths.filter(p => !Object.values(gameState.players).map(pl => pl.pathId).includes(p.id));
+                if (availablePaths.length > 0) {
+                    options.pulaPath = availablePaths[0].id;
                 } else {
-                     network.emitPlayCard({ cardId: card.id, targetId: target, options });
-                     return; // Exit and wait for update
+                    bestEffectMove.score = -1; // Invalidate move if no path available
                 }
-            } else {
-                await playCard(player, bestEffectMove.card, bestEffectMove.target, bestEffectMove.effectType);
-                await executeAiTurn(gameState.players[player.id]);
+            }
+
+            if (bestEffectMove.score > -1) {
+                if (isServerGame) {
+                    network.emitPlayCard({ cardId: card.id, targetId: target, options });
+                } else {
+                    await playCard(player, card, target, effectType, options);
+                    setTimeout(() => executeAiTurn(gameState.players[player.id]), 1200);
+                }
                 return;
             }
         }

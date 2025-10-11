@@ -59,6 +59,10 @@ export function renderTournamentView(state) {
             renderHubView();
             break;
     }
+
+    // Control the close button visibility
+    const isClosable = state.status === 'hub' || state.status === 'finished' || state.status === 'queue';
+    dom.tournamentCloseButton.classList.toggle('hidden', !isClosable);
 }
 
 function renderHubView() {

@@ -259,8 +259,18 @@ export function connectToServer() {
     });
 
     socket.on('cardPlayedAnimation', async ({ casterId, targetId, card, targetSlotLabel }) => {
-        const startElement = document.querySelector(`#hand-${casterId} [data-card-id="${card.id}"]`);
-        await animateCardPlay(card, startElement, targetId, targetSlotLabel);
+        const { gameState, playerId } = getState();
+        let startElement = document.querySelector(`#hand-${casterId} [data-card-id="${card.id}"]`);
+        let startRect = null;
+    
+        // If I am the one who cast the card, use the saved startRect from the floating hand
+        if (casterId === playerId && gameState && gameState.animationStartRect) {
+            startElement = null; // Don't use the (non-existent) hand element
+            startRect = gameState.animationStartRect;
+            gameState.animationStartRect = null; // Consume it
+        }
+    
+        await animateCardPlay(card, startElement, targetId, targetSlotLabel, false, startRect);
     
         // BUG FIX: Convert card.name to string before calling .toLowerCase()
         // This prevents a crash when a value card (which has a number for a name) is played.
