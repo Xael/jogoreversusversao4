@@ -504,6 +504,13 @@ export async function tryToSpeak(player) {
     const { gameState } = getState();
     const aiType = player.aiType;
 
+    // Robustness check: Ensure dialogueState and spokenLines (as a Set) exist.
+    // This prevents crashes if the gameState comes from the server without this property,
+    // or if it's an array that needs to be converted.
+    if (!gameState.dialogueState || !(gameState.dialogueState.spokenLines instanceof Set)) {
+        gameState.dialogueState = { spokenLines: new Set() };
+    }
+
     // Do not speak if this AI type has no dialogue configured
     if (!config.AI_DIALOGUE[aiType] || (!config.AI_DIALOGUE[aiType].winning && !config.AI_DIALOGUE[aiType].losing)) {
         return;

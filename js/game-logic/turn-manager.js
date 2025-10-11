@@ -16,7 +16,8 @@ import { rotateAndApplyKingNecroversoBoardEffects } from './board.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
 import { t } from '../core/i18n.js';
 import { createDeck } from './deck.js';
-import { renderTournamentMatchScore } from '../ui/torneio-renderer.js';
+import { renderTournamentMatchScore, clearTournamentMatchScore, renderTournamentView } from '../ui/torneio-renderer.js';
+import { initializeGame } from '../game-controller.js';
 
 
 /**
@@ -246,7 +247,7 @@ export async function showPvpDrawSequence(initialGameState) {
     initialGameState.playerIdsInGame.forEach(id => {
         const player = initialGameState.players[id];
         // Ensure player name is translated if it's a key
-        translatedPlayerNames[id] = (player.name.startsWith('avatars.') || player.name.startsWith('player_names.')) ? t(player.name) : player.name;
+        translatedPlayerNames[id] = (player.name.startsWith('avatars.') || player.name.startsWith('player_names.') || player.name.startsWith('event_chars.')) ? t(player.name) : player.name;
     });
 
     dom.drawStartCardsContainerEl.innerHTML = initialGameState.playerIdsInGame.map(id => `
@@ -334,7 +335,7 @@ export async function advanceToNextPlayer() {
         }
     }
 
-    updateLog(`É a vez de ${nextPlayer.name}.`);
+    updateLog(`É a vez de ${t(nextPlayer.name)}.`);
     renderAll();
 
     if (nextPlayer.isHuman) {
@@ -570,6 +571,90 @@ function checkGameEnd() {
 }
 
 
+async function processTournamentMatchResult_client(tournament, match, winnerId) {
+    match.result = winnerId;
+    match.winnerId = winnerId;
+
+    const p1Leaderboard = tournament.leaderboard.find(p => p.id === match.p1.id);
+    const p2Leaderboard = tournament.leaderboard.find(p => p.id === match.p2.id);
+
+    if (winnerId === 'draw') {
+        if (p1Leaderboard) { p1Leaderboard.points += 1; p1Leaderboard.draws += 1; }
+        if (p2Leaderboard) { p2Leaderboard.points += 1; p2Leaderboard.draws += 1; }
+    } else if (winnerId === match.p1.id) {
+        if (p1Leaderboard) { p1Leaderboard.points += 3; p1Leaderboard.wins += 1; }
+        if (p2Leaderboard) { p2Leaderboard.losses += 1; }
+    } else {
+        if (p2Leaderboard) { p2Leaderboard.points += 3; p2Leaderboard.wins += 1; }
+        if (p1Leaderboard) { p1Leaderboard.losses += 1; }
+    }
+    updateState('currentTournamentState', tournament);
+}
+
+function createOfflineTournamentMatch(tournament, match) {
+    const { userProfile } = getState();
+    const myPlayerConfig = match.p1.id === userProfile.id ? match.p1 : match.p2;
+    const opponentConfig = match.p1.id === userProfile.id ? match.p2 : match.p1;
+    
+    const gameOptions = {
+        tournamentMatch: {
+            player1: { ...myPlayerConfig, playerId: 'player-1', isHuman: true },
+            player2: { ...opponentConfig, playerId: 'player-2', isHuman: false }
+        },
+        playerIds: ['player-1', 'player-2']
+    };
+    
+    initializeGame('tournament', gameOptions);
+}
+
+function endOfflineTournament(tournament) {
+    tournament.status = 'finished';
+    tournament.leaderboard.sort((a, b) => b.points - a.points || b.wins - a.wins);
+    updateState('currentTournamentState', tournament);
+    renderTournamentView(tournament); // Show final champion screen
+}
+
+async function advanceToNextOfflineMatch(tournament) {
+    const myProfile = getState().userProfile;
+
+    // Check if all matches in the current round are finished
+    const currentRound = tournament.schedule.find(r => r.round === tournament.currentRound);
+    if (currentRound && currentRound.matches.every(m => m.result !== null)) {
+        if (tournament.currentRound < 7) { // 7 rounds total in an 8-player tourney
+            tournament.currentRound++;
+            
+            const nextRound = tournament.schedule.find(r => r.round === tournament.currentRound);
+            if (nextRound) {
+                for (const match of nextRound.matches) {
+                    if (match.p1.isAI && match.p2.isAI && match.result === null) {
+                        const rand = Math.random();
+                        const winnerId = rand < 0.45 ? match.p1.id : rand < 0.9 ? match.p2.id : 'draw';
+                        await processTournamentMatchResult_client(tournament, match, winnerId);
+                    }
+                }
+            }
+        } else {
+            endOfflineTournament(tournament);
+            return;
+        }
+    }
+
+    // Find the next UNPLAYED match for the human player
+    const roundForNextMatch = tournament.schedule.find(r => r.round === tournament.currentRound);
+    const myNextMatch = roundForNextMatch ? roundForNextMatch.matches.find(m => 
+        (m.p1.id === myProfile.id || m.p2.id === myProfile.id) && m.result === null
+    ) : null;
+
+    if (myNextMatch) {
+        createOfflineTournamentMatch(tournament, myNextMatch);
+    } else {
+        if (tournament.status !== 'finished') {
+            endOfflineTournament(tournament);
+        }
+    }
+}
+
+
 /**
  * Calculates final scores, determines winner, moves pawns, and checks for game over.
  */
@@ -656,16 +741,74 @@ async function calculateScoresAndEndRound() {
     }
     
     // 4. Log winner and show summary modal
-    if (winners.length > 0) {
-        const winnerNames = winners.map(id => gameState.players[id].name).join(' e ');
-        updateLog(`Vencedor(es) da rodada: ${winnerNames}.`);
-    } else {
-        updateLog("A rodada terminou em empate. Ninguém avança por pontuação.");
+    const winnerNames = winners.map(id => t(gameState.players[id].name)).join(' e ');
+    updateLog(winners.length > 0 ? `Vencedor(es) da rodada: ${winnerNames}.` : "A rodada terminou em empate. Ninguém avança por pontuação.");
+
+    // Show summary for non-tournament games. Tournament handles its own flow.
+    if (!gameState.isInfiniteChallenge) {
+        await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
     }
     
-    // Show summary for non-tournament games. Tournament handles its own flow.
-    if (!gameState.isInfiniteChallenge && !gameState.isTournamentMatch) {
-        await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
+    if (gameState.isTournamentMatch) {
+        const tournament = getState().currentTournamentState;
+        const myProfile = getState().userProfile;
+        const currentRoundSchedule = tournament.schedule.find(r => r.round === tournament.currentRound);
+        const opponent = Object.values(gameState.players).find(p => !p.isHuman);
+        const match = currentRoundSchedule.matches.find(m => (m.p1.id === myProfile.id && m.p2.username === opponent.name) || (m.p2.id === myProfile.id && m.p1.username === opponent.name));
+
+        if (!match) {
+            console.error("Could not find current offline tournament match!");
+            return;
+        }
+
+        const myPlayerId = myProfile.id;
+        const winnerIsMe = winners.length === 1 && (match.p1.id === myPlayerId ? winners[0] === 'player-1' : winners[0] === 'player-2');
+
+        if (winners.length === 1) {
+            const winnerIsP1 = (match.p1.id === myPlayerId && winners[0] === 'player-1') || (match.p1.id !== myPlayerId && winners[0] === 'player-1');
+            if (winnerIsP1) {
+                match.score[0]++;
+            } else {
+                match.score[1]++;
+            }
+        } else {
+            match.draws++;
+        }
+        
+        renderTournamentMatchScore(match.score);
+
+        const [p1Score, p2Score] = match.score;
+        const matchOver = p1Score >= 2 || p2Score >= 2 || (p1Score + p2Score + match.draws >= 3);
+
+        if (matchOver) {
+            let matchWinnerId;
+            if (p1Score > p2Score) {
+                matchWinnerId = match.p1.id;
+            } else if (p2Score > p1Score) {
+                matchWinnerId = match.p2.id;
+            } else {
+                matchWinnerId = 'draw';
+            }
+            
+            await processTournamentMatchResult_client(tournament, match, matchWinnerId);
+
+            dom.appContainerEl.classList.add('hidden');
+            clearTournamentMatchScore();
+            updateState('gameState', null);
+            renderTournamentView(tournament);
+
+            await new Promise(res => setTimeout(res, 5000));
+            
+            await advanceToNextOfflineMatch(tournament);
+
+            return;
+        } else {
+            if (winners.length > 0) {
+                gameState.currentPlayer = winners[0];
+            }
+            await startNewRound();
+        }
+        return;
     }
     
     // Handle INVERSUS heart loss & Infinite Challenge duel end

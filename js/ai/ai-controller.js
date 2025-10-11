@@ -103,80 +103,78 @@ export async function executeAiTurn(player) {
         }
     }
 
-    // --- Decision 2: Consider playing one effect card ---
-    // The AI will only play one effect card per turn for simplicity.
-    const hasPlayedEffectThisTurn = player.playedCards.effect.length > 0;
-    if (!hasPlayedEffectThisTurn) {
-        let bestEffectMove = { score: -1 };
+    // --- Decision 2: Consider playing an effect card ---
+    // AI will evaluate playing one effect card per recursive call.
+    let bestEffectMove = { score: -1 };
 
-        // (This is the full evaluation logic from your original code)
-        const effectCards = player.hand.filter(c => c.type === 'effect');
-        const isReversusTotalActive = difficulty === 'hard' && gameState.reversusTotalActive;
-        const selfBuffCards = isReversusTotalActive ? ['Menos', 'Desce'] : ['Mais', 'Sobe'];
-        const opponentDebuffCards = isReversusTotalActive ? ['Mais', 'Sobe', 'Pula'] : ['Menos', 'Desce', 'Pula'];
-        const selfDefenseReversusCondition = (p) => isReversusTotalActive ? (p.effects.score === 'Mais' || p.effects.movement === 'Sobe') : (p.effects.score === 'Menos' || p.effects.movement === 'Desce');
-        const opponentOffenseReversusCondition = (p) => isReversusTotalActive ? (p.effects.score === 'Menos' || p.effects.movement === 'Desce') : (p.effects.score === 'Mais' || p.effects.movement === 'Sobe');
-        const opponents = Object.values(gameState.players).filter(p => p.id !== player.id && !p.isEliminated);
-        const leader = opponents.length > 0 ? [...opponents].sort((a, b) => b.liveScore - a.liveScore)[0] : null;
+    const effectCards = player.hand.filter(c => c.type === 'effect');
+    const isReversusTotalActive = difficulty === 'hard' && gameState.reversusTotalActive;
+    const selfBuffCards = isReversusTotalActive ? ['Menos', 'Desce'] : ['Mais', 'Sobe'];
+    const opponentDebuffCards = isReversusTotalActive ? ['Mais', 'Sobe', 'Pula'] : ['Menos', 'Desce', 'Pula'];
+    const selfDefenseReversusCondition = (p) => isReversusTotalActive ? (p.effects.score === 'Mais' || p.effects.movement === 'Sobe') : (p.effects.score === 'Menos' || p.effects.movement === 'Desce');
+    const opponentOffenseReversusCondition = (p) => isReversusTotalActive ? (p.effects.score === 'Menos' || p.effects.movement === 'Desce') : (p.effects.score === 'Mais' || p.effects.movement === 'Sobe');
+    const opponents = Object.values(gameState.players).filter(p => p.id !== player.id && !p.isEliminated);
+    const leader = opponents.length > 0 ? [...opponents].sort((a, b) => b.liveScore - a.liveScore)[0] : null;
 
-        for (const card of effectCards) {
-            const evaluateMove = (target, score, reason, effectType = null) => {
-                if (score > bestEffectMove.score) {
-                    bestEffectMove = { card, target: target.id, score, reason, effectType };
-                }
-            };
-            if (card.name === 'Reversus Total') {
-                evaluateMove(player, 100, "para causar o caos total");
-            } else if (card.name === 'Reversus') {
-                if (leader && opponentOffenseReversusCondition(leader)) {
-                    const effectType = isReversusTotalActive ? (leader.effects.score === 'Menos' ? 'score' : 'movement') : (leader.effects.score === 'Mais' ? 'score' : 'movement');
-                    evaluateMove(leader, 85, "para anular a vantagem do oponente", effectType);
-                } else if (selfDefenseReversusCondition(player)) {
-                    const effectType = isReversusTotalActive ? (player.effects.score === 'Mais' ? 'score' : 'movement') : (player.effects.score === 'Menos' ? 'score' : 'movement');
-                    evaluateMove(player, 60, "para se defender", effectType);
-                }
-            } else if (card.name === 'Pula' && leader) {
-                const availablePaths = gameState.boardPaths.filter(p => !Object.values(gameState.players).map(pl => pl.pathId).includes(p.id));
-                if (availablePaths.length > 0) evaluateMove(leader, 75, "para reposicionar o oponente");
-            } else if (opponentDebuffCards.includes(card.name) && leader) {
-                evaluateMove(leader, 70, "para atacar o oponente");
-            } else if (selfBuffCards.includes(card.name)) {
-                evaluateMove(player, 50, "para se fortalecer");
+    for (const card of effectCards) {
+        const evaluateMove = (target, score, reason, effectType = null) => {
+            if (score > bestEffectMove.score) {
+                bestEffectMove = { card, target: target.id, score, reason, effectType };
             }
-        }
-        
-        if (bestEffectMove.score > -1) {
-            const { card, target, effectType } = bestEffectMove;
-            let options = { effectType };
-
-            if (card.name === 'Pula') {
-                const availablePaths = gameState.boardPaths.filter(p => !Object.values(gameState.players).map(pl => pl.pathId).includes(p.id));
-                if (availablePaths.length > 0) {
-                    options.pulaPath = availablePaths[0].id;
-                } else {
-                    bestEffectMove.score = -1; // Invalidate move if no path available
-                }
+        };
+        if (card.name === 'Reversus Total') {
+            evaluateMove(player, 100, "para causar o caos total");
+        } else if (card.name === 'Reversus') {
+            if (leader && opponentOffenseReversusCondition(leader)) {
+                const effectType = isReversusTotalActive ? (leader.effects.score === 'Menos' ? 'score' : 'movement') : (leader.effects.score === 'Mais' ? 'score' : 'movement');
+                evaluateMove(leader, 85, "para anular a vantagem do oponente", effectType);
+            } else if (selfDefenseReversusCondition(player)) {
+                const effectType = isReversusTotalActive ? (player.effects.score === 'Mais' ? 'score' : 'movement') : (player.effects.score === 'Menos' ? 'score' : 'movement');
+                evaluateMove(player, 60, "para se defender", effectType);
             }
-
-            if (bestEffectMove.score > -1) {
-                if (isServerGame) {
-                    network.emitPlayCard({ cardId: card.id, targetId: target, options });
-                } else {
-                    await playCard(player, card, target, effectType, options);
-                    setTimeout(() => executeAiTurn(gameState.players[player.id]), 1200);
-                }
-                return;
-            }
+        } else if (card.name === 'Pula' && leader) {
+            const availablePaths = gameState.boardPaths.filter(p => !Object.values(gameState.players).map(pl => pl.pathId).includes(p.id));
+            if (availablePaths.length > 0) evaluateMove(leader, 75, "para reposicionar o oponente");
+        } else if (opponentDebuffCards.includes(card.name) && leader) {
+            evaluateMove(leader, 70, "para atacar o oponente");
+        } else if (selfBuffCards.includes(card.name)) {
+            evaluateMove(player, 50, "para se fortalecer");
         }
     }
+    
+    if (bestEffectMove.score > -1) {
+        const { card, target, effectType } = bestEffectMove;
+        let options = { effectType };
 
+        if (card.name === 'Pula') {
+            const availablePaths = gameState.boardPaths.filter(p => !Object.values(gameState.players).map(pl => pl.pathId).includes(p.id));
+            if (availablePaths.length > 0) {
+                options.pulaPath = availablePaths[0].id;
+            } else {
+                bestEffectMove.score = -1; // Invalidate move if no path available
+            }
+        }
+
+        if (bestEffectMove.score > -1) {
+            if (isServerGame) {
+                network.emitPlayCard({ cardId: card.id, targetId: target, options });
+            } else {
+                await playCard(player, card, target, effectType, options);
+                setTimeout(() => executeAiTurn(gameState.players[player.id]), 1200);
+            }
+            return;
+        }
+    }
+    
     // --- Final Decision: If no more actions, end the turn. ---
     if (isServerGame) {
         network.emitEndTurn();
     } else {
-        const playedACard = player.playedValueCardThisTurn || player.playedCards.effect.length > 0;
-        gameState.consecutivePasses = playedACard ? 0 : gameState.consecutivePasses + 1;
+        // This block is only reached if the AI decides to pass this turn.
+        updateLog(`${player.name} passou o turno.`);
+        gameState.consecutivePasses++;
+        
         gameState.gamePhase = 'playing';
-        document.dispatchEvent(new Event('aiTurnEnded'));
+        document.dispatchEvent(new Event('aiTurnEnded')); // Triggers advanceToNextPlayer
     }
 }
