@@ -765,10 +765,8 @@ function startTurnTimer(room) {
         // No timer for offline AI matches
         room.gameState.remainingTurnTime = undefined;
         broadcastGameState(room.id);
-        const currentPlayer = room.gameState.players[room.gameState.currentPlayer];
-        if (!currentPlayer.isHuman) {
-             io.to(room.id).emit('aiTurn', { playerId: currentPlayer.id });
-        }
+        // The client will see the currentPlayer change in the gameStateUpdate
+        // and trigger the AI turn itself. This is safer.
         return;
     }
 
@@ -1370,8 +1368,6 @@ io.on('connection', (socket) => {
         const isOfflineTournament = room.isTournamentMatch && room.players.filter(p => p.userProfile && !p.userProfile.isAI).length <= 1;
         const currentPlayerState = room.gameState.players[room.gameState.currentPlayer];
         const isMyTurn = room.gameState.currentPlayer === player.playerId;
-        
-        // This is the AI's turn in an offline match, proxied by the human client's socket
         const isMyAIsTurn = isOfflineTournament && !currentPlayerState.isHuman;
 
         if (!isMyTurn && !isMyAIsTurn) return;
@@ -1450,10 +1446,6 @@ io.on('connection', (socket) => {
         }
     
         broadcastGameState(roomId);
-    
-        if (currentPlayerState && !currentPlayerState.isHuman) {
-            advanceToNextPlayerInRoom(room);
-        }
     });
     
     socket.on('endTurn', async () => {

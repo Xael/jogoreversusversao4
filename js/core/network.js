@@ -284,7 +284,7 @@ export function connectToServer() {
         const localGameState = state.gameState;
         const playerId = state.playerId;
         const oldCurrentPlayer = localGameState?.currentPlayer;
-
+    
         const localUiState = localGameState ? {
             selectedCard: localGameState.selectedCard,
             reversusTarget: localGameState.reversusTarget,
@@ -294,16 +294,24 @@ export function connectToServer() {
         updateState('gameState', newGameState);
         setupPlayerPerspective();
         renderAll();
-
+    
         const newCurrentPlayer = newGameState.players[newGameState.currentPlayer];
-        if (newCurrentPlayer?.id === playerId && oldCurrentPlayer !== newGameState.currentPlayer && newGameState.gamePhase === 'playing') {
+        const isMyTurnNow = newCurrentPlayer?.id === playerId && newGameState.gamePhase === 'playing';
+    
+        if (isMyTurnNow && oldCurrentPlayer !== newGameState.currentPlayer) {
             showTurnIndicator();
         }
-
+    
         // AI TURN TRIGGER FOR TOURNAMENTS (CLIENT SIDE)
-        if (newGameState.isTournamentMatch && newCurrentPlayer && !newCurrentPlayer.isHuman && oldCurrentPlayer !== newGameState.currentPlayer) {
-             console.log(`Game state updated. It's now AI's turn: ${newCurrentPlayer.name}. Triggering AI logic.`);
-             setTimeout(() => executeAiTurn(newCurrentPlayer), 1500);
+        const isMyClientControllingAI = 
+            newGameState.isTournamentMatch &&
+            newCurrentPlayer &&
+            !newCurrentPlayer.isHuman &&
+            state.gameState.players[playerId]?.isHuman; // Check if I am the human proxy for the AI
+    
+        if (isMyClientControllingAI && newGameState.gamePhase === 'playing') {
+            // Re-trigger AI logic as long as it's its turn. The AI is responsible for ending its turn.
+            setTimeout(() => executeAiTurn(newCurrentPlayer), 1000);
         }
     });
 
@@ -657,13 +665,24 @@ export function emitLeaveRoom() {
 
 export function emitEndTurn() {
     const { socket, gameState, playerId } = getState();
-    if (!socket || !gameState || gameState.currentPlayer !== playerId) return;
-    const player = gameState.players[playerId];
-    if(!player) return;
-    const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length;
-    if (valueCardsInHandCount > 1 && !player.playedValueCardThisTurn) {
-        alert("Você precisa jogar uma carta de valor neste turno!");
-        return;
+    if (!socket || !gameState || gameState.currentPlayer !== playerId) {
+        // If it's an AI turn in an offline tournament, the human client sends the end turn signal
+        const isMyAIsTurn = gameState.isTournamentMatch &&
+                            gameState.players[gameState.currentPlayer] &&
+                            !gameState.players[gameState.currentPlayer].isHuman &&
+                            gameState.players[playerId]?.isHuman;
+        if (!isMyAIsTurn) return;
+    }
+
+    const player = gameState.players[gameState.currentPlayer];
+    if (!player) return;
+    
+    if (player.isHuman) {
+        const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length;
+        if (valueCardsInHandCount > 1 && !player.playedValueCardThisTurn) {
+            alert("Você precisa jogar uma carta de valor neste turno!");
+            return;
+        }
     }
     socket.emit('endTurn');
 }
