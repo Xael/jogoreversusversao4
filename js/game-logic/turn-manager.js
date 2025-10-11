@@ -16,84 +16,55 @@ import { rotateAndApplyKingNecroversoBoardEffects } from './board.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
 import { t } from '../core/i18n.js';
 import { createDeck } from './deck.js';
-import { renderTournamentMatchScore, clearTournamentMatchScore, renderTournamentView } from '../ui/torneio-renderer.js';
-import { initializeGame } from '../game-controller.js';
+import { renderTournamentMatchScore } from '../ui/torneio-renderer.js';
 
 
 /**
- * Updates the in-game timer display, handling normal and countdown modes.
+ * Displays the initial draw sequence for a PvP match based on server results.
+ * @param {object} gameState - The initial game state from the server.
  */
-export const updateGameTimer = () => {
-    const { gameStartTime, gameState, gameTimerInterval, infiniteChallengeTimerInterval } = getState();
-    if (!gameStartTime || !gameState) return;
+export async function showPvpDrawSequence(gameState) {
+    const { drawResults, currentPlayer: startingPlayerId } = gameState;
+
+    dom.drawStartTitle.textContent = t('draw.title');
+    dom.drawStartResultMessage.textContent = t('draw.message_drawing');
+
+    dom.drawStartCardsContainerEl.innerHTML = gameState.playerIdsInGame.map(id => {
+        const player = gameState.players[id];
+        return `
+            <div class="draw-start-player-slot">
+                <span class="player-name ${id}">${player.name}</span>
+                <div class="card modal-card" style="background-image: url('./verso_valor.png');" id="draw-card-${id}"></div>
+            </div>
+        `;
+    }).join('');
+
+    dom.drawStartModal.classList.remove('hidden');
+    await new Promise(res => setTimeout(res, 1500));
+
+    const cardPromises = [];
+    for (const id of gameState.playerIdsInGame) {
+        const card = drawResults[id];
+        const cardEl = document.getElementById(`draw-card-${id}`);
+        const promise = new Promise(res => {
+            setTimeout(() => {
+                if (cardEl) cardEl.outerHTML = renderCard(card, 'modal');
+                res();
+            }, 500 * (cardPromises.length));
+        });
+        cardPromises.push(promise);
+    }
     
-    const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
-    gameState.elapsedSeconds = elapsed;
+    await Promise.all(cardPromises);
+    await new Promise(res => setTimeout(res, 1500));
 
-    let totalSeconds, remaining, container, warningClass;
+    const winner = gameState.players[startingPlayerId];
+    dom.drawStartResultMessage.textContent = t('draw.message_winner', { winnerName: winner.name });
 
-    if (gameState.isInfiniteChallenge) {
-        totalSeconds = 30 * 60; // 30 minutes
-        remaining = totalSeconds - elapsed;
-        container = dom.gameTimerContainerEl;
-        warningClass = 'countdown-warning';
-    } else if (gameState.currentStoryBattle === 'necroverso_final') {
-        totalSeconds = 15 * 60; // 15 minutes
-        remaining = totalSeconds - elapsed;
-        container = dom.gameTimerContainerEl;
-        warningClass = 'countdown-warning';
-    } else {
-        // Normal elapsed time mode
-        const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
-        const seconds = (elapsed % 60).toString().padStart(2, '0');
-        dom.gameTimerContainerEl.textContent = `${minutes}:${seconds}`;
-        return;
-    }
+    await new Promise(res => setTimeout(res, 2000));
+    dom.drawStartModal.classList.add('hidden');
+}
 
-    if (remaining <= 0) {
-        container.textContent = '00:00';
-        if (gameState.isInfiniteChallenge) {
-            if (infiniteChallengeTimerInterval) clearInterval(infiniteChallengeTimerInterval);
-            updateState('infiniteChallengeTimerInterval', null);
-            if (gameState.gamePhase !== 'game_over') {
-                 document.dispatchEvent(new CustomEvent('infiniteChallengeEnd', { detail: { reason: 'time' } }));
-            }
-        } else { // Necroverso final
-            if(gameTimerInterval) clearInterval(gameTimerInterval);
-            updateState('gameTimerInterval', null);
-            if (gameState.gamePhase !== 'game_over') {
-                document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: 'necroverso_final', won: false, reason: 'time' } }));
-            }
-        }
-        return;
-    }
-
-    if (warningClass) container.classList.add(warningClass);
-    const minutes = Math.floor(remaining / 60).toString().padStart(2, '0');
-    const seconds = (remaining % 60).toString().padStart(2, '0');
-    container.textContent = `${minutes}:${seconds}`;
-};
-
-
-/**
- * Displays a fullscreen announcement for final bosses.
- * @param {string} text - The dialogue text.
- * @param {string} imageSrc - The source URL for the character image.
- */
-const showFullscreenAnnounce = async (text, imageSrc) => {
-    return new Promise(resolve => {
-        dom.fullscreenAnnounceModal.classList.remove('hidden');
-        dom.fullscreenAnnounceModal.classList.add('psychedelic-bg');
-        dom.fullscreenAnnounceImage.src = imageSrc;
-        dom.fullscreenAnnounceText.textContent = text;
-        
-        setTimeout(() => {
-            dom.fullscreenAnnounceModal.classList.add('hidden');
-            dom.fullscreenAnnounceModal.classList.remove('psychedelic-bg');
-            resolve();
-        }, 5000); // Show for 5 seconds
-    });
-};
 
 /**
  * Initiates the sequence to start a game, beginning with the initial draw.
@@ -126,7 +97,7 @@ export async function initiateGameStartSequence() {
         const player = gameState.players[id];
         return `
             <div class="draw-start-player-slot">
-                <span class="player-name ${id}">${t(player.name)}</span>
+                <span class="player-name ${id}">${player.name}</span>
                 <div class="card modal-card" style="background-image: url('./verso_valor.png');" id="draw-card-${id}"></div>
             </div>
         `;
@@ -156,7 +127,7 @@ async function drawToStart() {
         
         const promise = new Promise(res => {
             setTimeout(() => {
-                if(cardEl) cardEl.outerHTML = renderCard(card, 'modal', id);
+                if(cardEl) cardEl.outerHTML = renderCard(card, 'modal');
                 res();
             }, 500 * (cardPromises.length));
         });
@@ -180,14 +151,14 @@ async function drawToStart() {
         return cardB - cardA;
     });
     
-    const logParts = gameState.playerIdsInGame.map(id => `${t(gameState.players[id].name)} sacou ${drawnCards[id].name}`);
+    const logParts = gameState.playerIdsInGame.map(id => `${gameState.players[id].name} sacou ${drawnCards[id].name}`);
     updateLog(`Sorteio: ${logParts.join(', ')}.`);
     
     if (sortedPlayers.length < 2 || (drawnCards[sortedPlayers[0]]?.value > drawnCards[sortedPlayers[1]]?.value)) {
         const winner = gameState.players[sortedPlayers[0]];
         gameState.currentPlayer = winner.id;
         gameState.initialDrawCards = drawnCards;
-        dom.drawStartResultMessage.textContent = `${t(winner.name)} tirou a carta mais alta e começa!`;
+        dom.drawStartResultMessage.textContent = `${winner.name} tirou a carta mais alta e começa!`;
         
         await new Promise(res => setTimeout(res, 2000));
         dom.drawStartModal.classList.add('hidden');
@@ -207,7 +178,7 @@ async function finalizeGameStart() {
     if (gameState.initialDrawCards) {
         gameState.playerIdsInGame.forEach(id => {
             gameState.players[id].resto = gameState.initialDrawCards[id];
-            updateLog(`Resto inicial de ${t(gameState.players[id].name)} é ${gameState.initialDrawCards[id].name}.`);
+            updateLog(`Resto inicial de ${gameState.players[id].name} é ${gameState.initialDrawCards[id].name}.`);
         });
     }
 
@@ -223,67 +194,8 @@ async function finalizeGameStart() {
         }
     }
     
-    // Add a delay to prevent AI from playing too fast after the draw.
-    if (!gameState.isPvp) {
-        await new Promise(res => setTimeout(res, 2000));
-    }
     await startNewRound(true);
 };
-
-/**
- * Displays the initial card draw sequence for a PvP match.
- * @param {object} initialGameState - The game state received from the server.
- */
-export async function showPvpDrawSequence(initialGameState) {
-    const { gameState } = getState(); // gameState is already set in network.js
-    const drawnCards = initialGameState.drawResults;
-    const startingPlayerId = initialGameState.currentPlayer;
-    const startingPlayer = initialGameState.players[startingPlayerId];
-
-    dom.drawStartTitle.textContent = t('draw.title');
-    dom.drawStartResultMessage.textContent = t('draw.message_drawing');
-
-    const translatedPlayerNames = {};
-    initialGameState.playerIdsInGame.forEach(id => {
-        const player = initialGameState.players[id];
-        // Ensure player name is translated if it's a key
-        translatedPlayerNames[id] = (player.name.startsWith('avatars.') || player.name.startsWith('player_names.') || player.name.startsWith('event_chars.')) ? t(player.name) : player.name;
-    });
-
-    dom.drawStartCardsContainerEl.innerHTML = initialGameState.playerIdsInGame.map(id => `
-        <div class="draw-start-player-slot">
-            <span class="player-name ${id}">${translatedPlayerNames[id]}</span>
-            <div class="card modal-card" style="background-image: url('./verso_valor.png');" id="draw-card-${id}"></div>
-        </div>
-    `).join('');
-
-    dom.drawStartModal.classList.remove('hidden');
-    await new Promise(res => setTimeout(res, 1500));
-
-    const cardPromises = initialGameState.playerIdsInGame.map((id, index) => {
-        return new Promise(res => {
-            setTimeout(() => {
-                const cardEl = document.getElementById(`draw-card-${id}`);
-                if (cardEl && drawnCards[id]) {
-                    cardEl.outerHTML = renderCard(drawnCards[id], 'modal', id);
-                }
-                res();
-            }, 500 * index);
-        });
-    });
-
-    await Promise.all(cardPromises);
-    await new Promise(res => setTimeout(res, 1500));
-
-    if (startingPlayer) {
-        dom.drawStartResultMessage.textContent = t('draw.message_winner', { winnerName: translatedPlayerNames[startingPlayerId] });
-    }
-    
-    // This timeout should align with the server's timeout before it sends the first 'playing' state update
-    await new Promise(res => setTimeout(res, 2000));
-    dom.drawStartModal.classList.add('hidden');
-}
-
 
 /**
  * Advances the game to the next player's turn or ends the round.
@@ -294,10 +206,18 @@ export async function advanceToNextPlayer() {
 
     const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
     
-    // If all active players have passed consecutively, end the round.
-    if (activePlayers.length > 0 && gameState.consecutivePasses >= activePlayers.length) {
+    // New round end condition: 2 full rounds of passes
+    const endRoundPassCount = activePlayers.length * 2;
+
+    // The round ends if everyone has passed consecutively twice.
+    if (activePlayers.length > 0 && gameState.consecutivePasses >= endRoundPassCount) {
         await endRound();
         return;
+    }
+    
+    // Announce the "last call" when one full round of passes is complete.
+    if (activePlayers.length > 0 && gameState.consecutivePasses === activePlayers.length) {
+        updateLog("ÚLTIMA CHAMADA! Todos os jogadores passaram. A rodada terminará se todos passarem novamente.");
     }
 
     // --- Find next active player (robustly) ---
@@ -335,26 +255,19 @@ export async function advanceToNextPlayer() {
         }
     }
 
-    updateLog(`É a vez de ${t(nextPlayer.name)}.`);
+    updateLog(`É a vez de ${nextPlayer.name}.`);
     renderAll();
 
     if (nextPlayer.isHuman) {
         await showTurnIndicator();
     } else {
-        // FIX: Add a delay before the AI plays to prevent it feeling instant and causing race conditions.
-        setTimeout(() => executeAiTurn(nextPlayer), 500);
+        executeAiTurn(nextPlayer);
     }
 }
 
 async function endRound() {
     const { gameState } = getState();
     if (gameState.gamePhase !== 'playing') return;
-    
-    // For PvP, the server handles round end. Client does nothing.
-    if (gameState.isPvp) {
-        console.log("Client skipping endRound logic for PvP match.");
-        return;
-    }
     
     gameState.gamePhase = 'resolution';
     renderAll(); // Update UI to show "Fim da rodada!"
@@ -478,7 +391,7 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
     currentPlayer.playedValueCardThisTurn = false; // Reset for the first player of the round
 
     if (autoStartTurn) {
-        updateLog(`É a vez de ${t(currentPlayer.name)}.`);
+        updateLog(`É a vez de ${currentPlayer.name}.`);
         renderAll();
 
         if (currentPlayer.isHuman) {
@@ -572,99 +485,11 @@ function checkGameEnd() {
 }
 
 
-async function processTournamentMatchResult_client(tournament, match, winnerId) {
-    match.result = winnerId;
-    match.winnerId = winnerId;
-
-    const p1Leaderboard = tournament.leaderboard.find(p => p.id === match.p1.id);
-    const p2Leaderboard = tournament.leaderboard.find(p => p.id === match.p2.id);
-
-    if (winnerId === 'draw') {
-        if (p1Leaderboard) { p1Leaderboard.points += 1; p1Leaderboard.draws += 1; }
-        if (p2Leaderboard) { p2Leaderboard.points += 1; p2Leaderboard.draws += 1; }
-    } else if (winnerId === match.p1.id) {
-        if (p1Leaderboard) { p1Leaderboard.points += 3; p1Leaderboard.wins += 1; }
-        if (p2Leaderboard) { p2Leaderboard.losses += 1; }
-    } else {
-        if (p2Leaderboard) { p2Leaderboard.points += 3; p2Leaderboard.wins += 1; }
-        if (p1Leaderboard) { p1Leaderboard.losses += 1; }
-    }
-    updateState('currentTournamentState', tournament);
-}
-
-function createOfflineTournamentMatch(tournament, match) {
-    const { userProfile } = getState();
-    const myPlayerConfig = match.p1.id === userProfile.id ? match.p1 : match.p2;
-    const opponentConfig = match.p1.id === userProfile.id ? match.p2 : match.p1;
-    
-    const gameOptions = {
-        tournamentMatch: {
-            player1: { ...myPlayerConfig, playerId: 'player-1', isHuman: true },
-            player2: { ...opponentConfig, playerId: 'player-2', isHuman: false }
-        },
-        playerIds: ['player-1', 'player-2']
-    };
-    
-    initializeGame('tournament', gameOptions);
-}
-
-function endOfflineTournament(tournament) {
-    tournament.status = 'finished';
-    tournament.leaderboard.sort((a, b) => b.points - a.points || b.wins - a.wins);
-    updateState('currentTournamentState', tournament);
-    renderTournamentView(tournament); // Show final champion screen
-}
-
-async function advanceToNextOfflineMatch(tournament) {
-    const myProfile = getState().userProfile;
-
-    // Check if all matches in the current round are finished
-    const currentRound = tournament.schedule.find(r => r.round === tournament.currentRound);
-    if (currentRound && currentRound.matches.every(m => m.result !== null)) {
-        if (tournament.currentRound < 7) { // 7 rounds total in an 8-player tourney
-            tournament.currentRound++;
-            
-            const nextRound = tournament.schedule.find(r => r.round === tournament.currentRound);
-            if (nextRound) {
-                for (const match of nextRound.matches) {
-                    if (match.p1.isAI && match.p2.isAI && match.result === null) {
-                        const rand = Math.random();
-                        const winnerId = rand < 0.45 ? match.p1.id : rand < 0.9 ? match.p2.id : 'draw';
-                        await processTournamentMatchResult_client(tournament, match, winnerId);
-                    }
-                }
-            }
-        } else {
-            endOfflineTournament(tournament);
-            return;
-        }
-    }
-
-    // Find the next UNPLAYED match for the human player
-    const roundForNextMatch = tournament.schedule.find(r => r.round === tournament.currentRound);
-    const myNextMatch = roundForNextMatch ? roundForNextMatch.matches.find(m => 
-        (m.p1.id === myProfile.id || m.p2.id === myProfile.id) && m.result === null
-    ) : null;
-
-    if (myNextMatch) {
-        createOfflineTournamentMatch(tournament, myNextMatch);
-    } else {
-        if (tournament.status !== 'finished') {
-            endOfflineTournament(tournament);
-        }
-    }
-}
-
-
 /**
  * Calculates final scores, determines winner, moves pawns, and checks for game over.
  */
 async function calculateScoresAndEndRound() {
     const { gameState } = getState();
-    
-    // The server is the source of truth for all PvP matches, including tournaments.
-    // The client should not run this logic for those games.
-    if (gameState.isPvp) return;
     
     const finalScores = {};
 
@@ -742,81 +567,61 @@ async function calculateScoresAndEndRound() {
     }
     
     // 4. Log winner and show summary modal
-    const winnerNames = winners.map(id => t(gameState.players[id].name)).join(' e ');
-    updateLog(winners.length > 0 ? `Vencedor(es) da rodada: ${winnerNames}.` : "A rodada terminou em empate. Ninguém avança por pontuação.");
-
-    // Show summary modal or announcement, with special handling for tournaments
-    if (gameState.isTournamentMatch) {
-        const winnerAnnounceText = winners.length > 0 ? t('round_summary.winner_text', { winnerNames }) : t('round_summary.tie_text');
-        announceEffect(winnerAnnounceText, 'default', 2500);
-    } else if (!gameState.isInfiniteChallenge) {
-        await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
+    if (winners.length > 0) {
+        const winnerNames = winners.map(id => gameState.players[id].name).join(' e ');
+        updateLog(`Vencedor(es) da rodada: ${winnerNames}.`);
+    } else {
+        updateLog("A rodada terminou em empate. Ninguém avança por pontuação.");
     }
     
+    // Show summary for non-tournament games. Tournament handles its own flow.
+    if (!gameState.isInfiniteChallenge && !gameState.isTournamentMatch) {
+        await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
+    }
+
+    // --- TOURNAMENT MATCH LOGIC ---
     if (gameState.isTournamentMatch) {
-        await new Promise(res => setTimeout(res, 3000));
-        
-        const tournament = getState().currentTournamentState;
-        const myProfile = getState().userProfile;
-        const currentRoundSchedule = tournament.schedule.find(r => r.round === tournament.currentRound);
-        const opponent = Object.values(gameState.players).find(p => !p.isHuman);
-        const match = currentRoundSchedule.matches.find(m => (m.p1.id === myProfile.id && m.p2.username === opponent.name) || (m.p2.id === myProfile.id && m.p1.username === opponent.name));
+        const match = gameState.tournamentMatch;
+        if (!match) { console.error("Tournament match data is missing!"); return; }
 
-        if (!match) {
-            console.error("Could not find current offline tournament match!");
-            return;
-        }
-
-        const myPlayerIdInGameState = Object.values(gameState.players).find(p => p.isHuman).id;
-        
         if (winners.length === 1) {
-            if (winners[0] === myPlayerIdInGameState) {
-                match.score[0]++; // Human is always player 1 in the score array for offline
-            } else {
-                match.score[1]++; // AI is player 2
+            const winnerId = winners[0];
+            const player1_is_in_match = gameState.playerIdsInGame.includes(match.player1.playerId);
+            const player2_is_in_match = gameState.playerIdsInGame.includes(match.player2.playerId);
+
+            if (winnerId === match.player1.playerId && player1_is_in_match) {
+                match.score[0]++;
+            } else if (winnerId === match.player2.playerId && player2_is_in_match) {
+                match.score[1]++;
             }
         } else {
             match.draws++;
         }
         
         renderTournamentMatchScore(match.score);
+        await new Promise(res => setTimeout(res, 3000)); // Pause to show scores
 
         const [p1Score, p2Score] = match.score;
-        const matchOver = (p1Score >= 2 || p2Score >= 2 || ((p1Score || 0) + (p2Score || 0) + (match.draws || 0)) >= 3);
+        const matchIsOver = p1Score >= 2 || p2Score >= 2 || (p1Score + p2Score + match.draws >= 3);
 
-
-        if (matchOver) {
-            let matchWinnerId;
+        if (matchIsOver) {
+            let winnerName, loserName;
             if (p1Score > p2Score) {
-                matchWinnerId = match.p1.id;
+                winnerName = match.player1.name;
+                loserName = match.player2.name;
             } else if (p2Score > p1Score) {
-                matchWinnerId = match.p2.id;
-            } else {
-                matchWinnerId = 'draw';
+                winnerName = match.player2.name;
+                loserName = match.player1.name;
+            } else { // Draw
+                 showGameOver(`A partida terminou em empate!`, "Fim da Partida", { action: 'tournament_continue' });
+                 return;
             }
-            
-            await processTournamentMatchResult_client(tournament, match, matchWinnerId);
-
-            const winnerPlayer = matchWinnerId === 'draw' ? null : (matchWinnerId === match.p1.id ? match.p1 : match.p2);
-            const winnerName = winnerPlayer ? (t(winnerPlayer.username) || winnerPlayer.username) : null;
-            const announcement = winnerName ? `${winnerName} venceu a partida!` : 'A partida terminou em empate!';
-            
-            announceEffect(announcement, 'default', 4000);
-            await new Promise(res => setTimeout(res, 4500)); 
-            
-            dom.appContainerEl.classList.add('hidden');
-            clearTournamentMatchScore();
-            updateState('gameState', null);
-            
-            await advanceToNextOfflineMatch(tournament);
-            return;
+             showGameOver(`${winnerName} venceu a partida contra ${loserName}!`, "Fim da Partida", { action: 'tournament_continue' });
+             return;
         } else {
-            if (winners.length > 0) {
-                gameState.currentPlayer = winners[0];
-            }
             await startNewRound();
+            return; // IMPORTANT: Prevent normal game logic from running after this
         }
-        return;
     }
     
     // Handle INVERSUS heart loss & Infinite Challenge duel end
@@ -1167,7 +972,7 @@ export async function startNextInfiniteChallengeDuel() {
     // 5. Manually start the first turn now that buffs are applied.
     const currentPlayer = updatedGameState.players[updatedGameState.currentPlayer];
     announceEffect(t('log.new_round_announcement', { turn: updatedGameState.isInfiniteChallenge ? updatedGameState.infiniteChallengeLevel : updatedGameState.turn }), 'default', 2000);
-    updateLog(`É a vez de ${t(currentPlayer.name)}.`);
+    updateLog(`É a vez de ${currentPlayer.name}.`);
     renderAll(); // Re-render to show buffed hand
 
     if (currentPlayer.isHuman) {

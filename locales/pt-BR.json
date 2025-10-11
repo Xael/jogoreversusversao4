@@ -42,7 +42,8 @@
         "inversus": "INVERSUS",
         "version": "VERSÃO 4.0",
         "login": "LOGIN",
-        "tournament": "TORNEIO"
+        "tournament": "TORNEIO",
+        "tournament_soon": "TORNEIO (EM BREVE)"
     },
     "tournament": {
         "title": "Torneio",
@@ -785,6 +786,7 @@
         "start_versatrix_dialogue_option_2": "Isso é ouro?",
         "start_versatrix_dialogue_option_3": "Você é solteira?",
         "versatrix_sinto_muito_text": "Talvez ;)",
+        "versatrix_solteira_text": "Bem... seu oportunista, vamos apenas duelar!",
         "post_versatrix_victory_text": "Agora a parte mais difícil...",
         "post_versatrix_victory_option_1": "Quando eles são derrotados... o que acontece?",
         "post_versatrix_defeat_text": "Não se preocupe... eu vou te ajudar na hora certa",

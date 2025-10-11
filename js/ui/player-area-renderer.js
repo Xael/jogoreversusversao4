@@ -174,16 +174,12 @@ function renderPlayerHeader(player) {
     ` : '';
 
     const positionDisplay = gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : player.position;
-    
-    const playerName = (player.name && (player.name.startsWith('event_chars.') || player.name.startsWith('player_names.') || player.name.startsWith('avatars.')))
-        ? t(player.name)
-        : player.name;
 
     return `
         <div class="player-header">
             <div class="opponent-header-top">
                  <div class="player-name-container">
-                    <span class="${nameClasses.join(' ')}">${playerName}</span>
+                    <span class="${nameClasses.join(' ')}">${player.name}</span>
                     ${revealedIcon}
                 </div>
                  <div class="player-header-right">

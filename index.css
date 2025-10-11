@@ -1,3 +1,4 @@
+
 :root {
     --bg-main: #0b131a; 
     --bg-panel: rgba(29, 53, 87, 0.6);
@@ -2895,90 +2896,6 @@ body.screen-shaking {
     font-size: 0.9rem;
 }
 
-/* --- EVENT MODAL --- */
-.event-modal-content {
-    width: 800px;
-    max-width: 95vw;
-}
-.event-grid {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 2rem;
-    align-items: flex-start;
-}
-.event-character-panel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    text-align: center;
-}
-#event-character-image {
-    width: 100%;
-    max-width: 280px;
-    border-radius: 10px;
-    object-fit: contain;
-    background-color: rgba(0,0,0,0.3);
-    border: 2px solid var(--card-border);
-}
-#event-character-name {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--accent-yellow);
-}
-.event-details-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-}
-.event-details-panel h3 {
-    color: var(--accent-yellow);
-    border-bottom: 1px solid var(--card-border);
-    padding-bottom: 0.5rem;
-}
-.event-details-panel h4 {
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-}
-.event-ability-container,
-.event-progress-container, 
-.event-reward-container {
-    background-color: rgba(0,0,0,0.2);
-    padding: 1rem;
-    border-radius: 8px;
-}
-#event-ability-description {
-    font-size: 0.95rem;
-    color: var(--text-secondary);
-}
-.event-progress-markers {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-}
-.progress-marker {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 3px solid var(--text-secondary);
-    transition: all 0.3s ease;
-}
-.progress-marker.completed {
-    background-color: var(--accent-yellow);
-    border-color: var(--accent-yellow);
-    box-shadow: 0 0 10px var(--accent-yellow);
-}
-#event-reward-text {
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-.event-status-text {
-    text-align: center;
-    color: var(--accent-red);
-    min-height: 1.2em;
-}
-
-
 /* --- ENDGAME SEQUENCE & CREDITS --- */
 #endgame-sequence-modal {
     background: none;
@@ -3046,6 +2963,7 @@ body.screen-shaking {
     will-change: transform, opacity;
     transition-property: transform, opacity;
     transition-timing-function: ease-out;
+    transition-duration: 1.5s;
 }
 /* Unique Shatter Styles */
 .shatter-particle.glitchy {
@@ -4148,37 +4066,4 @@ body.screen-shaking {
 .card-rule-item p {
     font-size: 0.95rem;
     line-height: 1.5;
-}
-
-.tournament-view-container {
-    background: var(--bg-panel);
-    border: 1px solid rgba(168, 218, 220, 0.2);
-    border-radius: 15px;
-    padding: 1rem;
-    width: 100%;
-    max-height: 550px; /* Corrected to prevent pushing content down */
-    display: grid;
-    grid-template-columns: 1fr 350px;
-    gap: 1.5rem;
-    overflow: hidden; /* Prevent double scrollbars */
-}
-
-.tournament-section {
-    overflow-y: auto;
-}
-
-.tournament-player-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-    flex-shrink: 0;
-}
-
-.match-player-avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    object-fit: cover;
-    flex-shrink: 0;
 }

@@ -2,7 +2,6 @@ import { getState } from './state.js';
 import * as dom from './dom.js';
 import * as config from './config.js';
 import { createDeck } from '../game-logic/deck.js';
-import { t } from './i18n.js';
 
 /**
  * Handles dealing a card from a specified deck, reshuffling from the discard pile if empty.
@@ -77,12 +76,7 @@ export const updateLog = (logEntry) => {
 
     dom.logEl.innerHTML = filteredLog.map(m => {
         const sanitizedMessage = String(m.message || '').replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        let emojiMessage = sanitizedMessage.replace(/:\)|:\(|;\(|s2|&lt;3|<3/gi, (match) => emojiMap[match.toLowerCase()] || match);
-
-        // Translate AI name codes within the message content.
-        emojiMessage = emojiMessage.replace(/\b(avatars|event_chars|player_names)\.[a-zA-Z0-9_]+\b/g, (match) => {
-            return t(match);
-        });
+        const emojiMessage = sanitizedMessage.replace(/:\)|:\(|;\(|s2|&lt;3|<3/gi, (match) => emojiMap[match.toLowerCase()] || match);
 
         if (m.type === 'dialogue' && m.speaker) {
             const myGoogleId = userProfile?.google_id;

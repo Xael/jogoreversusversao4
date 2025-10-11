@@ -67,7 +67,6 @@ const appState = {
     currentQueueMode: null, // The mode ('1v1', '1v4', '2v2') the player is queuing for
     betAmount: 0, // The bet amount for the current PvP match
     pot: 0, // The current pot for the PvP match
-    currentTournamentState: null, // Holds the overall tournament data while a match is in progress
 };
 
 /**

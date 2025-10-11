@@ -1,6 +1,6 @@
 // js/core/network.js
 import { getState, updateState } from './state.js';
-import * as dom from './dom.js';
+import * as dom from '../core/dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
 import { renderRoomList, renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
@@ -11,10 +11,10 @@ import { showPvpDrawSequence } from '../game-logic/turn-manager.js';
 import { t } from './i18n.js';
 import { animateCardPlay } from '../ui/animations.js';
 import { showCoinRewardNotification } from '../ui/toast-renderer.js';
-import { playSoundEffect, announceEffect } from './sound.js';
+import { playSoundEffect, announceEffect } from '../core/sound.js';
 import * as sound from './sound.js';
 import { renderShopAvatars, updateCoinVersusDisplay } from '../ui/shop-renderer.js';
-import { renderTournamentView, renderTournamentRankingTable, renderTournamentMatchScore, clearTournamentMatchScore, renderInGameTournamentView } from '../ui/torneio-renderer.js';
+import { renderTournamentView, renderTournamentRankingTable, renderTournamentMatchScore, clearTournamentMatchScore } from '../ui/torneio-renderer.js';
 import { executeAiTurn } from '../ai/ai-controller.js';
 
 
@@ -259,22 +259,10 @@ export function connectToServer() {
     });
 
     socket.on('cardPlayedAnimation', async ({ casterId, targetId, card, targetSlotLabel }) => {
-        const { gameState, playerId } = getState();
-        let startElement = document.querySelector(`#hand-${casterId} [data-card-id="${card.id}"]`);
-        let startRect = null;
+        const startElement = document.querySelector(`#hand-${casterId} [data-card-id="${card.id}"]`);
+        await animateCardPlay(card, startElement, targetId, targetSlotLabel);
     
-        // If I am the one who cast the card, use the saved startRect from the floating hand
-        if (casterId === playerId && gameState && gameState.animationStartRect) {
-            startElement = null; // Don't use the (non-existent) hand element
-            startRect = gameState.animationStartRect;
-            gameState.animationStartRect = null; // Consume it
-        }
-    
-        await animateCardPlay(card, startElement, targetId, targetSlotLabel, false, startRect);
-    
-        // BUG FIX: Convert card.name to string before calling .toLowerCase()
-        // This prevents a crash when a value card (which has a number for a name) is played.
-        const soundToPlay = String(card.name).toLowerCase().replace(/\s/g, '');
+        const soundToPlay = card.name.toLowerCase().replace(/\s/g, '');
         const effectsWithSounds = ['mais', 'menos', 'sobe', 'desce', 'pula', 'reversus'];
     
         if (card.isLocked) {
@@ -294,7 +282,7 @@ export function connectToServer() {
         const localGameState = state.gameState;
         const playerId = state.playerId;
         const oldCurrentPlayer = localGameState?.currentPlayer;
-    
+
         const localUiState = localGameState ? {
             selectedCard: localGameState.selectedCard,
             reversusTarget: localGameState.reversusTarget,
@@ -304,37 +292,21 @@ export function connectToServer() {
         updateState('gameState', newGameState);
         setupPlayerPerspective();
         renderAll();
-    
+
         const newCurrentPlayer = newGameState.players[newGameState.currentPlayer];
-        const isMyTurnNow = newCurrentPlayer?.id === playerId && newGameState.gamePhase === 'playing';
-    
-        if (isMyTurnNow && oldCurrentPlayer !== newGameState.currentPlayer) {
+        if (newCurrentPlayer?.id === playerId && oldCurrentPlayer !== newGameState.currentPlayer && newGameState.gamePhase === 'playing') {
             showTurnIndicator();
         }
-    
+
         // AI TURN TRIGGER FOR TOURNAMENTS (CLIENT SIDE)
-        const isMyClientControllingAI = 
-            newGameState.isTournamentMatch &&
-            newCurrentPlayer &&
-            !newCurrentPlayer.isHuman &&
-            state.gameState.players[playerId]?.isHuman; // Check if I am the human proxy for the AI
-    
-        if (isMyClientControllingAI && newGameState.gamePhase === 'playing') {
-            // Re-trigger AI logic as long as it's its turn. The AI is responsible for ending its turn.
-            setTimeout(() => executeAiTurn(newCurrentPlayer), 1000);
+        if (newGameState.isTournamentMatch && newCurrentPlayer && !newCurrentPlayer.isHuman && oldCurrentPlayer !== newGameState.currentPlayer) {
+             console.log(`Game state updated. It's now AI's turn: ${newCurrentPlayer.name}. Triggering AI logic.`);
+             setTimeout(() => executeAiTurn(newCurrentPlayer), 1500);
         }
     });
 
     socket.on('roundSummary', (summaryData) => {
-        const { gameState } = getState();
-        if (gameState && gameState.isTournamentMatch) {
-            // For tournaments, just announce the winner. The server controls the timing.
-            const winnerNames = summaryData.winners.map(id => t(gameState.players[id].name)).join(' e ');
-            const winnerAnnounceText = summaryData.winners.length > 0 ? t('round_summary.winner_text', { winnerNames }) : t('round_summary.tie_text');
-            announceEffect(winnerAnnounceText, 'default', 4000); // Announce for 4s, server waits 5s
-        } else {
-            showRoundSummaryModal(summaryData);
-        }
+        showRoundSummaryModal(summaryData);
     });
     
     socket.on('matchCancelled', (message) => {
@@ -479,15 +451,8 @@ export function connectToServer() {
     });
 
     socket.on('tournamentStateUpdate', (tournamentState) => {
-        updateState('currentTournamentState', tournamentState);
-        const { gameState } = getState();
-        // This is the fix: only render the tournament hub if a game is NOT active.
-        // The 'tournamentMatchEnd' event will handle showing the hub between matches.
-        // This prevents the hub from flashing on screen for a moment before the match actually starts.
-        if (gameState === null) {
-            if (tournamentState.status === 'active' || tournamentState.status === 'finished') {
-                renderTournamentView(tournamentState);
-            }
+        if (tournamentState.status === 'active' || tournamentState.status === 'finished') {
+            renderTournamentView(tournamentState);
         }
     });
 
@@ -495,57 +460,38 @@ export function connectToServer() {
         dom.tournamentModal.classList.add('hidden');
         dom.splashScreenEl.classList.add('hidden');
         
-        if (dom.centerPanelHeader) {
-            dom.centerPanelHeader.classList.remove('hidden');
-        }
-        
+        // This is a tournament match, not a lobby-based one, so we need to find our player ID.
+        // We assume the server sends 'player-1' for the human player in offline mode.
+        // In online mode, we need to check against our user profile ID.
         const { userProfile } = getState();
         const myPlayerEntry = Object.values(initialGameState.players).find(p => p.name === userProfile.username);
         if (myPlayerEntry) {
             updateState('playerId', myPlayerEntry.id);
         } else {
-            // Fallback for offline/AI matches
+             // Fallback for offline mode
             updateState('playerId', 'player-1');
         }
 
         updateState('gameState', initialGameState);
         
-        const state = getState();
-        
-        // Reconstruct draw results for the visual sequence
-        if (initialGameState.players['player-1'].resto && initialGameState.players['player-2'].resto) {
-            initialGameState.drawResults = {
-                'player-1': initialGameState.players['player-1'].resto,
-                'player-2': initialGameState.players['player-2'].resto
-            };
-            await showPvpDrawSequence(initialGameState);
-        }
-        
         dom.appContainerEl.classList.remove('hidden');
         dom.nextTrackButton.disabled = false;
         
+        const state = getState();
         if (state.gameTimerInterval) clearInterval(state.gameTimerInterval);
         updateState('gameStartTime', Date.now());
         updateGameTimer();
         updateState('gameTimerInterval', setInterval(updateGameTimer, 1000));
         
-        // UI Switch for Tournament Match
-        const boardAndScoresWrapper = document.querySelector('.board-and-scores-wrapper');
-        if (boardAndScoresWrapper) boardAndScoresWrapper.classList.add('hidden');
-        dom.tournamentViewContainer.classList.remove('hidden');
-        
-        const { currentTournamentState } = getState();
-        if (currentTournamentState) {
-            renderInGameTournamentView(currentTournamentState);
-        }
-
         setupPlayerPerspective();
         renderAll();
 
         const firstPlayer = state.gameState.players[state.gameState.currentPlayer];
         const myPlayerId = state.playerId;
         
+        // Trigger AI turn if it starts and is not the human player
         if (firstPlayer && !firstPlayer.isHuman && state.gameState.currentPlayer !== myPlayerId) {
+             console.log(`Tournament match started. It's AI's turn: ${firstPlayer.name}. Triggering AI logic.`);
              setTimeout(() => executeAiTurn(firstPlayer), 1500);
         }
         
@@ -560,25 +506,7 @@ export function connectToServer() {
     socket.on('tournamentMatchEnd', () => {
         clearTournamentMatchScore();
         dom.appContainerEl.classList.add('hidden');
-        
-        if (dom.centerPanelHeader) {
-            dom.centerPanelHeader.classList.remove('hidden');
-        }
-
-        // Revert UI switch
-        dom.tournamentViewContainer.classList.add('hidden');
-        const boardAndScoresWrapper = document.querySelector('.board-and-scores-wrapper');
-        if (boardAndScoresWrapper) boardAndScoresWrapper.classList.remove('hidden');
-        
-        updateState('gameState', null);
-        const { currentTournamentState } = getState();
-        
-        if (currentTournamentState) {
-            renderTournamentView(currentTournamentState);
-        } else {
-            dom.tournamentModal.classList.remove('hidden');
-            renderTournamentView({ status: 'hub' });
-        }
+        dom.tournamentModal.classList.remove('hidden');
     });
 
     socket.on('tournamentRankingData', (rankingData) => {
@@ -683,24 +611,13 @@ export function emitLeaveRoom() {
 
 export function emitEndTurn() {
     const { socket, gameState, playerId } = getState();
-    if (!socket || !gameState || gameState.currentPlayer !== playerId) {
-        // If it's an AI turn in an offline tournament, the human client sends the end turn signal
-        const isMyAIsTurn = gameState.isTournamentMatch &&
-                            gameState.players[gameState.currentPlayer] &&
-                            !gameState.players[gameState.currentPlayer].isHuman &&
-                            gameState.players[playerId]?.isHuman;
-        if (!isMyAIsTurn) return;
-    }
-
-    const player = gameState.players[gameState.currentPlayer];
-    if (!player) return;
-    
-    if (player.isHuman) {
-        const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length;
-        if (valueCardsInHandCount > 1 && !player.playedValueCardThisTurn) {
-            alert("Você precisa jogar uma carta de valor neste turno!");
-            return;
-        }
+    if (!socket || !gameState || gameState.currentPlayer !== playerId) return;
+    const player = gameState.players[playerId];
+    if(!player) return;
+    const valueCardsInHandCount = player.hand.filter(c => c.type === 'value').length;
+    if (valueCardsInHandCount > 1 && !player.playedValueCardThisTurn) {
+        alert("Você precisa jogar uma carta de valor neste turno!");
+        return;
     }
     socket.emit('endTurn');
 }

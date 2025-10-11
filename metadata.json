@@ -1,6 +1,6 @@
 {
-  "name": "FAZENDO TORNEIO FUNCIONAR",
-  "description": "VERSÃO ANTERIOR CHAMADA TORNEIO ESTAVA TUDO FUNCIONANDO MENOS O TORNEIO.",
+  "name": "VERSÃO SEM TORNEIO",
+  "description": "Jogo de cartas + tabuleiro",
   "requestFramePermissions": [],
   "prompt": ""
 }

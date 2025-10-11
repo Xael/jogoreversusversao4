@@ -13,7 +13,6 @@ import { generateBoardPaths } from './game-logic/board.js';
 import { executeAiTurn } from './ai/ai-controller.js';
 import { createSpiralStarryBackground, resetGameEffects } from './ui/animations.js';
 import { t } from './core/i18n.js';
-import { renderTournamentMatchScore, clearTournamentMatchScore } from './ui/torneio-renderer.js';
 
 
 /**
@@ -96,7 +95,6 @@ const showFullscreenAnnounce = async (text, imageSrc) => {
  * The core game state creation is now handled by the server for PvP.
  */
 export const initializeGame = async (mode, options) => {
-    clearTournamentMatchScore();
     const { isChatMuted, infiniteChallengeOpponentQueue } = getState();
     dom.chatInput.disabled = isChatMuted;
     dom.chatInput.placeholder = t(isChatMuted ? 'chat.chat_muted_message' : 'game.chat_placeholder');
@@ -260,24 +258,6 @@ export const initializeGame = async (mode, options) => {
         updateState('gameTimerInterval', timerInterval);
     }
 
-    const boardAndScoresWrapper = document.querySelector('.board-and-scores-wrapper');
-
-    // Restore header visibility (for "Melhor de 3" score).
-    if (dom.centerPanelHeader) {
-        dom.centerPanelHeader.classList.remove('hidden');
-    }
-    
-    // Hide the main board/scores area only for tournament matches.
-    if (boardAndScoresWrapper) {
-        boardAndScoresWrapper.classList.toggle('hidden', isTournamentMatch);
-    }
-
-    // Handle side scores for other special modes (when not a tournament).
-    if (dom.leftScoreBox && dom.rightScoreBox && !isTournamentMatch) {
-        const shouldHide = isInversusMode || isKingNecroBattle || isInfiniteChallenge;
-        dom.leftScoreBox.classList.toggle('hidden', shouldHide);
-        dom.rightScoreBox.classList.toggle('hidden', shouldHide);
-    }
     
     const valueDeck = shuffle(createDeck(config.VALUE_DECK_CONFIG, 'value'));
     const effectDeck = shuffle(createDeck(config.EFFECT_DECK_CONFIG, 'effect'));
@@ -430,6 +410,16 @@ export const initializeGame = async (mode, options) => {
             }
         }, 2000);
         updateState('inversusAnimationInterval', intervalId);
+    }
+
+    if (dom.leftScoreBox && dom.rightScoreBox) {
+        if (isInversusMode || isKingNecroBattle || isInfiniteChallenge || isTournamentMatch) {
+            dom.leftScoreBox.classList.add('hidden');
+            dom.rightScoreBox.classList.add('hidden');
+        } else {
+            dom.leftScoreBox.classList.remove('hidden');
+            dom.rightScoreBox.classList.remove('hidden');
+        }
     }
     
     const player1Container = document.getElementById('player-1-area-container');
