@@ -341,7 +341,8 @@ export async function advanceToNextPlayer() {
     if (nextPlayer.isHuman) {
         await showTurnIndicator();
     } else {
-        executeAiTurn(nextPlayer);
+        // FIX: Add a delay before the AI plays to prevent it feeling instant and causing race conditions.
+        setTimeout(() => executeAiTurn(nextPlayer), 500);
     }
 }
 
@@ -753,7 +754,6 @@ async function calculateScoresAndEndRound() {
     }
     
     if (gameState.isTournamentMatch) {
-        // Pause to let players see the announcement and score update
         await new Promise(res => setTimeout(res, 3000));
         
         const tournament = getState().currentTournamentState;
@@ -767,15 +767,13 @@ async function calculateScoresAndEndRound() {
             return;
         }
 
-        const myPlayerId = myProfile.id;
-        const winnerIsMe = winners.length === 1 && (match.p1.id === myPlayerId ? winners[0] === 'player-1' : winners[0] === 'player-2');
-
+        const myPlayerIdInGameState = Object.values(gameState.players).find(p => p.isHuman).id;
+        
         if (winners.length === 1) {
-            const winnerIsP1 = (match.p1.id === myPlayerId && winners[0] === 'player-1') || (match.p1.id !== myPlayerId && winners[0] === 'player-1');
-            if (winnerIsP1) {
-                match.score[0]++;
+            if (winners[0] === myPlayerIdInGameState) {
+                match.score[0]++; // Human is always player 1 in the score array for offline
             } else {
-                match.score[1]++;
+                match.score[1]++; // AI is player 2
             }
         } else {
             match.draws++;
@@ -784,7 +782,8 @@ async function calculateScoresAndEndRound() {
         renderTournamentMatchScore(match.score);
 
         const [p1Score, p2Score] = match.score;
-        const matchOver = p1Score >= 2 || p2Score >= 2 || (p1Score + p2Score + match.draws >= 3);
+        const matchOver = (p1Score >= 2 || p2Score >= 2 || ((p1Score || 0) + (p2Score || 0) + (match.draws || 0)) >= 3);
+
 
         if (matchOver) {
             let matchWinnerId;
@@ -798,15 +797,18 @@ async function calculateScoresAndEndRound() {
             
             await processTournamentMatchResult_client(tournament, match, matchWinnerId);
 
+            const winnerPlayer = matchWinnerId === 'draw' ? null : (matchWinnerId === match.p1.id ? match.p1 : match.p2);
+            const winnerName = winnerPlayer ? (t(winnerPlayer.username) || winnerPlayer.username) : null;
+            const announcement = winnerName ? `${winnerName} venceu a partida!` : 'A partida terminou em empate!';
+            
+            announceEffect(announcement, 'default', 4000);
+            await new Promise(res => setTimeout(res, 4500)); 
+            
             dom.appContainerEl.classList.add('hidden');
             clearTournamentMatchScore();
             updateState('gameState', null);
-            renderTournamentView(tournament);
-
-            await new Promise(res => setTimeout(res, 5000));
             
             await advanceToNextOfflineMatch(tournament);
-
             return;
         } else {
             if (winners.length > 0) {

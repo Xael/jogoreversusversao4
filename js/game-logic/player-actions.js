@@ -3,7 +3,7 @@
 import { getState, updateState } from '../core/state.js';
 import { updateLog, dealCard } from '../core/utils.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
-import { toggleReversusTotalBackground } from '../ui/animations.js';
+import { animateCardPlay, toggleReversusTotalBackground } from '../ui/animations.js';
 import * as dom from '../core/dom.js';
 import { triggerXaelChallengePopup } from '../story/story-abilities.js';
 import { renderAll } from '../ui/ui-renderer.js';
