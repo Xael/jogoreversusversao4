@@ -298,9 +298,11 @@ export async function shatterImage(imageEl) {
     
     playSoundEffect('destruido');
 
+    const parent = imageEl.parentNode;
+    const originalOverflow = parent.style.overflow;
+
     return new Promise(resolve => {
         requestAnimationFrame(() => {
-            const parent = imageEl.parentNode;
             const rect = imageEl.getBoundingClientRect();
 
             if (rect.width === 0 || rect.height === 0) {
@@ -308,11 +310,13 @@ export async function shatterImage(imageEl) {
                 setTimeout(resolve, 500);
                 return;
             }
+            
+            parent.style.overflow = 'visible';
 
             const container = document.createElement('div');
             container.className = 'shatter-container';
             container.style.position = 'absolute';
-            container.style.zIndex = '3000'; // FIX: Ensure shatter effect is on top of everything
+            container.style.zIndex = '3000';
             const parentRect = parent.getBoundingClientRect();
             container.style.left = `${rect.left - parentRect.left}px`;
             container.style.top = `${rect.top - parentRect.top}px`;
@@ -350,6 +354,7 @@ export async function shatterImage(imageEl) {
                 if (container.parentNode) {
                     container.remove();
                 }
+                parent.style.overflow = originalOverflow;
                 resolve();
             }, 1500);
         });

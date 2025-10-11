@@ -744,12 +744,18 @@ async function calculateScoresAndEndRound() {
     const winnerNames = winners.map(id => t(gameState.players[id].name)).join(' e ');
     updateLog(winners.length > 0 ? `Vencedor(es) da rodada: ${winnerNames}.` : "A rodada terminou em empate. Ninguém avança por pontuação.");
 
-    // Show summary for non-tournament games. Tournament handles its own flow.
-    if (!gameState.isInfiniteChallenge) {
+    // Show summary modal or announcement, with special handling for tournaments
+    if (gameState.isTournamentMatch) {
+        const winnerAnnounceText = winners.length > 0 ? t('round_summary.winner_text', { winnerNames }) : t('round_summary.tie_text');
+        announceEffect(winnerAnnounceText, 'default', 2500);
+    } else if (!gameState.isInfiniteChallenge) {
         await showRoundSummaryModal({ winners, finalScores, potWon: 0 });
     }
     
     if (gameState.isTournamentMatch) {
+        // Pause to let players see the announcement and score update
+        await new Promise(res => setTimeout(res, 3000));
+        
         const tournament = getState().currentTournamentState;
         const myProfile = getState().userProfile;
         const currentRoundSchedule = tournament.schedule.find(r => r.round === tournament.currentRound);

@@ -11,7 +11,7 @@ import { showPvpDrawSequence } from '../game-logic/turn-manager.js';
 import { t } from './i18n.js';
 import { animateCardPlay } from '../ui/animations.js';
 import { showCoinRewardNotification } from '../ui/toast-renderer.js';
-import { playSoundEffect, announceEffect } from '../core/sound.js';
+import { playSoundEffect, announceEffect } from './sound.js';
 import * as sound from './sound.js';
 import { renderShopAvatars, updateCoinVersusDisplay } from '../ui/shop-renderer.js';
 import { renderTournamentView, renderTournamentRankingTable, renderTournamentMatchScore, clearTournamentMatchScore, renderInGameTournamentView } from '../ui/torneio-renderer.js';
@@ -326,7 +326,15 @@ export function connectToServer() {
     });
 
     socket.on('roundSummary', (summaryData) => {
-        showRoundSummaryModal(summaryData);
+        const { gameState } = getState();
+        if (gameState && gameState.isTournamentMatch) {
+            // For tournaments, just announce the winner. The server controls the timing.
+            const winnerNames = summaryData.winners.map(id => t(gameState.players[id].name)).join(' e ');
+            const winnerAnnounceText = summaryData.winners.length > 0 ? t('round_summary.winner_text', { winnerNames }) : t('round_summary.tie_text');
+            announceEffect(winnerAnnounceText, 'default', 4000); // Announce for 4s, server waits 5s
+        } else {
+            showRoundSummaryModal(summaryData);
+        }
     });
     
     socket.on('matchCancelled', (message) => {
