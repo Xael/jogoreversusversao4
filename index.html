@@ -148,6 +148,10 @@
                 <div class="event-character-panel">
                     <img src="" id="event-character-image" alt="Personagem do Evento">
                     <p id="event-character-name">Nome do Personagem</p>
+                    <div id="event-completed-seal" class="hidden">
+                        <span data-i18n="event.seal_completed">COMPLETO</span>
+                        🏆
+                    </div>
                 </div>
                 <div class="event-details-panel">
                     <h3 data-i18n="event.challenge_title">Desafio do Mês</h3>
@@ -622,7 +626,10 @@
         <div class="modal-content">
             <h2 id="game-over-title" data-i18n="game_over.title">Fim de Jogo!</h2>
             <p id="game-over-message">O vencedor é...</p>
-            <button id="restart-button" class="control-button" data-i18n="game_over.play_again">Jogar Novamente</button>
+            <div class="button-group">
+                <button id="restart-button" class="control-button" data-i18n="game_over.play_again">Jogar Novamente</button>
+                <button id="game-over-back-to-menu-button" class="control-button secondary" data-i18n="game_over.back_to_menu">Voltar ao Menu</button>
+            </div>
         </div>
     </div>
     

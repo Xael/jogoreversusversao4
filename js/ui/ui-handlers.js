@@ -675,6 +675,12 @@ export function initializeUiHandlers() {
             const progressKey = `reversus-event-progress-${currentMonth}`;
             const wins = parseInt(localStorage.getItem(progressKey) || '0', 10);
     
+            // Logic for completion seal
+            const sealEl = document.getElementById('event-completed-seal');
+            if (sealEl) {
+                sealEl.classList.toggle('hidden', wins < 3);
+            }
+    
             const today = new Date().toISOString().split('T')[0];
             const lastAttemptDate = localStorage.getItem('reversus-event-attempt-date');
             const hasAttemptedToday = lastAttemptDate === today;
@@ -1037,6 +1043,14 @@ export function initializeUiHandlers() {
             showSplashScreen();
         }
     });
+
+    const gameOverBackToMenuButton = document.getElementById('game-over-back-to-menu-button');
+    if (gameOverBackToMenuButton) {
+        gameOverBackToMenuButton.addEventListener('click', () => {
+            dom.gameOverModal.classList.add('hidden');
+            showSplashScreen();
+        });
+    }
     
     dom.targetPlayerButtonsEl.addEventListener('click', async (e) => {
         if (e.target.tagName !== 'BUTTON') return;

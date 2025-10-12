@@ -93,6 +93,37 @@ export async function executeAiTurn(player) {
         if (player.isEventBoss) {
             const player1 = gameState.players['player-1'];
             switch(player.aiType) {
+                case 'abruxadoresto': // October
+                    if (!gameState.eventBossAbilityUsedThisRound && Math.random() < 0.5) {
+                        const hasMaisCard = player.hand.some(c => c.name === 'Mais');
+                        if (hasMaisCard) {
+                            const witchCard = player.hand.filter(c => c.type === 'value').sort((a,b) => b.value - a.value)[0];
+                            const player1Card = player1.hand.filter(c => c.type === 'value').sort((a,b) => b.value - a.value)[0];
+
+                            if (witchCard && player1Card) {
+                                // Remove cards from hands
+                                const witchCardIndex = player.hand.findIndex(c => c.id === witchCard.id);
+                                player.hand.splice(witchCardIndex, 1);
+                                const player1CardIndex = player1.hand.findIndex(c => c.id === player1Card.id);
+                                player1.hand.splice(player1CardIndex, 1);
+
+                                // Add to discard
+                                gameState.discardPiles.value.push(witchCard, player1Card);
+
+                                // Set temporary resto override
+                                player.temporaryRestoOverride = witchCard.value + player1Card.value;
+                                gameState.eventBossAbilityUsedThisRound = true;
+                                specialAbilityUsed = true;
+
+                                updateLog(`A Bruxa do Resto usou 'Feitiço do Sacrifício'! Ela descarta ${witchCard.value} e você descarta ${player1Card.value}. O resto dela para esta rodada é ${player.temporaryRestoOverride}!`);
+                                playSoundEffect('reversus');
+                                announceEffect('Feitiço!', 'reversus');
+                                renderAll();
+                                await new Promise(res => setTimeout(res, 1500));
+                            }
+                        }
+                    }
+                    break;
                 case 'detetivemisterioso': // September
                     if (!gameState.eventBossAbilityUsedThisRound) {
                         let swapMade = false;

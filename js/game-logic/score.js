@@ -26,6 +26,16 @@ export function updateLiveScoresAndWinningStatus() {
         const restoMenorEffect = activeEffects.find(fe => fe.name === 'Resto Menor' && fe.appliesTo === id);
         if(restoMenorEffect) restoValue = 2;
 
+        // Buff from Infinite Challenge overrides field effects
+        if (player.forceResto10) {
+            restoValue = 10;
+        }
+
+        // Witch's ability is the ultimate override for the round
+        if (player.temporaryRestoOverride !== undefined) {
+            restoValue = player.temporaryRestoOverride;
+        }
+
         if (effect === 'Mais') score += restoValue;
         if (effect === 'Menos') score -= restoValue;
 

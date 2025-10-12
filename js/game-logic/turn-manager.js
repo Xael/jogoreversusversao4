@@ -329,6 +329,7 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
         player.playedValueCardThisTurn = false;
         player.targetPathForPula = null;
         player.tournamentScoreEffect = null; // Reset tournament effect
+        player.temporaryRestoOverride = undefined; // Reset Witch ability override
 
         // Decrease Versatrix Card cooldown per round
         const versatrixCard = player.hand.find(c => c.name === 'Carta da Versatrix');
@@ -507,6 +508,16 @@ async function calculateScoresAndEndRound() {
         // Check for field effects on resto
         if (gameState.activeFieldEffects.some(fe => fe.name === 'Resto Maior' && fe.appliesTo === id)) restoValue = 10;
         if (gameState.activeFieldEffects.some(fe => fe.name === 'Resto Menor' && fe.appliesTo === id)) restoValue = 2;
+        
+        // Buff from Infinite Challenge overrides field effects
+        if (p.forceResto10) {
+            restoValue = 10;
+        }
+
+        // Witch's ability is the ultimate override for the round
+        if (p.temporaryRestoOverride !== undefined) {
+            restoValue = p.temporaryRestoOverride;
+        }
 
         if (p.effects.score === 'Mais') score += restoValue;
 
