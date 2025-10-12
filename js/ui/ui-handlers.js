@@ -1333,7 +1333,8 @@ export function initializeUiHandlers() {
                     
                     const year = new Date().getFullYear();
                     const challengeId = `event_${currentMonth}_${year}`;
-                    network.emitClaimChallengeReward({ challengeId, amount: 1000 });
+                    const titleCode = eventConfig.titleCode; // Get the code from the config
+                    network.emitClaimChallengeReward({ challengeId, amount: 1000, titleCode: titleCode });
 
                 } else {
                     message = t('event.victory_progress_message', { wins });
