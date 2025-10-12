@@ -686,19 +686,21 @@ export function initializeUiHandlers() {
             const hasAttemptedToday = lastAttemptDate === today;
     
             if (wins >= 3) {
-                dom.challengeEventButton.disabled = false;
+                dom.challengeEventButton.disabled = false; // Allow re-challenge for fun
                 dom.eventStatusText.textContent = t('event.status_completed');
             } else {
                 dom.challengeEventButton.disabled = hasAttemptedToday;
                 dom.eventStatusText.textContent = hasAttemptedToday ? t('event.status_wait') : '';
             }
     
+            // Render progress markers ("stamps")
             dom.eventProgressMarkers.innerHTML = '';
             for (let i = 0; i < 3; i++) {
                 const marker = document.createElement('div');
                 marker.className = 'progress-marker';
                 if (i < wins) {
                     marker.classList.add('completed');
+                    marker.innerHTML = '🏆'; // Add a trophy icon for completed
                 }
                 dom.eventProgressMarkers.appendChild(marker);
             }
