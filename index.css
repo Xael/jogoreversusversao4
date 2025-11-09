@@ -554,7 +554,7 @@ body.screen-shaking {
 /* --- NEW APP LAYOUT --- */
 .app-container {
     display: grid;
-    grid-template-columns: minmax(200px, 240px) 1fr minmax(350px, 450px);
+    grid-template-columns: minmax(900px, 900px) 1fr minmax(900px, 900px);
     height: 100%;
     gap: 1rem;
     padding: 1rem;
