@@ -32,19 +32,15 @@ function resizeAndCenterApp() {
     scalableContainer.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
 }
 
-/**
- * Ensures the splash screen is centered, especially on mobile.
- */
-function centerSplashScreen() {
-  const splash = document.querySelector('.modal-content.splash-content');
-  if (!splash) return;
-  // This is mostly a fallback; flexbox on the parent should handle centering.
-  splash.style.margin = '0 auto';
-}
-
-
 // This is the main entry point of the application.
 document.addEventListener('DOMContentLoaded', async () => {
+    // --- Mobile detection ---
+    const isMobileDevice = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+    if (isMobileDevice) {
+        document.body.classList.add('mobile-device');
+    }
+    // --- End Mobile detection ---
+    
     // Initialize internationalization first
     await initI18n();
 
@@ -71,9 +67,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- Add new resize logic ---
     resizeAndCenterApp();
-    centerSplashScreen(); // Center it on load
-    window.addEventListener('resize', () => {
-        resizeAndCenterApp();
-        centerSplashScreen(); // And on resize
-    });
+    window.addEventListener('resize', resizeAndCenterApp);
 });

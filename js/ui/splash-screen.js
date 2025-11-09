@@ -35,8 +35,15 @@ export const showSplashScreen = () => {
 
     // Show splash screen
     dom.splashScreenEl.classList.remove('hidden');
-    initializeFloatingItemsAnimation(dom.splashAnimationContainerEl, 'splash');
-    startVersatrixCardAnimation();
+
+    // Conditionally initialize animations to avoid them on mobile
+    if (!document.body.classList.contains('mobile-device')) {
+        initializeFloatingItemsAnimation(dom.splashAnimationContainerEl, 'splash');
+        startVersatrixCardAnimation();
+    } else {
+        // Ensure animation container is empty on mobile
+        dom.splashAnimationContainerEl.innerHTML = '';
+    }
     
     // Show/hide event button based on login status
     dom.eventButton.classList.toggle('hidden', !isLoggedIn);
