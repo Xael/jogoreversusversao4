@@ -4241,7 +4241,7 @@ body.screen-shaking {
 }
 
 /* Show orientation lock only on mobile devices in portrait mode */
-@media (max-width: 900px) and (orientation: portrait) {
+@media (max-width: 1920px) and (orientation: portrait) {
     .mobile-device #orientation-lock {
         display: flex;
     }
@@ -4251,7 +4251,7 @@ body.screen-shaking {
 }
 
 /* Styles for mobile landscape */
-@media (max-width: 900px) and (orientation: landscape) {
+@media (max-width: 1920px) and (orientation: landscape) {
     .mobile-device #splash-animation-container {
         display: none;
     }
