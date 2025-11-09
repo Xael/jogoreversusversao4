@@ -4261,8 +4261,8 @@ body.screen-shaking {
         align-items: center;
         gap: 4rem; /* Increased gap */
         padding: 2rem; /* Increased padding */
-        width: 90vw;  /* << Adicione esta linha */
-        height: 90vh; /* << Adicione esta linha */
+        width: 100vw;  /* << Adicione esta linha */
+        height: 100vh; /* << Adicione esta linha */
     }
     .mobile-device .splash-logo {
         width: 450px; /* Significantly increased width */
