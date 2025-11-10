@@ -554,7 +554,7 @@ body.screen-shaking {
 /* --- NEW APP LAYOUT --- */
 .app-container {
     display: grid;
-    grid-template-columns: minmax(900px, 900px) 1fr minmax(900px, 900px);
+    grid-template-columns: minmax(200px, 240px) 1fr minmax(350px, 450px);
     height: 100%;
     gap: 1rem;
     padding: 1rem;
@@ -4240,7 +4240,7 @@ body.screen-shaking {
 }
 
 /* Show orientation lock only on mobile devices in portrait mode */
-@media (max-width: 1920px) and (orientation: portrait) {
+@media (max-width: 900px) and (orientation: portrait) {
     .mobile-device #orientation-lock {
         display: flex;
     }
@@ -4250,7 +4250,7 @@ body.screen-shaking {
 }
 
 /* Styles for mobile landscape */
-@media (max-width: 1920px) and (orientation: landscape) {
+@media (max-width: 900px) and (orientation: landscape) {
     .mobile-device #splash-animation-container {
         display: none;
     }
@@ -4260,8 +4260,8 @@ body.screen-shaking {
         align-items: center;
         gap: 4rem; /* Increased gap */
         padding: 2rem; /* Increased padding */
-        width: 100vw;  /* << Adicione esta linha */
-        height: 100vh; /* << Adicione esta linha */
+        width: 90vw;  /* << Adicione esta linha */
+        height: 90vh; /* << Adicione esta linha */
     }
     .mobile-device .splash-logo {
         width: 450px; /* Significantly increased width */
@@ -4285,27 +4285,4 @@ body.screen-shaking {
     .mobile-device #infinite-challenge-pot-display {
         font-size: 1rem;
     }
-}
-#orientation-lock {
-  position: fixed;
-  inset: 0; /* ocupa a tela toda */
-  display: none; /* começa escondido */
-  justify-content: center;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.9);
-  color: #fff;
-  z-index: 9999;
-  flex-direction: column;
-  text-align: center;
-  padding: 2rem;
-}
-
-#orientation-lock .orientation-message {
-  font-size: 1.5rem;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.05); }
 }
