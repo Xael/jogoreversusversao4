@@ -4286,3 +4286,26 @@ body.screen-shaking {
         font-size: 1rem;
     }
 }
+#orientation-lock {
+  position: fixed;
+  inset: 0; /* ocupa a tela toda */
+  display: none; /* começa escondido */
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  z-index: 9999;
+  flex-direction: column;
+  text-align: center;
+  padding: 2rem;
+}
+
+#orientation-lock .orientation-message {
+  font-size: 1.5rem;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
