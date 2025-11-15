@@ -15,7 +15,7 @@ import * as network from '../core/network.js';
 import { shatterImage } from './animations.js';
 import { announceEffect } from '../core/sound.js';
 import { playCard } from '../game-logic/player-actions.js';
-import { advanceToNextPlayer, startNextInfiniteChallengeDuel, initiateGameStartSequence } from '../game-logic/turn-manager.js';
+import { advanceToNextPlayer, startNextInfiniteChallengeDuel } from '../game-logic/turn-manager.js';
 import { setLanguage, t } from '../core/i18n.js';
 import { showSplashScreen } from './splash-screen.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from './profile-renderer.js';
@@ -531,15 +531,6 @@ export function initializeUiHandlers() {
                 network.emitReportPlayer(googleId, message);
             }
         }
-        
-        const continueBtn = e.target.closest('#tournament-continue-btn');
-        if (continueBtn) {
-            const { gameState } = getState();
-            if (gameState && gameState.isTournamentMatch) {
-                initiateGameStartSequence();
-                continueBtn.classList.add('hidden'); 
-            }
-        }
     });
 
     dom.cardsButton.addEventListener('click', () => {
@@ -806,24 +797,50 @@ export function initializeUiHandlers() {
         }
     });
 
-    [dom.rankingContainer, dom.infiniteRankingContainer, dom.tournamentRankingContainer].forEach(container => {
-        if(container) {
-            container.addEventListener('click', (e) => {
-                const target = e.target.closest('.rank-name.clickable');
-                if (target) {
-                    const googleId = target.dataset.googleId;
-                    if (googleId) network.emitViewProfile({ googleId });
+    if (dom.rankingContainer) {
+        dom.rankingContainer.addEventListener('click', (e) => {
+            const target = e.target.closest('.rank-name.clickable');
+            if (target) {
+                const googleId = target.dataset.googleId;
+                if (googleId) {
+                    network.emitViewProfile({ googleId });
                 }
-            });
-        }
-    });
+            }
+        });
+    }
+
+    if (dom.infiniteRankingContainer) {
+        dom.infiniteRankingContainer.addEventListener('click', (e) => {
+            const target = e.target.closest('.rank-name.clickable');
+            if (target) {
+                const googleId = target.dataset.googleId;
+                if (googleId) {
+                    network.emitViewProfile({ googleId });
+                }
+            }
+        });
+    }
+
+    if(dom.tournamentRankingContainer) {
+        dom.tournamentRankingContainer.addEventListener('click', (e) => {
+            const target = e.target.closest('.rank-name.clickable');
+            if (target) {
+                const googleId = target.dataset.googleId;
+                if (googleId) {
+                    network.emitViewProfile({ googleId });
+                }
+            }
+        });
+    }
 
     if (dom.pvpLobbyModal) {
         dom.pvpLobbyModal.addEventListener('click', (e) => {
             const target = e.target.closest('.lobby-player-grid .clickable');
             if(target) {
                 const googleId = target.dataset.googleId;
-                if (googleId) network.emitViewProfile({ googleId });
+                if (googleId) {
+                    network.emitViewProfile({ googleId });
+                }
             }
         });
     }
@@ -833,7 +850,9 @@ export function initializeUiHandlers() {
             const target = e.target.closest('.room-player-name.clickable');
             if (target) {
                 const googleId = target.dataset.googleId;
-                if (googleId) network.emitViewProfile({ googleId });
+                if (googleId) {
+                    network.emitViewProfile({ googleId });
+                }
             }
         });
     }
@@ -1528,6 +1547,8 @@ export function initializeUiHandlers() {
         }
     };
     
+    if(dom.chatSendButton) dom.chatSendButton.addEventListener('click', sendChatMessage);
+    
     dom.chatInput.addEventListener('keypress', (e) => { 
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -1721,7 +1742,7 @@ export function initializeUiHandlers() {
             return;
         }
         dom.splashScreenEl.classList.add('hidden');
-        sound.playStoryMusic('tela.ogg'); // Use main menu music
+        sound.playStoryMusic('altar.ogg');
         renderTournamentView({ status: 'hub' });
     });
 
@@ -1735,26 +1756,12 @@ export function initializeUiHandlers() {
 
     dom.tournamentCancelQueueButton.addEventListener('click', () => {
         network.emitCancelTournamentQueue();
+        renderTournamentView({ status: 'hub' }); // Go back to hub
     });
 
     dom.tournamentCloseButton.addEventListener('click', () => {
-        const { gameState } = getState();
-        if (gameState && gameState.isTournamentMatch) {
-            if (confirm("Tem certeza que deseja desistir do torneio?")) {
-                 showSplashScreen();
-                 sound.stopStoryMusic();
-            }
-        } else {
-            dom.tournamentModal.classList.add('hidden');
-            showSplashScreen();
-            sound.stopStoryMusic();
-        }
+        dom.tournamentModal.classList.add('hidden');
+        showSplashScreen();
+        sound.stopStoryMusic();
     });
-
-    const tournamentRulesUnderstoodButton = document.getElementById('tournament-rules-understood-btn');
-    if (tournamentRulesUnderstoodButton) {
-        tournamentRulesUnderstoodButton.addEventListener('click', () => {
-            dom.tournamentRulesModal.classList.add('hidden');
-        });
-    }
 }

@@ -4,7 +4,7 @@ import * as dom from '../core/dom.js';
 import { renderAll, showGameOver, showRoundSummaryModal, showTurnIndicator } from '../ui/ui-renderer.js';
 import { renderRoomList, renderPvpRanking, renderInfiniteRanking, updateLobbyUi } from '../ui/lobby-renderer.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from '../ui/profile-renderer.js';
-import { showSplashScreen } from '../ui/splash-screen.js';
+import { showSplashScreen } from './splash-screen.js';
 import { updateLog } from './utils.js';
 import { updateGameTimer } from '../game-controller.js';
 import { showPvpDrawSequence } from '../game-logic/turn-manager.js';
@@ -16,7 +16,6 @@ import * as sound from './sound.js';
 import { renderShopAvatars, updateCoinVersusDisplay } from '../ui/shop-renderer.js';
 import { renderTournamentView, renderTournamentRankingTable, renderTournamentMatchScore, clearTournamentMatchScore } from '../ui/torneio-renderer.js';
 import { executeAiTurn } from '../ai/ai-controller.js';
-import { checkAndShowSpecialFeatures } from './achievements.js';
 
 
 /**
@@ -65,17 +64,6 @@ export function connectToServer() {
         console.log('Login successful on client:', userProfile);
         updateState('isLoggedIn', true);
         updateState('userProfile', userProfile);
-
-        // **AQUI ESTÁ A CORREÇÃO PRINCIPAL**
-        // Sincroniza as conquistas do servidor com o estado local do jogo.
-        if (userProfile.achievements && Array.isArray(userProfile.achievements)) {
-            const serverAchievements = new Set(userProfile.achievements);
-            updateState('achievements', serverAchievements);
-            
-            // Salva no localStorage para consistência e verifica recursos desbloqueáveis
-            localStorage.setItem('reversus-achievements', JSON.stringify(Array.from(serverAchievements)));
-            checkAndShowSpecialFeatures();
-        }
         
         dom.loginButton.classList.add('hidden');
         dom.userProfileDisplay.classList.remove('hidden');
