@@ -1,3 +1,4 @@
+
 // js/ui/ui-handlers.js
 import * as dom from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
@@ -15,7 +16,7 @@ import * as network from '../core/network.js';
 import { shatterImage } from './animations.js';
 import { announceEffect } from '../core/sound.js';
 import { playCard } from '../game-logic/player-actions.js';
-import { advanceToNextPlayer, startNextInfiniteChallengeDuel } from '../game-logic/turn-manager.js';
+import { advanceToNextPlayer, startNextInfiniteChallengeDuel, initiateGameStartSequence } from '../game-logic/turn-manager.js';
 import { setLanguage, t } from '../core/i18n.js';
 import { showSplashScreen } from './splash-screen.js';
 import { renderProfile, renderFriendsList, renderSearchResults, addPrivateChatMessage, updateFriendStatusIndicator, renderFriendRequests, renderAdminPanel, renderOnlineFriendsForInvite } from './profile-renderer.js';
@@ -513,7 +514,8 @@ export function initializeUiHandlers() {
             showGameOver(
                 message,
                 t('game_over.infinite_challenge_title'),
-                { action: 'menu', text: t('game_over.back_to_menu') }
+                { action: 'menu', text: t('game_over.back_to_menu') },
+                false // Explicit defeat
             );
         }
     });
@@ -529,6 +531,15 @@ export function initializeUiHandlers() {
             const message = button.dataset.message;
             if (confirm(t('confirm.report_player', { username }))) {
                 network.emitReportPlayer(googleId, message);
+            }
+        }
+        
+        const continueBtn = e.target.closest('#tournament-continue-btn');
+        if (continueBtn) {
+            const { gameState } = getState();
+            if (gameState && gameState.isTournamentMatch) {
+                initiateGameStartSequence();
+                continueBtn.classList.add('hidden'); 
             }
         }
     });
@@ -675,37 +686,29 @@ export function initializeUiHandlers() {
             const progressKey = `reversus-event-progress-${currentMonth}`;
             const wins = parseInt(localStorage.getItem(progressKey) || '0', 10);
     
-            // Logic for completion seal
-            const sealEl = document.getElementById('event-completed-seal');
-            if (sealEl) {
-                sealEl.classList.toggle('hidden', wins < 3);
-            }
-    
             const today = new Date().toISOString().split('T')[0];
             const lastAttemptDate = localStorage.getItem('reversus-event-attempt-date');
             const hasAttemptedToday = lastAttemptDate === today;
     
             if (wins >= 3) {
-                dom.challengeEventButton.disabled = false; // Allow re-challenge for fun
+                dom.challengeEventButton.disabled = false;
                 dom.eventStatusText.textContent = t('event.status_completed');
             } else {
                 dom.challengeEventButton.disabled = hasAttemptedToday;
                 dom.eventStatusText.textContent = hasAttemptedToday ? t('event.status_wait') : '';
             }
     
-            // Render progress markers ("stamps")
             dom.eventProgressMarkers.innerHTML = '';
             for (let i = 0; i < 3; i++) {
                 const marker = document.createElement('div');
                 marker.className = 'progress-marker';
                 if (i < wins) {
                     marker.classList.add('completed');
-                    marker.innerHTML = '🏆'; // Add a trophy icon for completed
                 }
                 dom.eventProgressMarkers.appendChild(marker);
             }
     
-        } else {
+       } else {
             sound.playStoryMusic('tela.ogg');
             dom.eventCharacterImage.src = '';
             dom.eventCharacterName.textContent = 'Nenhum Evento Ativo';
@@ -797,41 +800,24 @@ export function initializeUiHandlers() {
         }
     });
 
-    if (dom.rankingContainer) {
-        dom.rankingContainer.addEventListener('click', (e) => {
-            const target = e.target.closest('.rank-name.clickable');
-            if (target) {
-                const googleId = target.dataset.googleId;
-                if (googleId) {
-                    network.emitViewProfile({ googleId });
+    const rankContainers = [
+        dom.rankingModal.querySelector('#ranking-container'),
+        dom.rankingModal.querySelector('#infinite-ranking-container'),
+        dom.rankingModal.querySelector('#tournament-ranking-container')
+    ];
+    rankContainers.forEach(container => {
+        if (container) {
+            container.addEventListener('click', (e) => {
+                const target = e.target.closest('.rank-name.clickable');
+                if (target) {
+                    const googleId = target.dataset.googleId;
+                    if (googleId) {
+                        network.emitViewProfile({ googleId });
+                    }
                 }
-            }
-        });
-    }
-
-    if (dom.infiniteRankingContainer) {
-        dom.infiniteRankingContainer.addEventListener('click', (e) => {
-            const target = e.target.closest('.rank-name.clickable');
-            if (target) {
-                const googleId = target.dataset.googleId;
-                if (googleId) {
-                    network.emitViewProfile({ googleId });
-                }
-            }
-        });
-    }
-
-    if(dom.tournamentRankingContainer) {
-        dom.tournamentRankingContainer.addEventListener('click', (e) => {
-            const target = e.target.closest('.rank-name.clickable');
-            if (target) {
-                const googleId = target.dataset.googleId;
-                if (googleId) {
-                    network.emitViewProfile({ googleId });
-                }
-            }
-        });
-    }
+            });
+        }
+    });
 
     if (dom.pvpLobbyModal) {
         dom.pvpLobbyModal.addEventListener('click', (e) => {
@@ -1031,7 +1017,7 @@ export function initializeUiHandlers() {
     dom.restartButton.addEventListener('click', (e) => {
         dom.gameOverModal.classList.add('hidden');
         const action = e.target.dataset.action;
-        
+    
         if (action === 'restart') {
             const { gameState } = getState();
             if (gameState && gameState.isStoryMode) {
@@ -1039,20 +1025,79 @@ export function initializeUiHandlers() {
             } else if (gameState) {
                 initializeGame(gameState.gameMode, gameState.gameOptions);
             } else {
-                 showSplashScreen();
+                showSplashScreen();
+            }
+        } else if (action === 'tournament_continue') {
+            const { tournamentState, gameState, userProfile } = getState();
+            const winnerId = e.target.dataset.winnerId;
+    
+            if (!tournamentState || !gameState || !gameState.tournamentMatch) {
+                console.error("State missing for tournament continuation.");
+                showSplashScreen();
+                return;
+            }
+    
+            // Find the match in the main tournament state and update it
+            const currentRoundData = tournamentState.schedule.find(r => r.round === tournamentState.currentRound);
+            const matchInState = currentRoundData.matches.find(m => m.matchId === gameState.tournamentMatch.matchId);
+    
+            if (matchInState) {
+                matchInState.result = winnerId;
+                matchInState.winnerId = winnerId;
+                matchInState.score = gameState.tournamentMatch.score;
+            }
+    
+            // Update leaderboard
+            const p1Leaderboard = tournamentState.leaderboard.find(p => p.id == gameState.tournamentMatch.p1.id);
+            const p2Leaderboard = tournamentState.leaderboard.find(p => p.id == gameState.tournamentMatch.p2.id);
+    
+            if (winnerId === 'draw') {
+                if (p1Leaderboard) { p1Leaderboard.points += 1; p1Leaderboard.draws += 1; }
+                if (p2Leaderboard) { p2Leaderboard.points += 1; p2Leaderboard.draws += 1; }
+            } else if (winnerId == p1Leaderboard.id) {
+                p1Leaderboard.points += 3; p1Leaderboard.wins += 1;
+                p2Leaderboard.losses += 1;
+            } else if (winnerId == p2Leaderboard.id) {
+                p2Leaderboard.points += 3; p2Leaderboard.wins += 1;
+                p1Leaderboard.losses += 1;
+            }
+    
+            // Check if all matches in the round are finished
+            const allRoundMatchesFinished = currentRoundData.matches.every(m => m.result !== null);
+    
+            if (allRoundMatchesFinished) {
+                if (tournamentState.currentRound < 7) {
+                    tournamentState.currentRound++;
+                } else {
+                    tournamentState.status = 'finished';
+                    tournamentState.leaderboard.sort((a, b) => b.points - a.points || b.wins - a.wins);
+                }
+            }
+    
+            updateState('tournamentState', tournamentState);
+            updateState('gameState', null);
+    
+            dom.appContainerEl.classList.add('hidden');
+            dom.gameOverModal.classList.add('hidden');
+    
+            renderTournamentView(tournamentState);
+    
+            const nextRoundData = tournamentState.schedule.find(r => r.round === tournamentState.currentRound);
+            if (nextRoundData && tournamentState.status === 'active') {
+                const myNextMatch = nextRoundData.matches.find(m => (m.p1.id === userProfile.id || m.p2.id === userProfile.id) && m.p1.isAI !== m.p2.isAI && m.result === null);
+                if (myNextMatch) {
+                    setTimeout(() => {
+                        const continueBtn = document.querySelector('#tournament-continue-btn');
+                        if (continueBtn && !continueBtn.classList.contains('hidden')) {
+                            continueBtn.click();
+                        }
+                    }, 1000);
+                }
             }
         } else {
             showSplashScreen();
         }
     });
-
-    const gameOverBackToMenuButton = document.getElementById('game-over-back-to-menu-button');
-    if (gameOverBackToMenuButton) {
-        gameOverBackToMenuButton.addEventListener('click', () => {
-            dom.gameOverModal.classList.add('hidden');
-            showSplashScreen();
-        });
-    }
     
     dom.targetPlayerButtonsEl.addEventListener('click', async (e) => {
         if (e.target.tagName !== 'BUTTON') return;
@@ -1335,8 +1380,7 @@ export function initializeUiHandlers() {
                     
                     const year = new Date().getFullYear();
                     const challengeId = `event_${currentMonth}_${year}`;
-                    const titleCode = eventConfig.titleCode; // Get the code from the config
-                    network.emitClaimChallengeReward({ challengeId, amount: 1000, titleCode: titleCode });
+                    network.emitClaimChallengeReward({ challengeId, amount: 1000 });
 
                 } else {
                     message = t('event.victory_progress_message', { wins });
@@ -1345,8 +1389,25 @@ export function initializeUiHandlers() {
                 message = t('event.defeat_message');
             }
             
-            showGameOver(message, title, { action: 'menu', text: t('game_over.back_to_menu') });
+            showGameOver(message, title, { action: 'menu', text: t('game_over.back_to_menu') }, won);
             return;
+        }
+
+        // GATILHO DE CONQUISTAS DE HISTÓRIA IMEDIATO
+        if (won) {
+            switch(battle) {
+                case 'contravox': achievements.grantAchievement('contravox_win'); break;
+                case 'versatrix': achievements.grantAchievement('versatrix_win'); break;
+                case 'reversum': achievements.grantAchievement('reversum_win'); break;
+                case 'necroverso_king': achievements.grantAchievement('true_end_beta'); break;
+                case 'necroverso_final': achievements.grantAchievement('true_end_final'); break;
+                case 'xael_challenge': achievements.grantAchievement('xael_win'); break;
+                case 'narrador': achievements.grantAchievement('120%_unlocked'); break;
+                case 'inversus': achievements.grantAchievement('inversus_win'); break;
+                case 'tutorial_necroverso': achievements.grantAchievement('tutorial_win'); break;
+            }
+        } else {
+            if (battle === 'versatrix') achievements.grantAchievement('versatrix_loss');
         }
 
         const bossesToShatter = ['contravox', 'versatrix', 'reversum', 'necroverso_king'];
@@ -1384,7 +1445,6 @@ export function initializeUiHandlers() {
         switch (battle) {
             case 'tutorial_necroverso':
                 if (won) {
-                    achievements.grantAchievement('tutorial_win');
                     continueStory('post_tutorial');
                     return;
                 } else {
@@ -1393,7 +1453,6 @@ export function initializeUiHandlers() {
                 break;
             case 'contravox':
                 if (won) {
-                    achievements.grantAchievement('contravox_win');
                     continueStory('post_contravox_victory');
                     return;
                 } else {
@@ -1402,18 +1461,15 @@ export function initializeUiHandlers() {
                 break;
             case 'versatrix':
                 if (won) {
-                    achievements.grantAchievement('versatrix_win');
                     continueStory('post_versatrix_victory');
                 } else {
                     const { storyState } = getState();
                     storyState.lostToVersatrix = true;
-                    achievements.grantAchievement('versatrix_loss');
                     continueStory('post_versatrix_defeat');
                 }
                 return;
             case 'reversum':
                 if (won) {
-                    achievements.grantAchievement('reversum_win');
                     continueStory('post_reversum_victory');
                     return;
                 } else {
@@ -1422,7 +1478,6 @@ export function initializeUiHandlers() {
                 break;
              case 'necroverso_king':
                 if (won) {
-                    achievements.grantAchievement('true_end_beta');
                     continueStory('post_necroverso_king_victory');
                     return;
                 } else {
@@ -1431,7 +1486,6 @@ export function initializeUiHandlers() {
                 break;
             case 'necroverso_final':
                 if (won) {
-                    achievements.grantAchievement('true_end_final');
                     playEndgameSequence();
                     return;
                 } else {
@@ -1440,7 +1494,6 @@ export function initializeUiHandlers() {
                 break;
             case 'xael_challenge':
                 if (won) {
-                    achievements.grantAchievement('xael_win');
                     message = "Você venceu o criador! Habilidade 'Revelação Estelar' desbloqueada no Modo História.";
                     buttonAction = 'menu';
                 } else {
@@ -1449,7 +1502,6 @@ export function initializeUiHandlers() {
                 break;
             case 'narrador':
                 if (won) {
-                    achievements.grantAchievement('120%_unlocked');
                     message = "Você derrotou o Narrador! O que acontece agora...?";
                     buttonAction = 'menu';
                 } else {
@@ -1458,7 +1510,6 @@ export function initializeUiHandlers() {
                 break;
             case 'inversus':
                 if (won) {
-                    achievements.grantAchievement('inversus_win');
                     message = "Você derrotou o Inversus! 100% do jogo completo. Um segredo foi revelado...";
                     buttonAction = 'menu';
                 } else {
@@ -1468,7 +1519,7 @@ export function initializeUiHandlers() {
             default:
                 message = won ? 'Você venceu o duelo!' : 'Você foi derrotado.';
         }
-        showGameOver(message, title, { action: buttonAction });
+        showGameOver(message, title, { action: buttonAction }, won);
     });
 
     dom.splashLogo.addEventListener('click', (e) => {
@@ -1742,7 +1793,7 @@ export function initializeUiHandlers() {
             return;
         }
         dom.splashScreenEl.classList.add('hidden');
-        sound.playStoryMusic('altar.ogg');
+        sound.playStoryMusic('tela.ogg'); // Use main menu music
         renderTournamentView({ status: 'hub' });
     });
 
@@ -1756,12 +1807,19 @@ export function initializeUiHandlers() {
 
     dom.tournamentCancelQueueButton.addEventListener('click', () => {
         network.emitCancelTournamentQueue();
-        renderTournamentView({ status: 'hub' }); // Go back to hub
     });
 
     dom.tournamentCloseButton.addEventListener('click', () => {
-        dom.tournamentModal.classList.add('hidden');
-        showSplashScreen();
-        sound.stopStoryMusic();
+        const { gameState } = getState();
+        if (gameState && gameState.isTournamentMatch) {
+            if (confirm("Tem certeza que deseja desistir do torneio?")) {
+                 showSplashScreen();
+                 sound.stopStoryMusic();
+            }
+        } else {
+            dom.tournamentModal.classList.add('hidden');
+            showSplashScreen();
+            sound.stopStoryMusic();
+        }
     });
 }
