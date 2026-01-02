@@ -289,7 +289,7 @@
         transform: translateY(0);
     }
     to {
-        transform: translateY(-1200px);
+        transform: translateY(-1800px);
     }
 }
 
@@ -307,22 +307,6 @@
     40%, 60% {
         transform: translate3d(4px, 0, 0);
     }
-}
-
-@keyframes inversus-glow-pulse {
-  0%   { filter: drop-shadow(0 0 15px var(--accent-red)); }
-  25%  { filter: drop-shadow(0 0 20px var(--accent-blue)); }
-  50%  { filter: drop-shadow(0 0 15px var(--accent-green)); }
-  75%  { filter: drop-shadow(0 0 20px var(--accent-yellow)); }
-  100% { filter: drop-shadow(0 0 15px var(--accent-red)); }
-}
-@keyframes inversus-scale-pulse {
-  0%, 100% {
-    transform: scale(1.0);
-  }
-  50% {
-    transform: scale(1.05);
-  }
 }
 
 .inversus-character-portrait-animation {
@@ -2232,11 +2216,19 @@ body.screen-shaking {
 }
 
 
-/* --- Debug & Sound --- */
-#debug-button {
+/* --- Top Right Header Controls --- */
+.top-right-group {
     position: absolute;
-    bottom: 10px;
+    top: 10px;
     right: 10px;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#debug-button {
+    position: relative; /* Inside top-right-group */
     background-color: var(--accent-yellow);
     color: var(--bg-main);
     border: 1px solid #fff;
@@ -2244,7 +2236,6 @@ body.screen-shaking {
     width: 40px;
     height: 40px;
     cursor: pointer;
-    z-index: 2000;
     font-size: 1.5rem;
     display: flex;
     justify-content: center;
@@ -2258,9 +2249,9 @@ body.screen-shaking {
 }
 
 .sound-controls {
-    position: absolute;
+    position: absolute; /* Relative to container but we offset it */
     top: 10px;
-    right: 10px;
+    right: 60px; /* Aligned to the left of debug-button */
     z-index: 2000;
     display: flex;
     gap: 0;
@@ -2271,6 +2262,7 @@ body.screen-shaking {
     padding: 5px;
     backdrop-filter: blur(5px);
 }
+
 #fullscreen-button {
     position: absolute;
     top: 10px;
@@ -2295,6 +2287,70 @@ body.screen-shaking {
 #fullscreen-button:hover svg {
     transform: scale(1.1);
 }
+
+/* --- Minimalist Profile Button (Hamburger Style) --- */
+.user-profile-display {
+    position: absolute;
+    top: 10px;
+    left: 60px; /* Positioned next to the 40px fullscreen button */
+    transform: none;
+    z-index: 2001;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(11, 19, 26, 0.7);
+    border: 1px solid rgba(168, 218, 220, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    backdrop-filter: blur(5px);
+}
+.user-profile-display:hover {
+    background-color: rgba(29, 53, 87, 0.8);
+    transform: scale(1.1);
+}
+
+.profile-burger-icon {
+    width: 20px;
+    height: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.profile-burger-icon span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background-color: var(--text-primary);
+    border-radius: 2px;
+}
+
+.hidden-profile-data {
+    display: none; /* Hide old profile elements but keep them for JS reference */
+}
+
+.friend-request-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: var(--accent-red);
+    color: white;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+    border: 2px solid var(--bg-main);
+    animation: pulse-red 1.5s infinite;
+    z-index: 5;
+}
+
+
 .sound-button {
     position: static;
     background: transparent;
@@ -3189,7 +3245,7 @@ body.screen-shaking {
     flex-direction: column;
     align-items: center;
     gap: 1rem;
-    animation: float-up linear forwards;
+    animation: float-up linear;
     z-index: 5;
     pointer-events: all;
 }
