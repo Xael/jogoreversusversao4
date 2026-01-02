@@ -22,6 +22,11 @@ export const renderPlayerArea = (player) => {
     if (player.id === gameState.currentPlayer) playerEl.classList.add('active');
     if (player.isEliminated) playerEl.classList.add('eliminated');
 
+    // Hide Inversus side area if in Central Boss mode
+    if (player.id === 'player-2' && gameState.isInversusMode && !gameState.isInfiniteChallenge) {
+        playerEl.classList.add('inversus-boss-side-hide');
+    }
+
     // Special AI glow effects
     const glowMap = {
         'contravox': 'contravox-glow',
