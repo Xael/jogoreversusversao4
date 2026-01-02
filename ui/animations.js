@@ -1,3 +1,4 @@
+
 // js/ui/animations.js
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
@@ -172,8 +173,9 @@ export const animateNecroX = () => {
  * This function is now more robust and self-contained.
  */
 export const startVersatrixCardAnimation = () => {
-    // This feature has been removed. The achievement is now granted upon victory.
     const state = getState();
+
+    // 1. Clean up any previous animation state
     if (state.versatrixCardInterval) {
         clearInterval(state.versatrixCardInterval);
         updateState('versatrixCardInterval', null);
@@ -182,6 +184,59 @@ export const startVersatrixCardAnimation = () => {
     if (existingCard) {
         existingCard.remove();
     }
+
+    // 2. Check conditions using the current state
+    const shouldAnimate = state.achievements.has('versatrix_win') && !state.achievements.has('versatrix_card_collected');
+    
+    if (!shouldAnimate) {
+        return; // Nothing to do
+    }
+
+    // 3. Define the function that creates a single falling card
+    const createFallingCard = () => {
+        // Double-check condition again, in case it was collected between interval cycles
+        if (getState().achievements.has('versatrix_card_collected')) {
+            const { versatrixCardInterval } = getState();
+            if (versatrixCardInterval) {
+                clearInterval(versatrixCardInterval);
+                updateState('versatrixCardInterval', null);
+            }
+            return;
+        }
+
+        // Remove any lingering card from a previous cycle to prevent duplicates
+        const oldCard = document.getElementById('secret-versatrix-card');
+        if (oldCard) oldCard.remove();
+
+        const cardEl = document.createElement('div');
+        cardEl.id = 'secret-versatrix-card';
+        
+        // Positioning and styling
+        const size = 150;
+        cardEl.style.width = `${size}px`;
+        cardEl.style.height = `${size * 1.4}px`;
+        // Position horizontally within the scalable container's bounds (using a safe range)
+        const leftPos = Math.random() * (1920 - size);
+        cardEl.style.left = `${leftPos}px`; 
+        
+        const fallDuration = 10000; // 10 seconds
+        cardEl.style.animation = `secret-fall ${fallDuration / 1000}s linear, versatrix-pulse-glow 2s infinite ease-in-out`;
+
+        dom.scalableContainer.appendChild(cardEl);
+
+        // Set a timeout to remove the card if it's not clicked
+        setTimeout(() => {
+            if (cardEl.parentElement) {
+                cardEl.remove();
+            }
+        }, fallDuration);
+    };
+
+    // 4. Start the animation loop
+    const fallInterval = 15000; // A new card will try to appear every 15 seconds
+    createFallingCard(); // Create one immediately
+    const intervalId = setInterval(createFallingCard, fallInterval);
+    updateState('versatrixCardInterval', intervalId);
 };
 
 
