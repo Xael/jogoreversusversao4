@@ -289,7 +289,7 @@
         transform: translateY(0);
     }
     to {
-        transform: translateY(-1200px);
+        transform: translateY(-2200px);
     }
 }
 
@@ -1733,10 +1733,8 @@ body.screen-shaking {
 
 #cosmic-glow-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     pointer-events: none;
     z-index: 0;
     overflow: hidden;
@@ -2085,10 +2083,8 @@ body.screen-shaking {
 
 #story-stars-background {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     overflow: hidden;
     pointer-events: none;
     z-index: 1;
@@ -2498,6 +2494,18 @@ body.screen-shaking {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 1rem;
+}
+.achievement-card {
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid rgba(168, 218, 220, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease-in-out;
 }
 .achievement-card {
     background: rgba(0,0,0,0.2);
