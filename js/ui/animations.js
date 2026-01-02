@@ -13,41 +13,44 @@ import { getCardImageUrl } from './card-renderer.js';
  * @param {number} turn - O turno atual do jogo para calcular a intensidade.
  */
 export function applyInversusChaos(turn = 1) {
-    const container = dom.scalableContainer;
+    const container = document.body; // Body para evitar conflito com transform inline do container
     
     // 1. Limpa os efeitos de tela da rodada anterior
     container.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
 
-    // 2. Calcula a probabilidade baseada no progresso da partida (Intensidade Progressiva)
-    // Começa em 15% no turno 1 e aumenta 5% a cada turno, limitado a 75%
+    // 2. Calcula a probabilidade baseada no progresso da partida
     const baseProbability = Math.min(0.15 + (turn * 0.05), 0.75);
     
     let effectsAppliedCount = 0;
+    const activeEffects = [];
 
-    // Sorteia cada efeito de forma independente para permitir acúmulo
-    
     // Efeito 1: Cores Invertidas
     if (Math.random() < baseProbability) {
         container.classList.add('screen-inverted');
         effectsAppliedCount++;
+        activeEffects.push('Inversão de Cores');
     }
 
     // Efeito 2: Cabeça para Baixo (180 graus)
     if (Math.random() < baseProbability) {
         container.classList.add('screen-flipped');
         effectsAppliedCount++;
+        activeEffects.push('Tela Invertida (180°)');
     }
 
     // Efeito 3: Espelhado (Mirror)
     if (Math.random() < baseProbability) {
         container.classList.add('screen-mirrored');
         effectsAppliedCount++;
+        activeEffects.push('Tela Espelhada');
     }
 
-    // 3. Feedback sonoro se algum caos foi ativado nesta rodada
+    // 3. Feedback no log se algo foi ativado
     if (effectsAppliedCount > 0) {
         playSoundEffect('confusao');
-        console.log(`Inversus: Intensidade de Caos Nível ${effectsAppliedCount} aplicada (Turno ${turn}).`);
+        console.log(`[INVERSUS CHAOS] Turno ${turn}: ${activeEffects.join(' + ')}`);
+    } else {
+        console.log(`[INVERSUS CHAOS] Turno ${turn}: Realidade estável.`);
     }
 }
 
