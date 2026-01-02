@@ -1253,9 +1253,17 @@ body.screen-shaking {
 }
 
 .inversus-hearts-container, .player-hearts-container {
-    font-size: 1.1rem;
-    letter-spacing: 2px;
-    animation: heart-glow 1.5s infinite ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    letter-spacing: 4px;
+    animation: heart-beat 1.5s infinite ease-in-out;
+    transform-origin: center;
+    white-space: nowrap;
+    color: var(--accent-red);
+    text-shadow: 0 0 5px rgba(0,0,0,0.5);
+    min-height: 30px;
 }
 .player-hearts-container {
     color: var(--accent-red);
