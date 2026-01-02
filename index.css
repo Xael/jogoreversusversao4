@@ -1,3 +1,4 @@
+
 :root {
     --bg-main: #0b131a; 
     --bg-panel: rgba(29, 53, 87, 0.6);
@@ -31,25 +32,25 @@
     padding: 0;
 }
 
-/* --- INVERSUS SCREEN EFFECTS --- */
-/* Aplicamos as distorções ao BODY para não interferir no transform de escala do jogo aplicado via JS ao scalable-container */
+/* --- INVERSUS SCREEN EFFECTS (Ajustado para o BODY) --- */
+/* Aplicamos ao body para que o transform de escala do container interno não seja sobrescrito */
 
 body.screen-inverted {
     filter: invert(1) hue-rotate(180deg) !important;
-    background-color: var(--bg-main);
+    background-color: #f1faee !important; /* Inverso do bg-main */
 }
 
 body.screen-flipped {
-    transform: rotate(180deg);
+    transform: rotate(180deg) !important;
 }
 
 body.screen-mirrored {
-    transform: scaleX(-1);
+    transform: scaleX(-1) !important;
 }
 
-/* Combinação de efeitos de transformação */
+/* Combinações de efeitos */
 body.screen-flipped.screen-mirrored {
-    transform: rotate(180deg) scaleX(-1);
+    transform: rotate(180deg) scaleX(-1) !important;
 }
 
 /* --- KEYFRAMES --- */
@@ -59,7 +60,7 @@ body.screen-flipped.screen-mirrored {
 }
 
 @keyframes green-glow-pulse {
-    0%, 100% { box-shadow: 0 0 15px 3px var(--accent-green), 0 0 5px 1px var(--accent-green) inset; }
+    0%, 1000% { box-shadow: 0 0 15px 3px var(--accent-green), 0 0 5px 1px var(--accent-green) inset; }
     50% { box-shadow: 0 0 25px 5px var(--accent-green), 0 0 8px 2px var(--accent-green) inset; }
 }
 
@@ -525,6 +526,8 @@ body {
     overflow: hidden;
     height: 100vh;
     width: 100vw;
+    transform-origin: center center; /* Essencial para rotação de tela cheia */
+    transition: transform 0.2s ease-out, filter 0.5s ease-in-out;
 }
 body.screen-shaking {
     animation: screen-shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
