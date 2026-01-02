@@ -1,4 +1,3 @@
-
 :root {
     --bg-main: #0b131a; 
     --bg-panel: rgba(29, 53, 87, 0.6);
@@ -30,6 +29,27 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+}
+
+/* --- INVERSUS SCREEN EFFECTS --- */
+/* Aplicamos as distorções ao BODY para não interferir no transform de escala do jogo aplicado via JS ao scalable-container */
+
+body.screen-inverted {
+    filter: invert(1) hue-rotate(180deg) !important;
+    background-color: var(--bg-main);
+}
+
+body.screen-flipped {
+    transform: rotate(180deg);
+}
+
+body.screen-mirrored {
+    transform: scaleX(-1);
+}
+
+/* Combinação de efeitos de transformação */
+body.screen-flipped.screen-mirrored {
+    transform: rotate(180deg) scaleX(-1);
 }
 
 /* --- KEYFRAMES --- */
@@ -523,19 +543,6 @@ body.screen-shaking {
     transition: transform 0.2s ease-out, filter 0.5s ease-in-out;
 }
 
-/* INVERSUS SCREEN EFFECTS */
-#scalable-container.screen-flipped {
-    transform: rotate(180deg);
-}
-#scalable-container.screen-inverted {
-    filter: invert(1);
-    background-color: var(--bg-main); /* Prevent harsh white background on invert */
-}
-#scalable-container.screen-mirrored {
-    transform: scaleX(-1);
-}
-
-
 /* --- NEW APP LAYOUT --- */
 .app-container {
     display: grid;
@@ -581,10 +588,10 @@ body.screen-shaking {
 }
 
 .left-panel {
-    overflow-y: auto; /* Permite rolagem se o conteúdo for maior */
+    overflow-y: auto; 
 }
 .right-panel {
-    overflow: hidden; /* Remove a barra de rolagem do painel de oponentes */
+    overflow: hidden; 
 }
 
 
@@ -775,7 +782,7 @@ body.screen-shaking {
     backdrop-filter: none;
     gap: 0.5rem;
     position: relative;
-    min-height: 0; /* Fix for flexbox in grid */
+    min-height: 0; 
 }
 .center-panel-header {
     width: 100%;
@@ -785,7 +792,7 @@ body.screen-shaking {
     margin-bottom: 0.5rem;
     border: 1px solid rgba(168, 218, 220, 0.2);
     flex-shrink: 0;
-    min-height: 40px; /* Give it a minimum height to avoid layout shifts */
+    min-height: 40px; 
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -798,12 +805,12 @@ body.screen-shaking {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 10rem; /* Increased font size */
+    font-size: 10rem; 
     font-weight: 700;
     color: var(--accent-red);
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px var(--accent-red);
     animation: pulse-red 1s infinite ease-in-out;
-    z-index: 2500; /* High z-index to be on top of everything */
+    z-index: 2500; 
     pointer-events: none;
 }
 
@@ -834,7 +841,7 @@ body.screen-shaking {
     background: var(--bg-panel);
     border-radius: 15px;
     border: 1px solid rgba(168, 218, 220, 0.2);
-    margin-top: 0.5rem; /* adjusted from margin-top: auto */
+    margin-top: 0.5rem; 
 }
 
 
@@ -894,7 +901,7 @@ body.screen-shaking {
     border: 1px solid rgba(168, 218, 220, 0.2);
     border-radius: 15px;
     padding: 1rem;
-    overflow-y: auto; /* Allow this specific container to scroll if needed */
+    overflow-y: auto; 
 }
 
 
@@ -913,7 +920,7 @@ body.screen-shaking {
 .right-panel .player-area {
     flex-basis: 32%;
     flex-grow: 1;
-    overflow: hidden; /* Prevent scrollbars on opponent areas */
+    overflow: hidden; 
 }
 
 /* --- BOARD AND SCORES WRAPPER --- */
@@ -973,7 +980,7 @@ body.screen-shaking {
     font-weight: 700;
     text-transform: uppercase;
     margin-top: -10px;
-    height: 24px; /* Reserve space to prevent layout shifts */
+    height: 24px; 
 }
 .side-score-status.winning {
     color: var(--accent-blue);
@@ -989,15 +996,15 @@ body.screen-shaking {
 .game-board {
     transform: none;
     flex-shrink: 0;
-    width: min(550px, 90vw); /* Responsive width */
-    aspect-ratio: 1 / 1; /* Maintain square shape */
+    width: min(550px, 90vw); 
+    aspect-ratio: 1 / 1; 
     flex-basis: auto;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
     border-radius: 50%;
-    background-color: #414141; /* Dark Gray */
+    background-color: #414141; 
     border: none;
     box-shadow: inset 0 0 20px rgba(0,0,0,0.7);
 }
@@ -1020,12 +1027,12 @@ body.screen-shaking {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 50px; /* Corrected size */
-    height: 50px; /* Corrected size */
+    width: 50px; 
+    height: 50px; 
     background-color: #ffd700;
     color: #3a4b24;
     font-family: var(--font-family);
-    font-size: 1.8rem; /* Corrected font size */
+    font-size: 1.8rem; 
     font-weight: 700;
     border-radius: 50%;
     border: 2px solid #fff;
@@ -1060,7 +1067,7 @@ body.screen-shaking {
     align-items: center;
     padding-top: 2px;
     gap: 1px;
-    transform: translateX(-50%); /* Center the path before rotating */
+    transform: translateX(-50%); 
 }
 
 .board-space {
@@ -1071,7 +1078,7 @@ body.screen-shaking {
     display: flex;
     justify-content: center;
     align-items: center;
-    position: relative; /* Crucial for layering number and pawns */
+    position: relative; 
     box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
     transition: all 0.3s ease;
 }
@@ -1081,7 +1088,7 @@ body.screen-shaking {
     font-weight: 600;
     color: #333;
     position: relative;
-    z-index: 1; /* Numbers are at the bottom layer */
+    z-index: 1; 
 }
 .space-number.star-icon {
     font-size: 1.5rem;
@@ -1109,7 +1116,7 @@ body.screen-shaking {
     color: var(--accent-red);
     text-shadow: 0 0 3px white;
     animation: heart-glow 1.5s infinite ease-in-out;
-    z-index: 2; /* Above the number */
+    z-index: 2; 
     pointer-events: none;
 }
 
@@ -1121,7 +1128,7 @@ body.screen-shaking {
     border: 2px solid var(--text-primary);
     box-shadow: 0 2px 5px rgba(0,0,0,0.5);
     flex-shrink: 0;
-    position: absolute; /* Pawns are layered on top */
+    position: absolute; 
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -1144,7 +1151,7 @@ body.screen-shaking {
     gap: 0.5rem;
     border: 3px solid transparent;
     transition: all 0.3s ease;
-    overflow: hidden; /* Opponent areas should not scroll */
+    overflow: hidden; 
     color: #212121;
     position: relative;
 }
@@ -1215,8 +1222,8 @@ body.screen-shaking {
     border-bottom: 1px solid rgba(0,0,0,0.2);
     gap: 0.3rem;
     position: relative;
-    z-index: 2; /* Ensure header is above portrait */
-    flex-shrink: 0; /* Prevent header from shrinking */
+    z-index: 2; 
+    flex-shrink: 0; 
     order: 1;
 }
 .player-area.xael-portrait-bg .player-header,
@@ -1289,42 +1296,16 @@ body.screen-shaking {
     border: 1px solid rgba(255,255,255,0.5);
 }
 
-/* This class is no longer used for the header status, but is kept for other potential uses */
-.player-status-indicator {
-    padding: 2px 6px; 
-    border-radius: 5px; 
-    font-size: 0.9rem;
-    font-weight: 700;
-}
-.player-status-indicator.winning {
-    color: var(--accent-blue);
-    text-shadow: 0 0 5px var(--accent-blue);
-}
-.player-status-indicator.losing {
-    color: var(--accent-red);
-    text-shadow: 0 0 5px var(--accent-red);
-}
-
-
-/* Shared Header styles for all players */
-.opponent-header-top, .human-header-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
 .player-stats {
     display: flex;
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    flex-wrap: wrap; 
     align-items: center;
-    gap: 0.5rem 1rem; /* row-gap column-gap */
+    gap: 0.5rem 1rem; 
     width: 100%;
     background: rgba(0,0,0,0.1);
-    padding: 6px 8px; /* Adjusted padding */
+    padding: 6px 8px; 
     border-radius: 5px;
-    font-size: 0.95rem; /* Slightly increased base font size */
+    font-size: 0.95rem; 
     text-transform: uppercase;
     font-weight: 600;
     line-height: 1.4;
@@ -1367,12 +1348,12 @@ body.screen-shaking {
     align-content: flex-start;
     position: relative;
     z-index: 2;
-    order: 4; /* Corrected order */
-    flex-shrink: 0; /* Prevent vertical shrinking */
+    order: 4; 
+    flex-shrink: 0; 
 }
 
 .right-panel .player-hand {
-    flex-wrap: nowrap; /* Corrects the wrapping issue for opponents */
+    flex-wrap: nowrap; 
     justify-content: flex-start;
 }
 
@@ -1386,8 +1367,8 @@ body.screen-shaking {
     min-height: 115px;
     position: relative;
     z-index: 2;
-    order: 3; /* Corrected order */
-    flex-shrink: 0; /* Prevent vertical shrinking */
+    order: 3; 
+    flex-shrink: 0; 
 }
 
 .player-area.xael-portrait-bg .play-zone,
@@ -1400,13 +1381,13 @@ body.screen-shaking {
 }
 
 #player-1-area-container .play-zone {
-    grid-auto-rows: 130px; /* Make row height match hand cards */
-    min-height: auto; /* Remove old min-height */
+    grid-auto-rows: 130px; 
+    min-height: auto; 
     padding: 10px;
-    flex-shrink: 0; /* Prevent vertical shrinking */
+    flex-shrink: 0; 
 }
 #player-1-area-container .play-zone-slot {
-    min-height: 130px; /* Ensure slot has height even when empty */
+    min-height: 130px; 
 }
 
 
@@ -1526,7 +1507,7 @@ body.screen-shaking {
 }
 
 .play-zone .card.necro-glow,
-.play-zone .card.locked { /* Added .locked to show a glow */
+.play-zone .card.locked { 
     animation: necro-glow-animation 1.5s infinite ease-in-out;
 }
 
@@ -1567,8 +1548,8 @@ body.screen-shaking {
     gap: 1rem;
 }
 #card-viewer-image {
-    width: 350px; /* Standardize zoom width */
-    height: 500px; /* Standardize zoom height */
+    width: 350px; 
+    height: 500px; 
     object-fit: contain;
     border-radius: 15px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
@@ -1611,22 +1592,22 @@ body.screen-shaking {
 /* --- Floating Hand Overlay --- */
 #floating-hand-overlay {
     background: rgba(0, 0, 0, 0.6);
-    align-items: flex-end; /* Align to bottom */
-    padding-bottom: 2rem; /* Adjusted for larger cards */
+    align-items: flex-end; 
+    padding-bottom: 2rem; 
     backdrop-filter: blur(4px);
-    pointer-events: none; /* Allows clicks to pass through */
+    pointer-events: none; 
 }
 #floating-hand-overlay.visible {
-    pointer-events: all; /* Capture clicks when visible */
+    pointer-events: all; 
 }
 
 #floating-hand-container {
     display: flex;
     justify-content: center;
-    align-items: flex-end; /* Align cards to the bottom of the container */
-    gap: 1.5rem; /* Increased gap for larger cards */
+    align-items: flex-end; 
+    gap: 1.5rem; 
     padding: 0 2rem;
-    height: 450px; /* Give container a fixed height to contain the large cards */
+    height: 450px; 
 }
 
 .floating-card-wrapper {
@@ -1641,15 +1622,13 @@ body.screen-shaking {
     animation: slide-out-down 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
 }
 
-/* Make cards clickable directly */
 .floating-card-wrapper .card {
-    width: 280px; /* Doubled size */
-    height: 400px; /* Doubled size */
+    width: 280px; 
+    height: 400px; 
     cursor: pointer;
     transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
 }
 
-/* Simple hover effect for feedback */
 .floating-card-wrapper:hover {
     transform: translateY(-20px);
     z-index: 10;
@@ -1799,7 +1778,7 @@ body.screen-shaking {
     margin-bottom: 2rem;
     animation: splash-logo-spin 16s linear infinite;
     cursor: pointer;
-    position: relative; /* For glitch effect */
+    position: relative; 
 }
 
 .splash-button-container {
@@ -1894,7 +1873,7 @@ body.screen-shaking {
 }
 #secret-versatrix-card {
     position: absolute;
-    top: -300px; /* Start off-screen */
+    top: -300px; 
     pointer-events: all !important;
     cursor: pointer;
     z-index: 1001;
@@ -2130,46 +2109,6 @@ body.screen-shaking {
     margin-bottom: 2rem;
 }
 
-/* --- Tutorial Overlay --- */
-#tutorial-overlay {
-    background: none;
-    pointer-events: none;
-    align-items: flex-end;
-}
-#tutorial-dialogue-box {
-    position: relative;
-    width: 90%;
-    max-width: 900px;
-    background: rgba(11, 19, 26, 0.9);
-    border: 1px solid var(--text-secondary);
-    border-radius: 10px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    text-align: left;
-    z-index: 4;
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    pointer-events: all;
-    margin-bottom: 20px;
-}
-#tutorial-character-image {
-    width: 150px;
-    height: auto;
-    flex-shrink: 0;
-}
-#tutorial-text-content {
-    flex-grow: 1;
-}
-#tutorial-dialogue-text {
-    font-size: 1.1rem;
-    line-height: 1.6;
-    margin-bottom: 1.5rem;
-}
-#tutorial-dialogue-options {
-    justify-content: flex-start;
-}
-
 /* --- XAEL CHALLENGE --- */
 #xael-popup {
     position: absolute;
@@ -2193,7 +2132,7 @@ body.screen-shaking {
 #xael-star-power {
     position: absolute;
     bottom: 10px;
-    right: 60px; /* Next to debug button */
+    right: 60px; 
     background: none;
     border: none;
     color: #ffd700;
@@ -2228,7 +2167,7 @@ body.screen-shaking {
 }
 
 #debug-button {
-    position: relative; /* Inside top-right-group */
+    position: relative; 
     background-color: var(--accent-yellow);
     color: var(--bg-main);
     border: 1px solid #fff;
@@ -2249,9 +2188,9 @@ body.screen-shaking {
 }
 
 .sound-controls {
-    position: absolute; /* Relative to container but we offset it */
+    position: absolute; 
     top: 10px;
-    right: 60px; /* Aligned to the left of debug-button */
+    right: 60px; 
     z-index: 2000;
     display: flex;
     gap: 0;
@@ -2292,7 +2231,7 @@ body.screen-shaking {
 .user-profile-display {
     position: absolute;
     top: 10px;
-    left: 60px; /* Positioned next to the 40px fullscreen button */
+    left: 60px; 
     transform: none;
     z-index: 2001;
     width: 40px;
@@ -2328,7 +2267,7 @@ body.screen-shaking {
 }
 
 .hidden-profile-data {
-    display: none; /* Hide old profile elements but keep them for JS reference */
+    display: none; 
 }
 
 .friend-request-badge {
@@ -2337,14 +2276,14 @@ body.screen-shaking {
     right: -5px;
     background-color: var(--accent-red);
     color: white;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
     font-weight: bold;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     border: 2px solid var(--bg-main);
     animation: pulse-red 1.5s infinite;
     z-index: 5;
@@ -3296,7 +3235,7 @@ body.screen-shaking {
 #user-profile-display {
     position: absolute;
     top: 10px;
-    left: 60px; /* Positioned next to the 40px fullscreen button */
+    left: 60px; 
     transform: none;
     z-index: 2001;
 }
@@ -3614,7 +3553,7 @@ body.screen-shaking {
     font-weight: 600;
     transition: color 0.2s, border-bottom 0.2s;
     border-bottom: 3px solid transparent;
-    margin-bottom: -2px; /* align with parent border */
+    margin-bottom: -2px; 
 }
 .info-tab-button:hover, .profile-tab-button:hover {
     color: var(--text-primary);
@@ -3629,7 +3568,7 @@ body.screen-shaking {
 .info-tab-content.active {
     display: block;
 }
-.rules-content { /* Ensure consistent styling inside the tab */
+.rules-content { 
     line-height: 1.6;
 }
 .rules-content ul {
@@ -4225,7 +4164,7 @@ body.screen-shaking {
     font-size: 2.5rem;
     font-weight: bold;
     color: var(--accent-yellow);
-    animation: golden-text-glow 2s infinite ease-in-out;
+    animation: golden-text-glow 2.5s infinite ease-in-out;
     margin: 1rem 0;
 }
 #tournament-champion-view .runner-up-name {
@@ -4271,16 +4210,3 @@ body.screen-shaking {
     font-size: 0.95rem;
     line-height: 1.5;
 }
-/* --- ANIMATIONS & KEYFRAMES --- */
-@keyframes yellow-button-glow {
-    0%, 100% { box-shadow: 0 0 5px var(--accent-yellow), 0 0 10px rgba(252, 163, 17, 0.5); transform: scale(1); }
-    50% { box-shadow: 0 0 10px var(--accent-yellow), 0 0 20px rgba(252, 163, 17, 0.7); transform: scale(1.05); }
-}
-
-@keyframes pulse-red {
-    0%, 100% { transform: scale(1); text-shadow: 0 0 5px var(--accent-red); }
-    50% { transform: scale(1.05); text-shadow: 0 0 15px var(--accent-red), 0 0 20px var(--accent-red); }
-}
-
-@keyframes drift { from { transform: translateY(0) rotate(0deg); } to { transform: translateY(-1200px) rotate(360deg); } }
-@keyframes float-up { from { transform: translateY(0); } to { transform: translateY(-1800px); } }
