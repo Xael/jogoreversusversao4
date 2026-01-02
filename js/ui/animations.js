@@ -8,6 +8,26 @@ import { playSoundEffect } from '../core/sound.js';
 import { getCardImageUrl } from './card-renderer.js';
 
 /**
+ * Aplica efeitos visuais de caos na tela (Inversus).
+ */
+export function applyInversusChaos() {
+    const effects = ['screen-flipped', 'screen-inverted', 'screen-mirrored'];
+    const chosenEffect = effects[Math.floor(Math.random() * effects.length)];
+    
+    resetGameEffects();
+    dom.scalableContainer.classList.add(chosenEffect);
+    
+    // Rotação do tabuleiro baseada no caos
+    if (dom.boardEl) {
+        const rotationSpeeds = ['board-rotating', 'board-rotating-fast', 'board-rotating-super-fast'];
+        const chosenSpeed = rotationSpeeds[Math.floor(Math.random() * rotationSpeeds.length)];
+        dom.boardEl.classList.add(chosenSpeed);
+    }
+
+    playSoundEffect('confusao');
+}
+
+/**
  * Animates a card moving from a starting element (in hand) or position to a target slot (in a play zone).
  * @param {object} card - The card object being played.
  * @param {HTMLElement | null} startElement - The card element in the player's hand (can be null if override is used).
