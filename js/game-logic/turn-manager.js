@@ -1,3 +1,4 @@
+
 // js/game-logic/turn-manager.js
 
 import { getState, updateState } from '../core/state.js';
@@ -10,7 +11,7 @@ import { triggerFieldEffects, checkAndTriggerPawnLandingAbilities } from '../sto
 import { updateLog, dealCard, shuffle } from '../core/utils.js';
 import { grantAchievement } from '../core/achievements.js';
 import { showSplashScreen } from '../ui/splash-screen.js';
-import { toggleReversusTotalBackground, resetGameEffects } from '../ui/animations.js';
+import { toggleReversusTotalBackground, resetGameEffects, applyInversusRealityWarp } from '../ui/animations.js';
 import { updateLiveScoresAndWinningStatus } from './score.js';
 import { rotateAndApplyKingNecroversoBoardEffects } from './board.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
@@ -286,6 +287,13 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
         announceEffect(t('log.new_round_announcement', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn }), 'default', 2000);
     }
 
+    // --- GATILHO VISUAL INVERSUS (APENAS DUELO CHEFE) ---
+    // Removido do Desafio Infinito para manter a jogabilidade técnica.
+    if (gameState.isInversusMode && !gameState.isInfiniteChallenge) {
+        applyInversusRealityWarp();
+    } else {
+        resetGameEffects();
+    }
 
     // Reset round-specific states for each player
     gameState.playerIdsInGame.forEach(id => {
@@ -407,7 +415,6 @@ function checkGameEnd() {
     const { gameState } = getState();
     
     // In tournament matches, the game does not end based on board position.
-    // The win condition is handled in calculateScoresAndEndRound.
     if (gameState.isTournamentMatch) {
         return false;
     }
@@ -415,13 +422,11 @@ function checkGameEnd() {
     // Specific win/loss condition for heart-based battles
     if (gameState.currentStoryBattle === 'necroverso_final') {
         if (gameState.teamB_hearts <= 0) { // Necro's team
-            gameState.gamePhase = 'game_over';
-            document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: 'necroverso_final', won: true } }));
+            handleVictoryConditions(true);
             return true;
         }
         if (gameState.teamA_hearts <= 0) { // Player's team
-            gameState.gamePhase = 'game_over';
-            document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: 'necroverso_final', won: false } }));
+            handleVictoryConditions(false);
             return true;
         }
     }
@@ -429,10 +434,8 @@ function checkGameEnd() {
     if (gameState.isKingNecroBattle || (gameState.isInversusMode && !gameState.isInfiniteChallenge)) {
         const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
         if (activePlayers.length <= 1) {
-            gameState.gamePhase = 'game_over';
             const player1Victorious = activePlayers.length === 1 && activePlayers[0] === 'player-1';
-            
-            document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: gameState.currentStoryBattle || 'inversus', won: player1Victorious } }));
+            handleVictoryConditions(player1Victorious);
             return true;
         }
     }
@@ -451,38 +454,67 @@ function checkGameEnd() {
         if (gameState.isXaelChallenge) {
             const player1 = gameState.players['player-1'];
             const xael = gameState.players['player-2'];
-            
             const player1Won = gameWinners.includes('player-1');
             const xaelWon = gameWinners.includes('player-2');
 
             if (player1Won && xaelWon) {
-                // Tie-breaker: most stars. Xael wins ties.
                 actualWinners = (player1.stars > xael.stars) ? ['player-1'] : ['player-2'];
             } else if (player1Won) {
                 actualWinners = ['player-1'];
             } else if (xaelWon) {
                 actualWinners = ['player-2'];
-            } else {
-                 actualWinners = []; // Should not happen if gameWinners has items
             }
         }
         
         if(actualWinners.length > 0) {
-            gameState.gamePhase = 'game_over';
-            if (gameState.isStoryMode) {
-                 const player1Victorious = gameState.gameMode === 'duo'
-                    ? actualWinners.some(id => (gameState.currentStoryBattle === 'necroverso_final' ? ['player-1', 'player-4'] : config.TEAM_A).includes(id))
-                    : actualWinners.includes('player-1');
-                document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: gameState.currentStoryBattle, won: player1Victorious } }));
-            } else {
-                const winnerNames = actualWinners.map(id => gameState.players[id].name).join(' e ');
-                showGameOver(`${winnerNames} venceu o jogo!`);
-                grantAchievement('first_win');
-            }
-            return true; // Game has ended
+            const player1Victorious = gameState.gameMode === 'duo'
+                ? actualWinners.some(id => (gameState.currentStoryBattle === 'necroverso_final' ? ['player-1', 'player-4'] : config.TEAM_A).includes(id))
+                : actualWinners.includes('player-1');
+            
+            handleVictoryConditions(player1Victorious, actualWinners);
+            return true;
         }
     }
-    return false; // Game continues
+    return false;
+}
+
+/**
+ * Handles logic for granting achievements and ending the game based on win/loss status.
+ */
+function handleVictoryConditions(player1Victorious, actualWinners = []) {
+    const { gameState } = getState();
+    gameState.gamePhase = 'game_over';
+
+    if (player1Victorious) {
+        grantAchievement('first_win');
+        
+        // Speed Run: Win in under 5 minutes (300 seconds), excluding tutorial
+        if (gameState.elapsedSeconds < 300 && gameState.currentStoryBattle !== 'tutorial_necroverso') {
+            grantAchievement('speed_run');
+        }
+
+        // Quick Duel: Non-story, non-infinite match win
+        if (!gameState.isStoryMode && !gameState.isInfiniteChallenge && !gameState.isTournamentMatch) {
+            grantAchievement('quick_duel_win');
+        }
+
+        if (gameState.isStoryMode) {
+            document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: gameState.currentStoryBattle, won: true } }));
+        } else {
+            const winnerNames = actualWinners.length > 0 
+                ? actualWinners.map(id => gameState.players[id].name).join(' e ')
+                : gameState.players['player-1'].name;
+            showGameOver(t('game_over.victory_message', { winners: winnerNames }), t('game_over.title'), { action: 'menu' });
+        }
+    } else {
+        grantAchievement('first_defeat');
+        
+        if (gameState.isStoryMode) {
+            document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: gameState.currentStoryBattle, won: false } }));
+        } else {
+            showGameOver(t('game_over.story_defeat_message'), t('game_over.story_defeat_title'), { action: 'restart' });
+        }
+    }
 }
 
 
