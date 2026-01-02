@@ -1,4 +1,3 @@
-
 // js/game-logic/turn-manager.js
 
 import { getState, updateState } from '../core/state.js';
@@ -206,6 +205,13 @@ export async function advanceToNextPlayer() {
     const { gameState } = getState();
     if (gameState.gamePhase !== 'playing') return;
 
+    // --- ROTAÇÃO DE CAOS NO INVERSUS ---
+    // Se estiver em modo Inversus, o caos muda a cada TROCA DE TURNO para maior dinamismo
+    const hasInversus = gameState.playerIdsInGame.some(id => gameState.players[id].aiType === 'inversus');
+    if ((gameState.isInversusMode || hasInversus) && !gameState.isInfiniteChallenge) {
+        applyInversusChaos();
+    }
+
     const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
     
     // New round end condition: 2 full rounds of passes
@@ -288,13 +294,14 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
         announceEffect(t('log.new_round_announcement', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn }), 'default', 2000);
     }
 
-    // EFEITOS DO INVERSUS NO INÍCIO DA RODADA
-    // CORREÇÃO: Não aplicar efeitos visuais de caos no Desafio Infinito conforme solicitado.
+    // Resetamos sempre no início da rodada para garantir consistência visual básica
+    // Mas não resetamos a rotação do tabuleiro se for o Inversus
+    dom.scalableContainer.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
+    
+    // Reaplica o caos inicial se for duelo contra o Inversus
     const hasInversus = gameState.playerIdsInGame.some(id => gameState.players[id].aiType === 'inversus');
     if ((gameState.isInversusMode || hasInversus) && !gameState.isInfiniteChallenge) {
         applyInversusChaos();
-    } else {
-        resetGameEffects(); // Garante que a tela volte ao normal se não estiver nos modos permitidos
     }
 
     // Reset round-specific states for each player
