@@ -1,4 +1,3 @@
-
 // js/ui/animations.js
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
@@ -9,22 +8,20 @@ import { getCardImageUrl } from './card-renderer.js';
 
 /**
  * Aplica efeitos visuais de caos na tela (Inversus).
+ * Agora altera a realidade a cada turno, mantendo a rotação do tabuleiro.
  */
 export function applyInversusChaos() {
-    const effects = ['screen-flipped', 'screen-inverted', 'screen-mirrored'];
+    // Remove APENAS as distorções de tela, mantendo as classes do tabuleiro (rotação)
+    dom.scalableContainer.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
+
+    const effects = ['screen-flipped', 'screen-inverted', 'screen-mirrored', 'normal'];
+    // Sorteia um efeito (25% de chance de normalizar a visão por um turno)
     const chosenEffect = effects[Math.floor(Math.random() * effects.length)];
     
-    resetGameEffects();
-    dom.scalableContainer.classList.add(chosenEffect);
-    
-    // Rotação do tabuleiro baseada no caos
-    if (dom.boardEl) {
-        const rotationSpeeds = ['board-rotating', 'board-rotating-fast', 'board-rotating-super-fast'];
-        const chosenSpeed = rotationSpeeds[Math.floor(Math.random() * rotationSpeeds.length)];
-        dom.boardEl.classList.add(chosenSpeed);
+    if (chosenEffect !== 'normal') {
+        dom.scalableContainer.classList.add(chosenEffect);
+        playSoundEffect('confusao');
     }
-
-    playSoundEffect('confusao');
 }
 
 /**
