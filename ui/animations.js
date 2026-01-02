@@ -420,15 +420,8 @@ export function showInversusVictoryAnimation() {
  * Clears all reality-warping screen effects from the Inversus battle.
  */
 export function resetGameEffects() {
-    const { gameState } = getState();
-    
-    // Remover efeitos de distorção de tela
     dom.scalableContainer.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
-    
     if (dom.boardEl) {
-        // NÃO remover a rotação se for o duelo especial do Inversus
-        if (!(gameState && gameState.isInversusMode && !gameState.isInfiniteChallenge)) {
-            dom.boardEl.classList.remove('board-rotating', 'board-rotating-fast', 'board-rotating-super-fast', 'board-rotating-permanent');
-        }
+        dom.boardEl.classList.remove('board-rotating', 'board-rotating-fast', 'board-rotating-super-fast');
     }
 }
