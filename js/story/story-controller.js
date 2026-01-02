@@ -1,3 +1,4 @@
+
 import { getState, updateState } from '../core/state.js';
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
@@ -290,6 +291,7 @@ function showCreditsRoll() {
     ];
 
     const totalDuration = 176000; // 2:56 in milliseconds
+    const videoAnimationTime = 30000; // 30 seconds to cross the screen
 
     videos.forEach(video => {
         setTimeout(() => {
@@ -302,7 +304,7 @@ function showCreditsRoll() {
                 wrapper.style.left = '65%';
             }
             
-            wrapper.style.animationDuration = `30s`;
+            wrapper.style.animationDuration = `${videoAnimationTime / 1000}s`;
 
             const nameEl = document.createElement('p');
             nameEl.className = 'floating-video-name';
@@ -320,6 +322,13 @@ function showCreditsRoll() {
             wrapper.appendChild(nameEl);
             wrapper.appendChild(videoEl);
             creditsVideoContainer.appendChild(wrapper);
+
+            // Clean up the video element after it crosses the screen
+            setTimeout(() => {
+                if (wrapper.parentNode) {
+                    wrapper.parentNode.removeChild(wrapper);
+                }
+            }, videoAnimationTime + 1000);
         }, video.time);
     });
 
