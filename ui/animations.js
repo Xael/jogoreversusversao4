@@ -1,4 +1,3 @@
-
 // js/ui/animations.js
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
@@ -6,6 +5,50 @@ import { getState, updateState } from '../core/state.js';
 import { shuffle } from '../core/utils.js';
 import { playSoundEffect } from '../core/sound.js';
 import { getCardImageUrl } from './card-renderer.js';
+
+/**
+ * Aplica efeitos visuais de caos na tela (Inversus).
+ * Os efeitos agora duram a rodada inteira e aumentam em probabilidade com o tempo.
+ * @param {number} turn - O turno atual do jogo para calcular a intensidade.
+ */
+export function applyInversusChaos(turn = 1) {
+    const container = document.body; // Alterado para o Body para evitar conflito com transform de escala
+    
+    // 1. Limpa os efeitos de tela da rodada anterior
+    container.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
+
+    // 2. Calcula a probabilidade baseada no progresso da partida (Intensidade Progressiva)
+    // Começa em 15% no turno 1 e aumenta 5% a cada turno, limitado a 75%
+    const baseProbability = Math.min(0.15 + (turn * 0.05), 0.75);
+    
+    let effectsAppliedCount = 0;
+
+    // Sorteia cada efeito de forma independente para permitir acúmulo
+    
+    // Efeito 1: Cores Invertidas
+    if (Math.random() < baseProbability) {
+        container.classList.add('screen-inverted');
+        effectsAppliedCount++;
+    }
+
+    // Efeito 2: Cabeça para Baixo (180 graus)
+    if (Math.random() < baseProbability) {
+        container.classList.add('screen-flipped');
+        effectsAppliedCount++;
+    }
+
+    // Efeito 3: Espelhado (Mirror)
+    if (Math.random() < baseProbability) {
+        container.classList.add('screen-mirrored');
+        effectsAppliedCount++;
+    }
+
+    // 3. Feedback sonoro se algum caos foi ativado nesta rodada
+    if (effectsAppliedCount > 0) {
+        playSoundEffect('confusao');
+        console.log(`Inversus: Intensidade de Caos Nível ${effectsAppliedCount} aplicada (Turno ${turn}).`);
+    }
+}
 
 /**
  * Animates a card moving from a starting element (in hand) or position to a target slot (in a play zone).
@@ -475,7 +518,7 @@ export function showInversusVictoryAnimation() {
  * Clears all reality-warping screen effects from the Inversus battle.
  */
 export function resetGameEffects() {
-    dom.scalableContainer.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
+    document.body.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
     if (dom.boardEl) {
         dom.boardEl.classList.remove('board-rotating', 'board-rotating-fast', 'board-rotating-super-fast');
     }
