@@ -1,3 +1,135 @@
+/* Botão da Banda */
+.control-button.btn-band-color {
+    background: linear-gradient(135deg, #7b2cbf, #9d4edd);
+    color: white;
+    border: 1px solid #c77dff;
+    text-shadow: 0 0 5px #fff;
+    box-shadow: 0 0 10px rgba(157, 78, 221, 0.5);
+    animation: band-button-pulse 3s infinite ease-in-out;
+}
+
+@keyframes band-button-pulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(157, 78, 221, 0.5); transform: scale(1); }
+    50% { box-shadow: 0 0 20px rgba(157, 78, 221, 0.8), 0 0 10px #c77dff inset; transform: scale(1.02); }
+}
+
+/* Band Modal Layout */
+.band-modal-content {
+    width: 1200px !important;
+    max-width: 95vw !important;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    background: rgba(11, 19, 26, 0.95) !important;
+    border: 2px solid #7b2cbf !important;
+}
+
+.band-title {
+    text-align: center;
+    color: #c77dff;
+    font-size: 2.5rem;
+    text-shadow: 0 0 10px #7b2cbf, 0 0 20px #7b2cbf;
+    margin: 0;
+    font-weight: 700;
+}
+
+.band-layout {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 2rem;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.band-video-container {
+    background: #000;
+    border-radius: 15px;
+    border: 2px solid rgba(123, 44, 191, 0.3);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#band-video-player {
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+#band-video-placeholder {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.8);
+    z-index: 5;
+    color: #c77dff;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+}
+
+.band-track-list {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.band-track-item {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(199, 125, 255, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.band-track-item:hover:not(.locked) {
+    background: rgba(123, 44, 191, 0.2);
+    border-color: #c77dff;
+    transform: translateX(5px);
+}
+
+.band-track-item.active {
+    background: rgba(123, 44, 191, 0.4);
+    border-color: #c77dff;
+    box-shadow: 0 0 15px rgba(123, 44, 191, 0.3);
+}
+
+.band-track-item.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+.track-number {
+    font-weight: 700;
+    color: #c77dff;
+    min-width: 30px;
+}
+
+.track-name {
+    flex-grow: 1;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.track-status {
+    font-size: 1.2rem;
+}
 
 :root {
     --bg-main: #0b131a; 
