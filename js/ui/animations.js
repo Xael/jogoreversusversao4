@@ -68,14 +68,25 @@ export async function animateCardPlay(card, startElement, targetPlayerId, target
 /**
  * Applies random reality-warping visual effects for the Inversus battle.
  */
+/**
+ * Applies random reality-warping visual effects for the Inversus battle.
+ * Should be called at the start of the turn.
+ */
 export function applyInversusRealityWarp() {
+    // Primeiro limpa os efeitos do turno anterior (mas agora protege a rotação)
     resetGameEffects();
     
-    // 60% chance to warp reality this round
+    // Verifica o estado para ter certeza que estamos na batalha certa
+    const { gameState } = getState();
+    if (!gameState.isInversusMode) return;
+
+    // 60% de chance de NÃO acontecer nada neste turno (mantém o jogo jogável)
+    // Se quiser testar, diminua temporariamente este valor (ex: > 0.9)
     if (Math.random() > 0.6) return;
 
     const warps = ['screen-flipped', 'screen-inverted', 'screen-mirrored'];
-    // Shuffle and pick 1 or 2 effects
+    
+    // Embaralha e pega 1 ou 2 efeitos
     const activeWarps = shuffle([...warps]).slice(0, Math.random() > 0.8 ? 2 : 1);
     
     activeWarps.forEach(warp => {
@@ -83,7 +94,7 @@ export function applyInversusRealityWarp() {
     });
 
     if (activeWarps.length > 0) {
-        playSoundEffect('confusao');
+        playSoundEffect('confusao'); // Certifique-se que este som existe
         announceEffect("REALIDADE DISTORCIDA!", 'reversus');
     }
 }
@@ -498,19 +509,29 @@ export function showInversusVictoryAnimation() {
  */
 export function resetGameEffects() {
     const { gameState } = getState();
+    
+    // 1. Sempre limpa os efeitos visuais de distorção de tela anteriores
     dom.scalableContainer.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
     
     if (dom.boardEl) {
-        // NÃO remover a rotação se for o duelo especial do Inversus (Boss Arena)
-        // Só remove se for game_over ou se não for o Boss especial.
-        const isSpecialBossInversus = gameState && gameState.isInversusMode && !gameState.isInfiniteChallenge;
-        const isGameOver = gameState && gameState.gamePhase === 'game_over';
+        // Verifica se é a batalha específica do Boss Inversus (e não o modo infinito genérico)
+        const isSpecialBossInversus = gameState?.isInversusMode && !gameState?.isInfiniteChallenge;
+        const isGameOver = gameState?.gamePhase === 'game_over';
 
-        if (!(isSpecialBossInversus && !isGameOver)) {
-            dom.boardEl.classList.remove('board-rotating', 'board-rotating-fast', 'board-rotating-super-fast', 'board-rotating-permanent');
+        // 2. Remove velocidades temporárias (usadas em outros momentos do jogo)
+        dom.boardEl.classList.remove('board-rotating', 'board-rotating-fast', 'board-rotating-super-fast');
+
+        // 3. Lógica da Rotação Permanente
+        if (isSpecialBossInversus && !isGameOver) {
+            // SE for o Boss e o jogo NÃO acabou:
+            // Garante que a rotação permanente está lá (failsafe caso tenha sido removida)
+            if (!dom.boardEl.classList.contains('board-rotating-permanent')) {
+                dom.boardEl.classList.add('board-rotating-permanent');
+            }
         } else {
-            // Se for Boss Inversus, removemos apenas as temporárias, mantendo a permanente
-            dom.boardEl.classList.remove('board-rotating', 'board-rotating-fast', 'board-rotating-super-fast');
+            // SE NÃO for o Boss OU se for Game Over:
+            // Limpa a rotação permanente
+            dom.boardEl.classList.remove('board-rotating-permanent');
         }
     }
 }
