@@ -3,6 +3,10 @@
     "document": {
         "title": "Reversus - Online Game"
     },
+    "band": {
+        "title": "THE REVERSED BAND",
+        "select_track": "Select a track to play"
+    },
     "card": {
         "Mais": "More",
         "Menos": "Less",
