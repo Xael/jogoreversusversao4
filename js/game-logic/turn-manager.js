@@ -1,4 +1,3 @@
-
 // js/game-logic/turn-manager.js
 
 import { getState, updateState } from '../core/state.js';
@@ -291,8 +290,8 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
         announceEffect(t('log.new_round_announcement', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn }), 'default', 2000);
     }
 
-    // Reset visual distortions (mas mantém rotação do tabuleiro se for Inversus)
-    dom.scalableContainer.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
+    // Reset visual distortions no BODY para evitar conflito com escala
+    document.body.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
     
     // --- CAOS DO INVERSUS: APLICADO NO INÍCIO DA RODADA ---
     // A cada rodada (round), uma nova realidade é sorteada e fica fixa.
