@@ -1,3 +1,4 @@
+
 // js/ui/ui-renderer.js
 import * as dom from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
@@ -171,8 +172,19 @@ export async function showRoundSummaryModal(summaryData) {
 
     dom.roundSummaryTitle.textContent = t('round_summary.title', { turn: gameState.turn });
     
-    const winnerNames = winners.map(id => gameState.players[id].name).join(' e ');
-    dom.roundSummaryWinnerText.textContent = winners.length > 0 ? t('round_summary.winner_text', { winnerNames }) : t('round_summary.tie_text');
+    let winnerText = winners.length > 0 
+        ? t('round_summary.winner_text', { winnerNames: winners.map(id => gameState.players[id].name).join(' e ') }) 
+        : t('round_summary.tie_text');
+    
+    if (gameState.isTournamentMatch) {
+        const match = gameState.tournamentMatch;
+        if (match && match.score) {
+            const scoreText = t('tournament.best_of_3_score') + `: ${match.score[0]} - ${match.score[1]}`;
+            winnerText = `<strong>${scoreText}</strong><br>${winnerText}`;
+        }
+    }
+    
+    dom.roundSummaryWinnerText.innerHTML = winnerText;
     
     const potTextEl = document.getElementById('round-summary-pot-text');
     if (potTextEl && potWon > 0) {
@@ -214,8 +226,9 @@ export async function showRoundSummaryModal(summaryData) {
  * @param {object} [buttonOptions={}] - Options for the button.
  * @param {string} [buttonOptions.text='Jogar Novamente'] - The text for the button.
  * @param {string} [buttonOptions.action='restart'] - The action for the button ('restart' or 'menu').
+ * @param {boolean | null} [isVictory=null] - Explicitly signals victory or defeat for achievements.
  */
-export const showGameOver = (message, title = t('game_over.title'), buttonOptions = {}) => {
+export const showGameOver = (message, title = t('game_over.title'), buttonOptions = {}, isVictory = null) => {
     const { text = t('game_over.play_again'), action = 'restart' } = buttonOptions;
     
     resetGameEffects();
@@ -227,11 +240,14 @@ export const showGameOver = (message, title = t('game_over.title'), buttonOption
     dom.gameOverModal.classList.remove('hidden');
 
     const { gameState } = getState();
-    if (gameState && gameState.isStoryMode && !message.toLowerCase().includes('derrotado')) {
-        // Only grant achievement on non-story defeats
-    } else if (gameState && !gameState.isStoryMode && !gameState.isInfiniteChallenge && !message.toLowerCase().includes('derrotado')) {
-        grantAchievement('first_win');
-    } else {
+
+    // LÓGICA DE CONQUISTAS ROBUSTA
+    if (isVictory === true) {
+        // Concede primeira vitória se não estiver em modos especiais
+        if (!gameState?.isStoryMode && !gameState?.isInfiniteChallenge) {
+            grantAchievement('first_win');
+        }
+    } else if (isVictory === false) {
         grantAchievement('first_defeat');
     }
 };
