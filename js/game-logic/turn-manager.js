@@ -1,4 +1,3 @@
-
 // js/game-logic/turn-manager.js
 
 import { getState, updateState } from '../core/state.js';
@@ -257,7 +256,17 @@ export async function advanceToNextPlayer() {
     }
 
     updateLog(`É a vez de ${nextPlayer.name}.`);
+    
+    // ATUALIZA A TELA (ISSO GERALMENTE LIMPA AS CLASSES DO TABULEIRO)
     renderAll();
+
+    // --- CORREÇÃO: REAPLICAR A ROTAÇÃO APÓS O RENDER ---
+    // Como o renderAll recria/limpa o tabuleiro, precisamos garantir que ele continue girando
+    if (gameState.isInversusMode && !gameState.isInfiniteChallenge) {
+        if (dom.boardEl) {
+            dom.boardEl.classList.add('board-rotating-permanent');
+        }
+    }
 
     if (nextPlayer.isHuman) {
         await showTurnIndicator();
@@ -287,13 +296,8 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
         announceEffect(t('log.new_round_announcement', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn }), 'default', 2000);
     }
 
-    // --- GATILHO VISUAL INVERSUS (APENAS DUELO CHEFE) ---
-    // Removido do Desafio Infinito para manter a jogabilidade técnica.
-    if (gameState.isInversusMode && !gameState.isInfiniteChallenge) {
-        applyInversusRealityWarp();
-    } else {
-        resetGameEffects();
-    }
+    // REMOVIDO DAQUI E MOVIDO PARA O FINAL DA FUNÇÃO (APÓS RENDERALL)
+    // Para evitar que o render apague os efeitos imediatamente
 
     // Reset round-specific states for each player
     gameState.playerIdsInGame.forEach(id => {
@@ -401,7 +405,15 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
 
     if (autoStartTurn) {
         updateLog(`É a vez de ${currentPlayer.name}.`);
-        renderAll();
+        renderAll(); // <--- O RENDER ACONTECE AQUI
+
+        // --- CORREÇÃO CRÍTICA: GATILHO VISUAL INVERSUS APÓS O RENDER ---
+        // Aplicamos os efeitos agora, pois o renderAll acabou de atualizar o DOM.
+        if (gameState.isInversusMode && !gameState.isInfiniteChallenge) {
+            applyInversusRealityWarp();
+        } else {
+            resetGameEffects();
+        }
 
         if (currentPlayer.isHuman) {
             await showTurnIndicator();
@@ -484,6 +496,9 @@ function checkGameEnd() {
 function handleVictoryConditions(player1Victorious, actualWinners = []) {
     const { gameState } = getState();
     gameState.gamePhase = 'game_over';
+
+    // Limpa efeitos especiais ao terminar o jogo
+    resetGameEffects();
 
     if (player1Victorious) {
         grantAchievement('first_win');
@@ -1016,7 +1031,17 @@ export async function startNextInfiniteChallengeDuel() {
     const currentPlayer = updatedGameState.players[updatedGameState.currentPlayer];
     announceEffect(t('log.new_round_announcement', { turn: updatedGameState.isInfiniteChallenge ? updatedGameState.infiniteChallengeLevel : updatedGameState.turn }), 'default', 2000);
     updateLog(`É a vez de ${currentPlayer.name}.`);
+    
     renderAll(); // Re-render to show buffed hand
+
+    // --- CORREÇÃO FINAL: GARANTIR EFEITOS NO DESAFIO INFINITO (CASO APLICÁVEL) ---
+    // Embora o desafio infinito remova os efeitos visuais agressivos, se houver lógica residual de Boss
+    if (updatedGameState.isInversusMode && !updatedGameState.isInfiniteChallenge) {
+         applyInversusRealityWarp();
+    } else {
+        // Se for desafio infinito, limpamos para garantir jogabilidade limpa
+        resetGameEffects();
+    }
 
     if (currentPlayer.isHuman) {
         await showTurnIndicator();
