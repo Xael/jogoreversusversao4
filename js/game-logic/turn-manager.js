@@ -1,4 +1,3 @@
-
 // js/game-logic/turn-manager.js
 
 import { getState, updateState } from '../core/state.js';
@@ -11,7 +10,7 @@ import { triggerFieldEffects, checkAndTriggerPawnLandingAbilities } from '../sto
 import { updateLog, dealCard, shuffle } from '../core/utils.js';
 import { grantAchievement } from '../core/achievements.js';
 import { showSplashScreen } from '../ui/splash-screen.js';
-import { toggleReversusTotalBackground, resetGameEffects, applyInversusRealityWarp } from '../ui/animations.js';
+import { toggleReversusTotalBackground, resetGameEffects } from '../ui/animations.js';
 import { updateLiveScoresAndWinningStatus } from './score.js';
 import { rotateAndApplyKingNecroversoBoardEffects } from './board.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
@@ -287,13 +286,6 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
         announceEffect(t('log.new_round_announcement', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn }), 'default', 2000);
     }
 
-    // --- GATILHO VISUAL INVERSUS (APENAS DUELO CHEFE) ---
-    // Removido do Desafio Infinito para manter a jogabilidade técnica.
-    if (gameState.isInversusMode && !gameState.isInfiniteChallenge) {
-        applyInversusRealityWarp();
-    } else {
-        resetGameEffects();
-    }
 
     // Reset round-specific states for each player
     gameState.playerIdsInGame.forEach(id => {

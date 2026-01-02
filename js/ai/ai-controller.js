@@ -1,4 +1,3 @@
-
 // js/ai/ai-controller.js
 
 import { getState } from '../core/state.js';
@@ -88,19 +87,6 @@ export async function executeAiTurn(player) {
                     renderAll();
                     await new Promise(res => setTimeout(res, 1500));
                 }
-            }
-        }
-
-        // --- NECROVERSO FINAL ABILITY GATILHO ---
-        if (player.aiType === 'necroverso_final' && !gameState.necroXUsedThisRound && Math.random() < 0.4) {
-            const player1 = gameState.players['player-1'];
-            const versatrix = gameState.players['player-4']; // Versatrix is player-4 in the final battle
-            const targets = [player1, versatrix].filter(p => p && !p.isEliminated);
-            if (targets.length > 0) {
-                const target = targets[Math.floor(Math.random() * targets.length)];
-                await triggerNecroX(player, target);
-                specialAbilityUsed = true;
-                await new Promise(res => setTimeout(res, 1000));
             }
         }
 
