@@ -1,4 +1,4 @@
-
+// js/core/dom.js
 export const appContainerEl = document.getElementById('app-container');
 export const boardEl = document.getElementById('game-board');
 export const cardsButton = document.getElementById('cards-button');
@@ -12,6 +12,12 @@ export const splashAnimationContainerEl = document.getElementById('splash-animat
 export const quickStartButton = document.getElementById('quick-start-button');
 export const storyModeButton = document.getElementById('story-mode-button');
 export const pvpModeButton = document.getElementById('pvp-mode-button');
+export const bandButton = document.getElementById('band-button');
+export const bandModal = document.getElementById('band-modal');
+export const bandVideoPlayer = document.getElementById('band-video-player');
+export const bandTrackList = document.getElementById('band-track-list');
+export const bandVideoPlaceholder = document.getElementById('band-video-placeholder');
+export const closeBandButton = document.getElementById('close-band-button');
 export const infoButton = document.getElementById('info-button');
 export const infoModal = document.getElementById('info-modal');
 export const closeInfoButton = document.getElementById('close-info-button');
@@ -260,3 +266,7 @@ export const tournamentRankingTabContent = document.getElementById('ranking-tour
 export const tournamentRankingContainer = document.getElementById('tournament-ranking-container');
 export const tournamentRankingPagination = document.getElementById('tournament-ranking-pagination');
 export const centerPanelHeader = document.querySelector('.center-panel-header');
+export const tournamentViewContainer = document.getElementById('tournament-view-container');
+export const tournamentMatchScoreContainer = document.getElementById('tournament-match-score-container');
+export const tournamentRulesModal = document.getElementById('tournament-rules-modal');
+export const tournamentRulesUnderstoodButton = document.getElementById('tournament-rules-understood-btn');
