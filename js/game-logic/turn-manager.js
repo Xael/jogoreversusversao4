@@ -287,8 +287,9 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
         announceEffect(t('log.new_round_announcement', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn }), 'default', 2000);
     }
 
-    // --- GATILHO VISUAL INVERSUS ---
-    if (gameState.isInversusMode || gameState.isInfiniteChallenge) {
+    // --- GATILHO VISUAL INVERSUS (APENAS DUELO CHEFE) ---
+    // Removido do Desafio Infinito para manter a jogabilidade técnica.
+    if (gameState.isInversusMode && !gameState.isInfiniteChallenge) {
         applyInversusRealityWarp();
     } else {
         resetGameEffects();
