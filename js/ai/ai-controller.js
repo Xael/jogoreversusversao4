@@ -1,3 +1,4 @@
+
 // js/ai/ai-controller.js
 
 import { getState } from '../core/state.js';
@@ -90,6 +91,22 @@ export async function executeAiTurn(player) {
             }
         }
 
+        // HABILIDADE NECRO X - NECROVERSO FINAL
+        if (player.aiType === 'necroverso_final' && !gameState.necroXUsedThisRound) {
+            const opponents = Object.values(gameState.players).filter(p => 
+                !p.isEliminated && 
+                p.aiType !== 'necroverso_final' &&
+                p.aiType !== 'versatrix' // Não ataca a aliada na batalha final
+            );
+            
+            if (opponents.length > 0) {
+                const target = opponents[Math.floor(Math.random() * opponents.length)];
+                specialAbilityUsed = true;
+                await triggerNecroX(player, target);
+                await new Promise(res => setTimeout(res, 1000));
+            }
+        }
+
         if (player.isEventBoss) {
             const player1 = gameState.players['player-1'];
             switch(player.aiType) {
@@ -133,7 +150,10 @@ export async function executeAiTurn(player) {
                         updateLog({ type: 'dialogue', speaker: player.aiType, message: `Detetive Misterioso: "Hum... um movimento interessante. Vejamos suas cartas mais de perto."` });
                         await new Promise(res => setTimeout(res, 500));
 
-                        const playerEffectCards = player1.hand.filter(c => c.type === 'effect');
+                        const playerEffectCards = player1.hand.filter(c => {
+                             // Check for effect cards. Contravox obscuring might happen, but here we check data
+                             return c.type === 'effect';
+                        });
                         const aiEffectCards = player.hand.filter(c => c.type === 'effect');
 
                         if (playerEffectCards.length > 0 && aiEffectCards.length > 0) {
@@ -240,7 +260,7 @@ export async function executeAiTurn(player) {
         }
 
         // --- Part 3: Consider playing one effect card ---
-        const effectCards = player.hand.filter(c => c.type === 'effect');
+        const effectCards = player.hand.filter(c => c.type === 'effect' && !c.isBlocked);
         let bestMove = { score: -1 };
 
         // Define strategic card sets based on difficulty and game state
