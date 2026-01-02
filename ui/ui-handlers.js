@@ -23,6 +23,7 @@ import { openChatWindow, initializeChatHandlers } from './chat-handler.js';
 import { renderShopAvatars } from './shop-renderer.js';
 import { renderCard } from './card-renderer.js';
 import { renderTournamentView } from './torneio-renderer.js';
+import { renderBandPlaylist, closeBandModal } from './band-renderer.js';
 
 
 let currentEventData = null;
@@ -460,6 +461,22 @@ export function initializeUiHandlers() {
     document.addEventListener('aiTurnEnded', advanceToNextPlayer);
     
     initializeChatHandlers();
+
+    if (dom.bandButton) {
+        dom.bandButton.addEventListener('click', () => {
+            dom.splashScreenEl.classList.add('hidden');
+            dom.bandModal.classList.remove('hidden');
+            renderBandPlaylist();
+        });
+    }
+
+    if (dom.closeBandButton) {
+        dom.closeBandButton.addEventListener('click', () => {
+            closeBandModal();
+            dom.splashScreenEl.classList.remove('hidden');
+        });
+    }
+    
 
     document.addEventListener('initiateInfiniteChallengeGame', () => {
         cleanupInfiniteChallengeIntro();
