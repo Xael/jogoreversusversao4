@@ -1,3 +1,4 @@
+
 // js/core/network.js
 import { getState, updateState } from './state.js';
 import * as dom from '../core/dom.js';
@@ -315,7 +316,9 @@ export function connectToServer() {
     });
 
     socket.on('gameOver', ({ message, winnerId }) => {
-        showGameOver(message, "Fim de Jogo!", { action: 'menu' });
+        const { playerId } = getState();
+        const isVictory = winnerId === playerId;
+        showGameOver(message, "Fim de Jogo!", { action: 'menu' }, isVictory);
     });
 
     socket.on('error', (message) => {
@@ -441,7 +444,8 @@ export function connectToServer() {
         showGameOver(
             t('game_over.infinite_challenge_win', { time: timeFormatted, pot: potWon }),
             t('game_over.infinite_challenge_title'),
-            { action: 'menu', text: t('game_over.back_to_menu') }
+            { action: 'menu', text: t('game_over.back_to_menu') },
+            true // Victory signal
         );
     });
 
