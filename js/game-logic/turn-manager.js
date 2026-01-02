@@ -1,3 +1,4 @@
+
 // js/game-logic/turn-manager.js
 
 import { getState, updateState } from '../core/state.js';
@@ -10,8 +11,9 @@ import { triggerFieldEffects, checkAndTriggerPawnLandingAbilities } from '../sto
 import { updateLog, dealCard, shuffle } from '../core/utils.js';
 import { grantAchievement } from '../core/achievements.js';
 import { showSplashScreen } from '../ui/splash-screen.js';
-import { toggleReversusTotalBackground, resetGameEffects } from '../ui/animations.js';
+import { toggleReversusTotalBackground, resetGameEffects, applyInversusChaos } from '../ui/animations.js';
 import { updateLiveScoresAndWinningStatus } from './score.js';
+import { updateTournamentLiveScores } from '../tournament/tournament-score.js';
 import { rotateAndApplyKingNecroversoBoardEffects } from './board.js';
 import { playSoundEffect, announceEffect } from '../core/sound.js';
 import { t } from '../core/i18n.js';
@@ -286,6 +288,14 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
         announceEffect(t('log.new_round_announcement', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn }), 'default', 2000);
     }
 
+    // EFEITOS DO INVERSUS NO INÍCIO DA RODADA
+    // CORREÇÃO: Não aplicar efeitos visuais de caos no Desafio Infinito conforme solicitado.
+    const hasInversus = gameState.playerIdsInGame.some(id => gameState.players[id].aiType === 'inversus');
+    if ((gameState.isInversusMode || hasInversus) && !gameState.isInfiniteChallenge) {
+        applyInversusChaos();
+    } else {
+        resetGameEffects(); // Garante que a tela volte ao normal se não estiver nos modos permitidos
+    }
 
     // Reset round-specific states for each player
     gameState.playerIdsInGame.forEach(id => {
@@ -469,6 +479,22 @@ function checkGameEnd() {
         
         if(actualWinners.length > 0) {
             gameState.gamePhase = 'game_over';
+            
+            // LÓGICA DE CONQUISTAS DE VITÓRIA (MODOS NÃO-HISTÓRIA/INFINITO)
+            if (!gameState.isStoryMode && !gameState.isInfiniteChallenge && !gameState.isTournamentMatch) {
+                if (actualWinners.includes('player-1')) {
+                    grantAchievement('first_win');
+                    // Conquista Speed Run (Menos de 5 minutos = 300 segundos)
+                    if (gameState.elapsedSeconds < 300) {
+                        grantAchievement('speed_run');
+                    }
+                    // Conquista Duelo Rápido (Modo Solo 1v1 contra IA comum)
+                    if (gameState.gameMode === 'solo' && gameState.playerIdsInGame.length === 2) {
+                        grantAchievement('quick_duel_win');
+                    }
+                }
+            }
+
             if (gameState.isStoryMode) {
                  const player1Victorious = gameState.gameMode === 'duo'
                     ? actualWinners.some(id => (gameState.currentStoryBattle === 'necroverso_final' ? ['player-1', 'player-4'] : config.TEAM_A).includes(id))
@@ -476,8 +502,8 @@ function checkGameEnd() {
                 document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: gameState.currentStoryBattle, won: player1Victorious } }));
             } else {
                 const winnerNames = actualWinners.map(id => gameState.players[id].name).join(' e ');
-                showGameOver(`${winnerNames} venceu o jogo!`);
-                grantAchievement('first_win');
+                const player1Won = actualWinners.includes('player-1');
+                showGameOver(`${winnerNames} venceu o jogo!`, t('game_over.title'), {}, player1Won);
             }
             return true; // Game has ended
         }
@@ -617,17 +643,20 @@ async function calculateScoresAndEndRound() {
 
         if (matchIsOver) {
             let winnerName, loserName;
+            let isPlayer1Victorious = false;
             if (p1Score > p2Score) {
                 winnerName = match.player1.name;
                 loserName = match.player2.name;
+                isPlayer1Victorious = match.player1.playerId === 'player-1';
             } else if (p2Score > p1Score) {
                 winnerName = match.player2.name;
                 loserName = match.player1.name;
+                isPlayer1Victorious = match.player2.playerId === 'player-1';
             } else { // Draw
                  showGameOver(`A partida terminou em empate!`, "Fim da Partida", { action: 'tournament_continue' });
                  return;
             }
-             showGameOver(`${winnerName} venceu a partida contra ${loserName}!`, "Fim da Partida", { action: 'tournament_continue' });
+             showGameOver(`${winnerName} venceu a partida contra ${loserName}!`, "Fim da Partida", { action: 'tournament_continue' }, isPlayer1Victorious);
              return;
         } else {
             await startNewRound();
@@ -703,7 +732,7 @@ async function calculateScoresAndEndRound() {
                     if (loserPlayer.hearts <= 0) {
                         loserPlayer.hearts = 0; // Prevent negative hearts
                         loserPlayer.isEliminated = true;
-                        updateLog(`${loserPlayer.name} foi eliminado da batalha!`);
+                        updateLog(`${loserPlayer.name} foi iniciado da batalha!`);
                     }
                 }
             }
