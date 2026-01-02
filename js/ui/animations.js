@@ -1,3 +1,4 @@
+
 // js/ui/animations.js
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
@@ -8,24 +9,57 @@ import { getCardImageUrl } from './card-renderer.js';
 
 /**
  * Aplica efeitos visuais de caos na tela (Inversus).
- * Agora altera a realidade a cada turno, mantendo a rotação do tabuleiro.
+ * Os efeitos agora duram a rodada inteira e aumentam em probabilidade com o tempo.
+ * @param {number} turn - O turno atual do jogo para calcular a intensidade.
  */
-export function applyInversusChaos() {
-    // Remove APENAS as distorções de tela, mantendo as classes do tabuleiro (rotação)
-    dom.scalableContainer.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
-
-    const effects = ['screen-flipped', 'screen-inverted', 'screen-mirrored', 'normal'];
-    // Sorteia um efeito (25% de chance de normalizar a visão por um turno)
-    const chosenEffect = effects[Math.floor(Math.random() * effects.length)];
+export function applyInversusChaos(turn = 1) {
+    const container = dom.scalableContainer;
     
-    if (chosenEffect !== 'normal') {
-        dom.scalableContainer.classList.add(chosenEffect);
+    // 1. Limpa os efeitos de tela da rodada anterior
+    container.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
+
+    // 2. Calcula a probabilidade baseada no progresso da partida (Intensidade Progressiva)
+    // Começa em 15% no turno 1 e aumenta 5% a cada turno, limitado a 75%
+    const baseProbability = Math.min(0.15 + (turn * 0.05), 0.75);
+    
+    let effectsAppliedCount = 0;
+
+    // Sorteia cada efeito de forma independente para permitir acúmulo
+    
+    // Efeito 1: Cores Invertidas
+    if (Math.random() < baseProbability) {
+        container.classList.add('screen-inverted');
+        effectsAppliedCount++;
+    }
+
+    // Efeito 2: Cabeça para Baixo (180 graus)
+    if (Math.random() < baseProbability) {
+        container.classList.add('screen-flipped');
+        effectsAppliedCount++;
+    }
+
+    // Efeito 3: Espelhado (Mirror)
+    if (Math.random() < baseProbability) {
+        container.classList.add('screen-mirrored');
+        effectsAppliedCount++;
+    }
+
+    // 3. Feedback sonoro se algum caos foi ativado nesta rodada
+    if (effectsAppliedCount > 0) {
         playSoundEffect('confusao');
+        console.log(`Inversus: Intensidade de Caos Nível ${effectsAppliedCount} aplicada (Turno ${turn}).`);
     }
 }
 
 /**
  * Animates a card moving from a starting element (in hand) or position to a target slot (in a play zone).
+ * @param {object} card - The card object being played.
+ * @param {HTMLElement | null} startElement - The card element in the player's hand (can be null if override is used).
+ * @param {string} targetPlayerId - The ID of the player whose play zone is the destination.
+ * @param {string} targetSlotLabel - The data-label of the target slot (e.g., 'Valor 1').
+ * @param {boolean} [forceHiddenAnimation=false] - If true, the animation will show the card back.
+ * @param {DOMRect | null} [startRectOverride=null] - An optional override for the starting position and size.
+ * @returns {Promise<void>} A promise that resolves when the animation is complete.
  */
 export async function animateCardPlay(card, startElement, targetPlayerId, targetSlotLabel, forceHiddenAnimation = false, startRectOverride = null) {
      return new Promise(resolve => {
@@ -48,6 +82,7 @@ export async function animateCardPlay(card, startElement, targetPlayerId, target
         const clone = document.createElement('div');
         clone.className = 'card card-animation-clone';
 
+        // Correctly get the card image URL using the helper function. This handles all card types and visibility states.
         const imageUrl = getCardImageUrl(card, forceHiddenAnimation);
         clone.style.backgroundImage = `url('./${imageUrl}')`;
         
@@ -70,16 +105,19 @@ export async function animateCardPlay(card, startElement, targetPlayerId, target
             clone.remove();
             if (startElement) startElement.style.visibility = 'visible';
             resolve();
-        }, 600);
+        }, 600); // Duration must match the transition time in index.css
     });
 }
 
 /**
  * Creates a reusable starry background effect.
+ * @param {HTMLElement} container - The element to add the stars to.
+ * @param {string} [color='#FFFFFF'] - The color of the stars.
+ * @param {number} [starCount=100] - The number of stars to generate.
  */
 export function createStarryBackground(container, color = '#FFFFFF', starCount = 100) {
     if (!container) return;
-    container.innerHTML = ''; 
+    container.innerHTML = ''; // Clear previous stars
 
     for (let i = 0; i < starCount; i++) {
         const star = document.createElement('div');
@@ -101,10 +139,12 @@ export function createStarryBackground(container, color = '#FFFFFF', starCount =
 
 /**
  * Creates a spiral starry background effect for the final battle.
+ * @param {HTMLElement} container - The element to add the stars to.
+ * @param {number} [starCount=150] - The number of stars to generate.
  */
 export function createSpiralStarryBackground(container, starCount = 150) {
     if (!container) return;
-    container.innerHTML = ''; 
+    container.innerHTML = ''; // Clear previous stars
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
 
@@ -136,7 +176,7 @@ export function createSpiralStarryBackground(container, starCount = 150) {
 export function createCosmicGlowOverlay() {
     const container = dom.cosmicGlowOverlay;
     if (!container) return;
-    container.innerHTML = ''; 
+    container.innerHTML = ''; // Clear previous particles
     const colors = ['#e63946', '#00b4d8', '#52b788', '#fca311', '#9b5de5', '#f1faee'];
     
     for (let i = 0; i < 70; i++) {
@@ -173,11 +213,13 @@ export const animateNecroX = () => {
 };
 
 /**
- * Creates and starts the falling animation for the secret Versatrix card.
+ * Creates and starts the falling animation for the secret Versatrix card on the splash screen.
+ * This function is now more robust and self-contained.
  */
 export const startVersatrixCardAnimation = () => {
     const state = getState();
 
+    // 1. Clean up any previous animation state
     if (state.versatrixCardInterval) {
         clearInterval(state.versatrixCardInterval);
         updateState('versatrixCardInterval', null);
@@ -187,13 +229,16 @@ export const startVersatrixCardAnimation = () => {
         existingCard.remove();
     }
 
+    // 2. Check conditions using the current state
     const shouldAnimate = state.achievements.has('versatrix_win') && !state.achievements.has('versatrix_card_collected');
     
     if (!shouldAnimate) {
-        return; 
+        return; // Nothing to do
     }
 
+    // 3. Define the function that creates a single falling card
     const createFallingCard = () => {
+        // Double-check condition again, in case it was collected between interval cycles
         if (getState().achievements.has('versatrix_card_collected')) {
             const { versatrixCardInterval } = getState();
             if (versatrixCardInterval) {
@@ -203,23 +248,27 @@ export const startVersatrixCardAnimation = () => {
             return;
         }
 
+        // Remove any lingering card from a previous cycle to prevent duplicates
         const oldCard = document.getElementById('secret-versatrix-card');
         if (oldCard) oldCard.remove();
 
         const cardEl = document.createElement('div');
         cardEl.id = 'secret-versatrix-card';
         
+        // Positioning and styling
         const size = 150;
         cardEl.style.width = `${size}px`;
         cardEl.style.height = `${size * 1.4}px`;
+        // Position horizontally within the scalable container's bounds (using a safe range)
         const leftPos = Math.random() * (1920 - size);
         cardEl.style.left = `${leftPos}px`; 
         
-        const fallDuration = 10000;
+        const fallDuration = 10000; // 10 seconds
         cardEl.style.animation = `secret-fall ${fallDuration / 1000}s linear, versatrix-pulse-glow 2s infinite ease-in-out`;
 
         dom.scalableContainer.appendChild(cardEl);
 
+        // Set a timeout to remove the card if it's not clicked
         setTimeout(() => {
             if (cardEl.parentElement) {
                 cardEl.remove();
@@ -227,15 +276,18 @@ export const startVersatrixCardAnimation = () => {
         }, fallDuration);
     };
 
-    const fallInterval = 15000;
-    createFallingCard(); 
+    // 4. Start the animation loop
+    const fallInterval = 15000; // A new card will try to appear every 15 seconds
+    createFallingCard(); // Create one immediately
     const intervalId = setInterval(createFallingCard, fallInterval);
     updateState('versatrixCardInterval', intervalId);
 };
 
 
 /**
- * Creates and starts the floating items animation.
+ * Creates and starts the floating items animation for the splash screen or other effects.
+ * @param {HTMLElement} containerEl - The container element to fill with animated items.
+ * @param {string} [context='splash'] - The context ('splash' or 'credits').
  */
 export const initializeFloatingItemsAnimation = (containerEl, context = 'splash') => {
     if (!containerEl) return;
@@ -247,7 +299,7 @@ export const initializeFloatingItemsAnimation = (containerEl, context = 'splash'
 
     if (context === 'credits') {
         imagePool = [...config.BASE_CARD_IMAGES, ...config.BOSS_CARD_IMAGES, ...config.AVATAR_IMAGES];
-    } else { 
+    } else { // 'splash' context
         imagePool = [...config.BASE_CARD_IMAGES];
         if (achievements.has('contravox_win')) bossPool.push({ image: 'cartacontravox.png', direction: 'up' });
         if (achievements.has('versatrix_win')) bossPool.push({ image: 'cartaversatrix.png', direction: 'up' });
@@ -257,7 +309,7 @@ export const initializeFloatingItemsAnimation = (containerEl, context = 'splash'
     
     const effectNamePool = config.EFFECT_DECK_CONFIG.map(item => item.name);
     const itemsToCreate = [];
-    const totalItems = context === 'credits' ? 12 : 30;
+    const totalItems = context === 'credits' ? 12 : 30; // Reduced for credits
     const numCards = context === 'credits' ? totalItems : 15;
 
     for (let i = 0; i < totalItems; i++) {
@@ -268,7 +320,7 @@ export const initializeFloatingItemsAnimation = (containerEl, context = 'splash'
     const createItem = (config) => {
         const item = document.createElement('div');
         item.classList.add('animated-item');
-        item.classList.add(config.direction === 'down' ? 'drift-down' : 'drift');
+        item.classList.add(config.direction === 'down' ? 'drift-down' : 'drift'); // default to 'drift' (up)
 
         item.classList.add('card-shape');
         item.style.backgroundImage = `url('./${config.image}')`;
@@ -284,8 +336,10 @@ export const initializeFloatingItemsAnimation = (containerEl, context = 'splash'
         containerEl.appendChild(item);
     };
 
+    // Create boss card animations
     bossPool.forEach(boss => createItem(boss));
 
+    // Create regular floating items
     for (const itemConfig of itemsToCreate) {
         const item = document.createElement('div');
         item.classList.add('animated-item');
@@ -321,6 +375,7 @@ export const initializeFloatingItemsAnimation = (containerEl, context = 'splash'
 
 /**
  * Toggles the visibility and animation of the Reversus Total background effect.
+ * @param {boolean} isActive - Whether to activate or deactivate the effect.
  */
 export const toggleReversusTotalBackground = (isActive) => {
     if (isActive) {
@@ -334,6 +389,8 @@ export const toggleReversusTotalBackground = (isActive) => {
 
 /**
  * Creates a shattering effect for an image element.
+ * @param {HTMLElement} imageEl - The image element to shatter.
+ * @returns {Promise<void>} A promise that resolves when the animation is complete.
  */
 export async function shatterImage(imageEl) {
     if (!imageEl || !imageEl.parentNode) return;
@@ -346,6 +403,7 @@ export async function shatterImage(imageEl) {
             const rect = imageEl.getBoundingClientRect();
 
             if (rect.width === 0 || rect.height === 0) {
+                console.warn('Shatter animation skipped: image has no dimensions.', imageEl);
                 setTimeout(resolve, 500);
                 return;
             }
@@ -353,7 +411,7 @@ export async function shatterImage(imageEl) {
             const container = document.createElement('div');
             container.className = 'shatter-container';
             container.style.position = 'absolute';
-            container.style.zIndex = '3000';
+            container.style.zIndex = '3000'; // FIX: Ensure shatter effect is on top of everything
             const parentRect = parent.getBoundingClientRect();
             container.style.left = `${rect.left - parentRect.left}px`;
             container.style.top = `${rect.top - parentRect.top}px`;
@@ -459,33 +517,10 @@ export function showInversusVictoryAnimation() {
 
 /**
  * Clears all reality-warping screen effects from the Inversus battle.
- * Ensures the rotation persists during the specific boss battle.
  */
 export function resetGameEffects() {
-    const { gameState } = getState();
-    
-    // 1. Sempre limpa os efeitos visuais de distorção de tela anteriores
     dom.scalableContainer.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
-    
     if (dom.boardEl) {
-        // Verifica se é a batalha específica do Boss Inversus (e não o modo infinito genérico)
-        const isSpecialBossInversus = gameState && gameState.isInversusMode && !gameState.isInfiniteChallenge;
-        const isGameOver = gameState && gameState.gamePhase === 'game_over';
-
-        // 2. Remove velocidades temporárias (usadas em outros momentos do jogo)
         dom.boardEl.classList.remove('board-rotating', 'board-rotating-fast', 'board-rotating-super-fast');
-
-        // 3. Lógica da Rotação Permanente (Proteção)
-        if (isSpecialBossInversus && !isGameOver) {
-            // SE for o Boss e o jogo NÃO acabou:
-            // Garante que a rotação permanente está lá (failsafe caso tenha sido removida)
-            if (!dom.boardEl.classList.contains('board-rotating-permanent')) {
-                dom.boardEl.classList.add('board-rotating-permanent');
-            }
-        } else {
-            // SE NÃO for o Boss OU se for Game Over:
-            // Limpa a rotação permanente
-            dom.boardEl.classList.remove('board-rotating-permanent');
-        }
     }
 }
