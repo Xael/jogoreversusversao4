@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,7 +23,9 @@
 <script type="importmap">
 {
   "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.12.0"
+    "@google/genai": "https://esm.sh/@google/genai@^1.12.0",
+    "path": "https://esm.sh/path@^0.12.7",
+    "vite": "https://esm.sh/vite@^7.3.0"
   }
 }
 </script>
@@ -57,19 +60,26 @@
         <span id="reward-toast-text"></span>
     </div>
 
-    <!-- User Profile & Login -->
+    <!-- User Profile & Login (Minimalist Button Version) -->
     <div id="user-profile-display" class="user-profile-display hidden">
         <div id="friend-request-badge" class="friend-request-badge hidden">!</div>
-        <img id="user-avatar" src="" alt="User Avatar">
-        <div class="user-info">
-             <span id="user-name"></span>
-             <span id="user-coin-balance-header">🪙 0</span>
-             <div class="xp-bar-container">
-                 <div id="xp-bar-fill"></div>
-                 <span id="xp-bar-text"></span>
-             </div>
+        <div class="profile-burger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
         </div>
-        <div id="user-level" class="user-level"></div>
+        <div class="hidden-profile-data">
+            <img id="user-avatar" src="" alt="User Avatar">
+            <div class="user-info">
+                 <span id="user-name"></span>
+                 <span id="user-coin-balance-header">🪙 0</span>
+                 <div class="xp-bar-container">
+                     <div id="xp-bar-fill"></div>
+                     <span id="xp-bar-text"></span>
+                 </div>
+            </div>
+            <div id="user-level" class="user-level"></div>
+        </div>
     </div>
 
 
@@ -906,7 +916,11 @@
         </div>
     </div>
 
-    <button id="debug-button" class="hidden" data-i18n-title="controls.game_menu_title">&#9881;</button>
+    <!-- Grouped Top Right Controls -->
+    <div class="top-right-group">
+        <button id="debug-button" class="hidden" data-i18n-title="controls.game_menu_title">&#9881;</button>
+    </div>
+
     <button id="xael-star-power" class="hidden" data-i18n-title="controls.xael_power_title">⭐</button>
 
     <!-- In-Game Menu & Confirmation Modals -->
