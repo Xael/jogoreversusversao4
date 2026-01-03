@@ -73,7 +73,7 @@ export async function executeAiTurn(player) {
         // --- Part 1: Story & Event Boss Special Abilities ---
         if (player.aiType === 'versatrix' && gameState.currentStoryBattle === 'versatrix' && !gameState.versatrixSwapActive) {
             const player1 = gameState.players['player-1'];
-            const player1IsLeading = player1.position > player.position + 3; // Condition: player is winning by a lot
+            const player1IsLeading = player1.position > player.position + 1; // Condition: player is winning by a lot
             if (player1IsLeading) {
                 const availablePaths = gameState.boardPaths.filter(p => !Object.values(gameState.players).some(pl => pl.pathId === p.id && !pl.isEliminated));
                 if (availablePaths.length > 0) {
