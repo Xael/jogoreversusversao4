@@ -1,11 +1,9 @@
+
 import { getState, updateState } from './state.js';
 import * as dom from './dom.js';
 import * as config from './config.js';
 import { toggleReversusTotalBackground } from '../ui/animations.js';
 
-/**
- * Initializes the music player if it hasn't been already.
- */
 export const initializeMusic = () => {
     const state = getState();
     if (state.isMusicInitialized) return;
@@ -13,10 +11,6 @@ export const initializeMusic = () => {
     updateMusic();
 };
 
-/**
- * Plays a sound effect corresponding to a card name or event.
- * @param {string} effectName - The name of the card, event, or effect.
- */
 export const playSoundEffect = (effectName) => {
     const { soundState } = getState();
     if (soundState.muted) return;
@@ -26,7 +20,6 @@ export const playSoundEffect = (effectName) => {
     const wavEffects = ['conquista', 'confusao', 'campoinverso', 'x', 'destruido', 'xael', 'jogarcarta', 'coracao'];
     const mp3Effects = ['escolhido'];
     
-    // Sanitize card names like "Reversus Total"
     const sanitizedEffectName = effectName.toLowerCase().replace(/\s/g, '');
 
     if (wavEffects.includes(sanitizedEffectName)) {
@@ -44,20 +37,13 @@ export const playSoundEffect = (effectName) => {
     player.src = sfxSrc;
 
     let volume = soundState.volume;
-
-    const effectsToBoost = [
-        'jogarcarta', 'mais', 'menos', 'sobe', 'desce', 'pula',
-        'reversus', 'reversustotal', 'x', 'coracao'
-    ];
+    const effectsToBoost = ['jogarcarta', 'mais', 'menos', 'sobe', 'desce', 'pula', 'reversus', 'reversustotal', 'x', 'coracao'];
 
     if (sanitizedEffectName === 'confusao') {
-        // Specific boost for this sound effect based on user feedback.
         volume = Math.min(1.0, soundState.volume * 3.5);
     } else if (effectsToBoost.includes(sanitizedEffectName)) {
-        // Boost volume significantly for game-play feedback sounds
         volume = Math.min(1.0, soundState.volume * 2.2); 
     } else if (sanitizedEffectName === 'xael') {
-        // Special case for popups, can be same or different
         volume = Math.min(1.0, soundState.volume * 2.0);
     }
     
@@ -65,49 +51,33 @@ export const playSoundEffect = (effectName) => {
     player.play().catch(e => console.error(`Failed to play sound effect: ${sfxSrc}`, e));
 };
 
-/**
- * Processes the queue of announcements one by one.
- */
 function processAnnouncementQueue() {
     const { isAnnouncing, announcementQueue } = getState();
-    if (isAnnouncing || announcementQueue.length === 0) {
-        return;
-    }
+    if (isAnnouncing || announcementQueue.length === 0) return;
 
     updateState('isAnnouncing', true);
     const announcement = announcementQueue.shift();
 
-    if (announcement.type === 'inversus-total') {
-        playSoundEffect('reversustotal');
+    if (announcement.type === 'inversus-total') playSoundEffect('reversustotal');
+
+    if (dom.effectAnnouncerEl) {
+        dom.effectAnnouncerEl.textContent = announcement.text;
+        dom.effectAnnouncerEl.className = 'effect-announcer-overlay';
+        dom.effectAnnouncerEl.classList.add(announcement.type);
+        dom.effectAnnouncerEl.classList.remove('hidden');
     }
 
-    dom.effectAnnouncerEl.textContent = announcement.text;
-    dom.effectAnnouncerEl.className = 'effect-announcer-overlay'; // Reset
-    dom.effectAnnouncerEl.classList.add(announcement.type);
-
-    dom.effectAnnouncerEl.classList.remove('hidden');
-
     setTimeout(() => {
-        dom.effectAnnouncerEl.classList.add('hidden');
+        if (dom.effectAnnouncerEl) dom.effectAnnouncerEl.classList.add('hidden');
         updateState('isAnnouncing', false);
-        // Process the next item in the queue after a short delay
         setTimeout(processAnnouncementQueue, 200);
     }, announcement.duration);
 }
 
-
-/**
- * Displays a large text announcement on the screen for special effects by adding it to a queue.
- * @param {string} text - The text to announce.
- * @param {string} [type='default'] - The type of announcement (e.g., 'positive', 'negative', 'reversus').
- * @param {number} [duration=1500] - The duration of the announcement in milliseconds.
- */
 export const announceEffect = (text, type = 'default', duration = 1500) => {
-    // Legacy support for calling with card name
     if (type === 'default' && ['Mais', 'Sobe', 'Menos', 'Desce', 'Reversus', 'Reversus Total', 'Pula'].includes(text)) {
         const cardName = text;
         let animationDuration = 1500;
-
         switch (cardName) {
             case 'Mais': case 'Sobe': type = 'positive'; break;
             case 'Menos': case 'Desce': type = 'negative'; break;
@@ -117,91 +87,79 @@ export const announceEffect = (text, type = 'default', duration = 1500) => {
                 type = 'reversus-total';
                 animationDuration = 2000;
                 break;
-            case 'Pula': type = 'default'; break; // Keep default yellow
+            case 'Pula': type = 'default'; break;
         }
         duration = animationDuration;
     }
-    
     const { announcementQueue } = getState();
     announcementQueue.push({ text, type, duration });
     processAnnouncementQueue();
 };
 
-/**
- * Plays a specific music track for story mode, optionally looping it.
- * @param {string} track - The filename of the music track.
- * @param {boolean} [loop=true] - Whether the track should loop.
- */
 export const playStoryMusic = async (track, loop = true) => {
+    if (!dom.musicPlayer) return;
     if (dom.musicPlayer.src && dom.musicPlayer.src.endsWith(track)) return;
-
     dom.musicPlayer.src = track;
     dom.musicPlayer.loop = loop;
-    dom.nextTrackButton.disabled = true;
+    if (dom.nextTrackButton) dom.nextTrackButton.disabled = true;
+    
+    // Forçar inicialização ao tentar tocar uma música de história
+    updateState('isMusicInitialized', true);
     await updateMusic();
 };
 
-/**
- * Stops the current story music and reverts to the default playlist.
- */
 export const stopStoryMusic = () => {
+    if (!dom.musicPlayer) return;
     const { currentTrackIndex } = getState();
-    dom.nextTrackButton.disabled = false;
+    if (dom.nextTrackButton) dom.nextTrackButton.disabled = false;
     dom.musicPlayer.src = config.MUSIC_TRACKS[currentTrackIndex];
     updateMusic();
 };
 
-/**
- * Updates the music player's state (playing/paused, volume) based on the global sound state.
- */
 export const updateMusic = () => {
+    if (!dom.musicPlayer) return;
     const { soundState, isMusicInitialized } = getState();
+    
+    dom.musicPlayer.volume = soundState.volume;
+
     if (soundState.muted) {
         dom.musicPlayer.pause();
     } else {
-        if (isMusicInitialized) {
-            const playPromise = dom.musicPlayer.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    if (error.name !== 'AbortError') {
-                        console.error("Music play failed:", error);
-                    }
-                });
-            }
-        }
+        // Se houver uma música carregada e não estiver mudo, tenta tocar
+        // Mesmo que isMusicInitialized seja falso, permitimos o play via ação direta
+        const playPromise = dom.musicPlayer.play();
+        if (playPromise !== undefined) playPromise.catch(() => {
+            console.log("Auto-play bloqueado pelo navegador. Aguardando interação.");
+        });
     }
-    dom.musicPlayer.volume = soundState.volume;
 };
 
-/**
- * Changes the background music to the next track in the playlist.
- */
 export const changeTrack = () => {
     let { currentTrackIndex } = getState();
     currentTrackIndex = (currentTrackIndex + 1) % config.MUSIC_TRACKS.length;
     updateState('currentTrackIndex', currentTrackIndex);
-    dom.musicPlayer.src = config.MUSIC_TRACKS[currentTrackIndex];
-    updateMusic();
+    if (dom.musicPlayer) {
+        dom.musicPlayer.src = config.MUSIC_TRACKS[currentTrackIndex];
+        updateMusic();
+    }
 };
 
-/**
- * Toggles the mute state for all audio.
- */
 export const toggleMute = () => {
     const { soundState } = getState();
     soundState.muted = !soundState.muted;
-    dom.muteButton.classList.toggle('muted', soundState.muted);
-    dom.muteButton.textContent = soundState.muted ? '▶' : '||';
+    console.log("Mudo:", soundState.muted);
+    
+    if (dom.muteButton) {
+        dom.muteButton.classList.toggle('muted', soundState.muted);
+        dom.muteButton.textContent = soundState.muted ? '▶' : '||';
+    }
+    
     updateMusic();
 };
 
-/**
- * Sets the volume for all audio.
- * @param {number} value - The volume level (0.0 to 1.0).
- */
 export const setVolume = (value) => {
     const { soundState } = getState();
     soundState.volume = value;
-    dom.volumeSlider.value = String(value);
+    if (dom.volumeSlider) dom.volumeSlider.value = String(value);
     updateMusic();
 };
