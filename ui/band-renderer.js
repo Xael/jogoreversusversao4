@@ -19,6 +19,7 @@ export function renderBandPlaylist() {
     console.log("Renderizando Playlist da Banda...");
     const { achievements } = getState();
     const trackList = dom.bandTrackList;
+    
     if (!trackList) {
         console.error("Erro: Container 'band-track-list' não encontrado no DOM.");
         return;
@@ -41,7 +42,7 @@ export function renderBandPlaylist() {
         const statusIcon = isUnlocked ? '▶' : '🔒';
 
         return `
-            <div class="band-track-item ${lockedClass}" data-track-id="${track.id}" ${isUnlocked ? '' : 'disabled'}>
+            <div class="band-track-item ${lockedClass}" data-track-id="${track.id}">
                 <span class="track-number">${track.id}</span>
                 <span class="track-name">${displayName}</span>
                 <span class="track-status">${statusIcon}</span>
@@ -62,7 +63,7 @@ export function playBandTrack(trackId) {
     const track = TRACKS_CONFIG.find(t => t.id === trackId);
     if (!track) return;
 
-    console.log(`Reproduzindo faixa: ${track.name} (${track.file})`);
+    console.log(`Reproduzindo faixa: ${track.name}`);
 
     // Pause game music
     const { soundState } = getState();
