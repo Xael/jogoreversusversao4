@@ -150,6 +150,8 @@ export const startVersatrixCardAnimation = () => {
         clearInterval(state.versatrixCardInterval);
         updateState('versatrixCardInterval', null);
     }
+    
+    // Remove carta remanescente para evitar duplicatas
     const oldCard = document.getElementById('secret-versatrix-card');
     if (oldCard) oldCard.remove();
 
@@ -157,11 +159,15 @@ export const startVersatrixCardAnimation = () => {
     const hasWin = state.achievements && state.achievements.has('versatrix_win');
     const hasCollected = state.achievements && state.achievements.has('versatrix_card_collected');
     
+    // DEBUG: Descomente a linha abaixo para ver no console se as condições são atendidas
+    // console.log(`Versatrix Spawn Check -> Win: ${hasWin}, Collected: ${hasCollected}`);
+
     if (!hasWin || hasCollected) {
         return;
     }
 
     const createFallingCard = () => {
+        // Re-checagem de estado para garantir que não coletou no meio do intervalo
         const currentState = getState();
         if (currentState.achievements.has('versatrix_card_collected')) {
             if (currentState.versatrixCardInterval) {
@@ -176,29 +182,60 @@ export const startVersatrixCardAnimation = () => {
         const existing = document.getElementById('secret-versatrix-card');
         if (existing) existing.remove();
 
+        // Garante o container correto
+        const container = dom.scalableContainer || document.getElementById('scalable-container') || document.body;
+        
         const cardEl = document.createElement('div');
         cardEl.id = 'secret-versatrix-card';
         const size = 150;
+        
+        // --- CORREÇÃO 1: Estilização Essencial ---
+        cardEl.style.position = 'absolute';
         cardEl.style.width = `${size}px`;
         cardEl.style.height = `${size * 1.4}px`;
-        cardEl.style.left = `${Math.random() * (1920 - size)}px`;
+        cardEl.style.zIndex = '9999'; // Garante que fique acima de tudo
+        cardEl.style.cursor = 'pointer'; // Indica que é clicável
         
-        const fallDuration = 10;
-        cardEl.style.animation = `secret-fall ${fallDuration}s linear, versatrix-pulse-glow 2s infinite ease-in-out`;
+        // --- CORREÇÃO 2: Responsividade ---
+        // Usa a largura real do container em vez de fixo 1920
+        const containerWidth = container.clientWidth || window.innerWidth;
+        cardEl.style.left = `${Math.random() * (containerWidth - size)}px`;
+        cardEl.style.top = `-200px`; // Começa fora da tela (acima)
 
-        const container = dom.scalableContainer || document.getElementById('scalable-container');
+        // Adiciona classe visual se necessário (assumindo que você tem CSS para a imagem da carta)
+        // cardEl.classList.add('versatrix-gold-card'); 
+        // OU defina a imagem diretamente se não for via CSS ID:
+        // cardEl.style.backgroundImage = "url('./assets/images/versatrix_gold.png')"; 
+
+        const fallDuration = 10;
+        cardEl.style.animation = `secret-fall ${fallDuration}s linear forwards, versatrix-pulse-glow 2s infinite ease-in-out`;
+
+        // --- CORREÇÃO 3: Evento de Clique ---
+        // Adicione o listener de clique aqui ou garanta que ele exista no módulo de input
+        cardEl.addEventListener('click', () => {
+             console.log("Carta Dourada Clicada!");
+             // Dispara evento global para o sistema capturar
+             document.dispatchEvent(new CustomEvent('versatrixCardClicked'));
+             cardEl.remove();
+        });
+
         if (container) {
             container.appendChild(cardEl);
         }
 
-        setTimeout(() => { if (cardEl.parentElement) cardEl.remove(); }, fallDuration * 1000);
+        // Remove após a animação acabar se não for clicada
+        setTimeout(() => { 
+            if (cardEl.parentElement) cardEl.remove(); 
+        }, fallDuration * 1000);
     };
 
+    // Cria a primeira imediatamente
     createFallingCard();
+    
+    // Configura o intervalo
     const intervalId = setInterval(createFallingCard, 15000);
     updateState('versatrixCardInterval', intervalId);
 };
-
 /**
  * Creates a spiral starry background effect for the final battle.
  * @param {HTMLElement} container - The element to add the stars to.
