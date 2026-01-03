@@ -24,7 +24,7 @@ import { renderShopAvatars } from './shop-renderer.js';
 import { renderCard } from './card-renderer.js';
 import { renderTournamentView } from './torneio-renderer.js';
 import { renderBandPlaylist, closeBandModal } from './band-renderer.js';
-
+import { playInversusFinalCinematic } from './animations.js';
 
 let currentEventData = null;
 let infiniteChallengeIntroHandler = null;
@@ -459,6 +459,8 @@ async function startInfiniteChallengeIntro() {
 
 export function initializeUiHandlers() {
     document.addEventListener('aiTurnEnded', advanceToNextPlayer);
+        // Listener principal para Vitórias e Derrotas no Modo História/Especial
+    
     
     initializeChatHandlers();
 
@@ -1519,6 +1521,7 @@ export function initializeUiHandlers() {
                 if (won) {
                     achievements.grantAchievement('inversus_win');
                     message = "Você derrotou o Inversus! 100% do jogo completo. Um segredo foi revelado...";
+                    await playInversusFinalCinematic();
                     buttonAction = 'menu';
                 } else {
                     message = "O reflexo sombrio do Reversus te derrotou. Tentar novamente?";
