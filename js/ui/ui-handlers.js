@@ -1,4 +1,3 @@
-
 // js/ui/ui-handlers.js
 import * as dom from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
@@ -24,6 +23,8 @@ import { openChatWindow, initializeChatHandlers } from './chat-handler.js';
 import { renderShopAvatars } from './shop-renderer.js';
 import { renderCard } from './card-renderer.js';
 import { renderTournamentView } from './torneio-renderer.js';
+// Integração da Banda
+import { renderBandPlaylist, closeBandModal } from './band-renderer.js';
 
 
 let currentEventData = null;
@@ -462,6 +463,24 @@ export function initializeUiHandlers() {
     
     initializeChatHandlers();
 
+    // --- INTEGRAÇÃO DA BANDA ---
+    if (dom.bandButton) {
+        dom.bandButton.addEventListener('click', () => {
+            dom.splashScreenEl.classList.add('hidden');
+            dom.bandModal.classList.remove('hidden');
+            renderBandPlaylist();
+        });
+    }
+
+    if (dom.closeBandButton) {
+        dom.closeBandButton.addEventListener('click', () => {
+            closeBandModal();
+            dom.splashScreenEl.classList.remove('hidden');
+        });
+    }
+    // ---------------------------
+    
+
     document.addEventListener('initiateInfiniteChallengeGame', () => {
         cleanupInfiniteChallengeIntro();
         const { infiniteChallengeOpponentQueue } = getState();
@@ -514,8 +533,7 @@ export function initializeUiHandlers() {
             showGameOver(
                 message,
                 t('game_over.infinite_challenge_title'),
-                { action: 'menu', text: t('game_over.back_to_menu') },
-                false // Explicit defeat
+                { action: 'menu', text: t('game_over.back_to_menu') }
             );
         }
     });
@@ -1389,25 +1407,8 @@ export function initializeUiHandlers() {
                 message = t('event.defeat_message');
             }
             
-            showGameOver(message, title, { action: 'menu', text: t('game_over.back_to_menu') }, won);
+            showGameOver(message, title, { action: 'menu', text: t('game_over.back_to_menu') });
             return;
-        }
-
-        // GATILHO DE CONQUISTAS DE HISTÓRIA IMEDIATO
-        if (won) {
-            switch(battle) {
-                case 'contravox': achievements.grantAchievement('contravox_win'); break;
-                case 'versatrix': achievements.grantAchievement('versatrix_win'); break;
-                case 'reversum': achievements.grantAchievement('reversum_win'); break;
-                case 'necroverso_king': achievements.grantAchievement('true_end_beta'); break;
-                case 'necroverso_final': achievements.grantAchievement('true_end_final'); break;
-                case 'xael_challenge': achievements.grantAchievement('xael_win'); break;
-                case 'narrador': achievements.grantAchievement('120%_unlocked'); break;
-                case 'inversus': achievements.grantAchievement('inversus_win'); break;
-                case 'tutorial_necroverso': achievements.grantAchievement('tutorial_win'); break;
-            }
-        } else {
-            if (battle === 'versatrix') achievements.grantAchievement('versatrix_loss');
         }
 
         const bossesToShatter = ['contravox', 'versatrix', 'reversum', 'necroverso_king'];
@@ -1445,6 +1446,7 @@ export function initializeUiHandlers() {
         switch (battle) {
             case 'tutorial_necroverso':
                 if (won) {
+                    achievements.grantAchievement('tutorial_win');
                     continueStory('post_tutorial');
                     return;
                 } else {
@@ -1453,6 +1455,7 @@ export function initializeUiHandlers() {
                 break;
             case 'contravox':
                 if (won) {
+                    achievements.grantAchievement('contravox_win');
                     continueStory('post_contravox_victory');
                     return;
                 } else {
@@ -1461,15 +1464,18 @@ export function initializeUiHandlers() {
                 break;
             case 'versatrix':
                 if (won) {
+                    achievements.grantAchievement('versatrix_win');
                     continueStory('post_versatrix_victory');
                 } else {
                     const { storyState } = getState();
                     storyState.lostToVersatrix = true;
+                    achievements.grantAchievement('versatrix_loss');
                     continueStory('post_versatrix_defeat');
                 }
                 return;
             case 'reversum':
                 if (won) {
+                    achievements.grantAchievement('reversum_win');
                     continueStory('post_reversum_victory');
                     return;
                 } else {
@@ -1478,6 +1484,7 @@ export function initializeUiHandlers() {
                 break;
              case 'necroverso_king':
                 if (won) {
+                    achievements.grantAchievement('true_end_beta');
                     continueStory('post_necroverso_king_victory');
                     return;
                 } else {
@@ -1486,6 +1493,7 @@ export function initializeUiHandlers() {
                 break;
             case 'necroverso_final':
                 if (won) {
+                    achievements.grantAchievement('true_end_final');
                     playEndgameSequence();
                     return;
                 } else {
@@ -1494,6 +1502,7 @@ export function initializeUiHandlers() {
                 break;
             case 'xael_challenge':
                 if (won) {
+                    achievements.grantAchievement('xael_win');
                     message = "Você venceu o criador! Habilidade 'Revelação Estelar' desbloqueada no Modo História.";
                     buttonAction = 'menu';
                 } else {
@@ -1502,6 +1511,7 @@ export function initializeUiHandlers() {
                 break;
             case 'narrador':
                 if (won) {
+                    achievements.grantAchievement('120%_unlocked');
                     message = "Você derrotou o Narrador! O que acontece agora...?";
                     buttonAction = 'menu';
                 } else {
@@ -1510,6 +1520,7 @@ export function initializeUiHandlers() {
                 break;
             case 'inversus':
                 if (won) {
+                    achievements.grantAchievement('inversus_win');
                     message = "Você derrotou o Inversus! 100% do jogo completo. Um segredo foi revelado...";
                     buttonAction = 'menu';
                 } else {
@@ -1519,7 +1530,7 @@ export function initializeUiHandlers() {
             default:
                 message = won ? 'Você venceu o duelo!' : 'Você foi derrotado.';
         }
-        showGameOver(message, title, { action: buttonAction }, won);
+        showGameOver(message, title, { action: buttonAction });
     });
 
     dom.splashLogo.addEventListener('click', (e) => {
@@ -1597,8 +1608,6 @@ export function initializeUiHandlers() {
             dom.chatInput.value = '';
         }
     };
-    
-    if(dom.chatSendButton) dom.chatSendButton.addEventListener('click', sendChatMessage);
     
     dom.chatInput.addEventListener('keypress', (e) => { 
         if (e.key === 'Enter') {
