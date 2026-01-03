@@ -53,6 +53,54 @@ export function applyInversusChaos(turn = 1) {
         console.log(`[INVERSUS CHAOS] Turno ${turn}: Realidade estável.`);
     }
 }
+/**
+ * Executa a cinemática final do Inversus: FIM.mp4 seguido de CLIPE.mp4.
+ */
+export async function playInversusFinalCinematic() {
+    const overlay = document.getElementById('cinematic-overlay');
+    const player = document.getElementById('cinematic-video-player');
+    
+    if (!overlay || !player) return;
+
+    // 1. Preparar cena e silenciar jogo
+    dom.appContainerEl.classList.add('hidden');
+    overlay.classList.remove('hidden');
+    if (dom.musicPlayer) dom.musicPlayer.pause();
+
+    return new Promise(resolve => {
+        // Sequência 1: FIM.mp4 (560x560)
+        player.src = './FIM.mp4';
+        player.style.width = '560px';
+        player.style.height = '560px';
+        
+        const onFimEnded = async () => {
+            player.removeEventListener('ended', onFimEnded);
+            
+            // Sequência 2: CLIPE.mp4 (688x464)
+            player.src = './CLIPE.mp4';
+            player.style.width = '688px';
+            player.style.height = '464px';
+            await player.play();
+
+            const onClipeEnded = () => {
+                player.removeEventListener('ended', onClipeEnded);
+                overlay.classList.add('hidden');
+                player.src = '';
+                // Retornar ao Splash Screen
+                document.dispatchEvent(new Event('showSplashScreen'));
+                resolve();
+            };
+            player.addEventListener('ended', onClipeEnded);
+        };
+
+        player.addEventListener('ended', onFimEnded);
+        player.play().catch(e => console.error("Erro ao reproduzir FIM.mp4:", e));
+    });
+}
+
+
+
+
 
 /**
  * Animates a card moving from a starting element (in hand) or position to a target slot (in a play zone).
