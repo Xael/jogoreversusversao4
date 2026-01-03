@@ -478,6 +478,10 @@ export function initializeUiHandlers() {
             dom.splashScreenEl.classList.remove('hidden');
         });
     }
+
+    if (dom.muteButton) dom.muteButton.addEventListener('click', sound.toggleMute);
+    if (dom.nextTrackButton) dom.nextTrackButton.addEventListener('click', sound.changeTrack);
+    if (dom.volumeSlider) dom.volumeSlider.addEventListener('input', (e) => sound.setVolume(parseFloat(e.target.value)));
     // ---------------------------
     
 
@@ -1315,13 +1319,13 @@ export function initializeUiHandlers() {
         const exitIcon = document.getElementById('fullscreen-icon-exit');
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen();
-            enterIcon.classList.add('hidden');
-            exitIcon.classList.remove('hidden');
+            if(enterIcon) enterIcon.classList.add('hidden');
+            if(exitIcon) exitIcon.classList.remove('hidden');
         } else {
             if (document.exitFullscreen) {
                 document.exitFullscreen();
-                enterIcon.classList.remove('hidden');
-                exitIcon.classList.add('hidden');
+                if(enterIcon) enterIcon.classList.remove('hidden');
+                if(exitIcon) exitIcon.classList.add('hidden');
             }
         }
     });
@@ -1533,7 +1537,7 @@ export function initializeUiHandlers() {
         showGameOver(message, title, { action: buttonAction });
     });
 
-    dom.splashLogo.addEventListener('click', (e) => {
+    if (dom.splashLogo) dom.splashLogo.addEventListener('click', (e) => {
         const { achievements } = getState();
         if (!achievements.has('inversus_win')) return;
         
@@ -1550,7 +1554,7 @@ export function initializeUiHandlers() {
         }, 800);
     });
 
-    dom.scalableContainer.addEventListener('click', (e) => {
+    if (dom.scalableContainer) dom.scalableContainer.addEventListener('click', (e) => {
         if (e.target.id === 'secret-versatrix-card') {
             const { achievements: unlockedAchievements, versatrixCardInterval } = getState();
             if (unlockedAchievements.has('versatrix_win') && !unlockedAchievements.has('versatrix_card_collected')) {
@@ -1565,21 +1569,21 @@ export function initializeUiHandlers() {
         }
     });
     
-    dom.xaelPopup.addEventListener('click', async () => {
+    if (dom.xaelPopup) dom.xaelPopup.addEventListener('click', async () => {
         dom.xaelPopup.classList.add('hidden');
         await shatterImage(dom.xaelPopup.querySelector('img'));
         renderStoryNode('xael_challenge_intro');
-        dom.splashScreenEl.classList.add('hidden');
-        dom.storyModeModalEl.classList.remove('hidden');
+        if (dom.splashScreenEl) dom.splashScreenEl.classList.add('hidden');
+        if (dom.storyModeModalEl) dom.storyModeModalEl.classList.remove('hidden');
     });
 
-    dom.xaelStarPowerButton.addEventListener('click', () => {
+    if (dom.xaelStarPowerButton) dom.xaelStarPowerButton.addEventListener('click', () => {
         dom.xaelPowerConfirmModal.classList.remove('hidden');
     });
 
-    dom.xaelPowerConfirmNo.addEventListener('click', () => dom.xaelPowerConfirmModal.classList.add('hidden'));
+    if (dom.xaelPowerConfirmNo) dom.xaelPowerConfirmNo.addEventListener('click', () => dom.xaelPowerConfirmModal.classList.add('hidden'));
 
-    dom.xaelPowerConfirmYes.addEventListener('click', () => {
+    if (dom.xaelPowerConfirmYes) dom.xaelPowerConfirmYes.addEventListener('click', () => {
         dom.xaelPowerConfirmModal.classList.add('hidden');
         const { gameState } = getState();
         const player1 = gameState.players['player-1'];
@@ -1609,20 +1613,20 @@ export function initializeUiHandlers() {
         }
     };
     
-    dom.chatInput.addEventListener('keypress', (e) => { 
+    if (dom.chatInput) dom.chatInput.addEventListener('keypress', (e) => { 
         if (e.key === 'Enter') {
             e.preventDefault();
             sendChatMessage();
         }
     });
     
-    dom.chatToggleBtn.addEventListener('click', () => {
+    if (dom.chatToggleBtn) dom.chatToggleBtn.addEventListener('click', () => {
         const state = getState();
         updateState('isChatMuted', !state.isChatMuted);
         updateChatControls();
     });
 
-    dom.chatFilterBtn.addEventListener('click', () => {
+    if (dom.chatFilterBtn) dom.chatFilterBtn.addEventListener('click', () => {
         const state = getState();
         const currentFilter = state.chatFilter;
         const filterCycle = {
@@ -1693,7 +1697,7 @@ export function initializeUiHandlers() {
         });
     }
 
-    dom.lobbyChatSendButton.addEventListener('click', () => {
+    if (dom.lobbyChatSendButton) dom.lobbyChatSendButton.addEventListener('click', () => {
         const message = dom.lobbyChatInput.value.trim();
         if(message) {
             network.emitLobbyChat(message);
@@ -1701,7 +1705,7 @@ export function initializeUiHandlers() {
         }
     });
     
-    dom.lobbyChatInput.addEventListener('keypress', (e) => {
+    if (dom.lobbyChatInput) dom.lobbyChatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             const message = dom.lobbyChatInput.value.trim();
@@ -1712,15 +1716,15 @@ export function initializeUiHandlers() {
         }
     });
 
-    dom.pvpShowCreateRoomButton.addEventListener('click', () => {
+    if (dom.pvpShowCreateRoomButton) dom.pvpShowCreateRoomButton.addEventListener('click', () => {
         dom.pvpCreateRoomModal.classList.remove('hidden');
     });
 
-    dom.pvpCreateRoomCancelButton.addEventListener('click', () => {
+    if (dom.pvpCreateRoomCancelButton) dom.pvpCreateRoomCancelButton.addEventListener('click', () => {
         dom.pvpCreateRoomModal.classList.add('hidden');
     });
 
-    dom.pvpCreateRoomConfirmButton.addEventListener('click', () => {
+    if (dom.pvpCreateRoomConfirmButton) dom.pvpCreateRoomConfirmButton.addEventListener('click', () => {
         const name = dom.roomNameInput.value.trim();
         const password = dom.roomPasswordInput.value.trim();
         const betAmountRadio = document.querySelector('input[name="bet-amount"]:checked');
@@ -1742,7 +1746,7 @@ export function initializeUiHandlers() {
     });
     
     let selectedRoomIdForPassword = null;
-    dom.pvpRoomGridEl.addEventListener('click', (e) => {
+    if (dom.pvpRoomGridEl) dom.pvpRoomGridEl.addEventListener('click', (e) => {
         const button = e.target.closest('.join-room-button');
         if (button) {
             const roomId = button.dataset.roomId;
@@ -1758,7 +1762,7 @@ export function initializeUiHandlers() {
         }
     });
 
-    dom.pvpPasswordSubmit.addEventListener('click', () => {
+    if (dom.pvpPasswordSubmit) dom.pvpPasswordSubmit.addEventListener('click', () => {
         if (selectedRoomIdForPassword) {
             const password = dom.pvpPasswordInput.value;
             network.emitJoinRoom({ roomId: selectedRoomIdForPassword, password });
@@ -1767,21 +1771,21 @@ export function initializeUiHandlers() {
         }
     });
 
-    dom.pvpPasswordCancel.addEventListener('click', () => {
+    if (dom.pvpPasswordCancel) dom.pvpPasswordCancel.addEventListener('click', () => {
         dom.pvpPasswordModal.classList.add('hidden');
         selectedRoomIdForPassword = null;
     });
 
-    dom.pvpRoomListCloseButton.addEventListener('click', () => {
+    if (dom.pvpRoomListCloseButton) dom.pvpRoomListCloseButton.addEventListener('click', () => {
         dom.pvpRoomListModal.classList.add('hidden');
         showSplashScreen();
     });
     
-    dom.pvpLobbyCloseButton.addEventListener('click', () => network.emitLeaveRoom());
-    dom.lobbyGameModeEl.addEventListener('change', (e) => network.emitChangeMode(e.target.value));
-    dom.lobbyStartGameButton.addEventListener('click', () => network.emitStartGame());
+    if (dom.pvpLobbyCloseButton) dom.pvpLobbyCloseButton.addEventListener('click', () => network.emitLeaveRoom());
+    if (dom.lobbyGameModeEl) dom.lobbyGameModeEl.addEventListener('change', (e) => network.emitChangeMode(e.target.value));
+    if (dom.lobbyStartGameButton) dom.lobbyStartGameButton.addEventListener('click', () => network.emitStartGame());
     
-    dom.fieldEffectTargetModal.addEventListener('click', (e) => {
+    if (dom.fieldEffectTargetModal) dom.fieldEffectTargetModal.addEventListener('click', (e) => {
         const button = e.target.closest('button');
         if (!button) return;
         const { fieldEffectTargetResolver } = getState();
@@ -1796,29 +1800,29 @@ export function initializeUiHandlers() {
         }
     });
     
-    dom.tournamentButton.addEventListener('click', () => {
+    if (dom.tournamentButton) dom.tournamentButton.addEventListener('click', () => {
         if (!getState().isLoggedIn) {
             alert(t('common.login_required', { feature: t('splash.tournament') }));
             return;
         }
-        dom.splashScreenEl.classList.add('hidden');
+        if (dom.splashScreenEl) dom.splashScreenEl.classList.add('hidden');
         sound.playStoryMusic('tela.ogg'); // Use main menu music
         renderTournamentView({ status: 'hub' });
     });
 
-    dom.tournamentPlayOnlineButton.addEventListener('click', () => {
+    if (dom.tournamentPlayOnlineButton) dom.tournamentPlayOnlineButton.addEventListener('click', () => {
         network.emitJoinTournamentQueue({ type: 'online' });
     });
 
-    dom.tournamentPlayOfflineButton.addEventListener('click', () => {
+    if (dom.tournamentPlayOfflineButton) dom.tournamentPlayOfflineButton.addEventListener('click', () => {
         network.emitJoinTournamentQueue({ type: 'offline' });
     });
 
-    dom.tournamentCancelQueueButton.addEventListener('click', () => {
+    if (dom.tournamentCancelQueueButton) dom.tournamentCancelQueueButton.addEventListener('click', () => {
         network.emitCancelTournamentQueue();
     });
 
-    dom.tournamentCloseButton.addEventListener('click', () => {
+    if (dom.tournamentCloseButton) dom.tournamentCloseButton.addEventListener('click', () => {
         const { gameState } = getState();
         if (gameState && gameState.isTournamentMatch) {
             if (confirm("Tem certeza que deseja desistir do torneio?")) {
