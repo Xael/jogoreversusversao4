@@ -1,3 +1,4 @@
+
 // js/ui/band-renderer.js
 import * as dom from '../core/dom.js';
 import { getState } from '../core/state.js';
@@ -15,9 +16,13 @@ const TRACKS_CONFIG = [
 ];
 
 export function renderBandPlaylist() {
+    console.log("Renderizando Playlist da Banda...");
     const { achievements } = getState();
     const trackList = dom.bandTrackList;
-    if (!trackList) return;
+    if (!trackList) {
+        console.error("Erro: Container 'band-track-list' não encontrado no DOM.");
+        return;
+    }
 
     // Determine which tracks are unlocked
     const unlockedMap = {};
@@ -57,9 +62,11 @@ export function playBandTrack(trackId) {
     const track = TRACKS_CONFIG.find(t => t.id === trackId);
     if (!track) return;
 
+    console.log(`Reproduzindo faixa: ${track.name} (${track.file})`);
+
     // Pause game music
     const { soundState } = getState();
-    dom.musicPlayer.pause();
+    if (dom.musicPlayer) dom.musicPlayer.pause();
 
     // Highlight active track
     dom.bandTrackList.querySelectorAll('.band-track-item').forEach(el => el.classList.remove('active'));
@@ -67,17 +74,21 @@ export function playBandTrack(trackId) {
     if (activeItem) activeItem.classList.add('active');
 
     // Show video player
-    dom.bandVideoPlaceholder.classList.add('hidden');
-    dom.bandVideoPlayer.src = `./${track.file}`;
-    dom.bandVideoPlayer.volume = soundState.volume;
-    dom.bandVideoPlayer.play().catch(e => console.error("Error playing band video:", e));
+    if (dom.bandVideoPlaceholder) dom.bandVideoPlaceholder.classList.add('hidden');
+    if (dom.bandVideoPlayer) {
+        dom.bandVideoPlayer.src = `./${track.file}`;
+        dom.bandVideoPlayer.volume = soundState.volume;
+        dom.bandVideoPlayer.play().catch(e => console.error("Erro ao reproduzir vídeo da banda:", e));
+    }
 }
 
 export function closeBandModal() {
-    dom.bandModal.classList.add('hidden');
-    dom.bandVideoPlayer.pause();
-    dom.bandVideoPlayer.src = '';
-    dom.bandVideoPlaceholder.classList.remove('hidden');
+    if (dom.bandModal) dom.bandModal.classList.add('hidden');
+    if (dom.bandVideoPlayer) {
+        dom.bandVideoPlayer.pause();
+        dom.bandVideoPlayer.src = '';
+    }
+    if (dom.bandVideoPlaceholder) dom.bandVideoPlaceholder.classList.remove('hidden');
     
     // Resume game music
     updateMusic();
