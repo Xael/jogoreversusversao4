@@ -270,6 +270,21 @@
     font-size: 1.2rem;
 }
 
+/* Estilos para o Vídeo do Inversus no Tabuleiro */
+.inversus-portrait-video {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 560px;
+    height: 560px;
+    object-fit: cover;
+    filter: drop-shadow(0 0 20px rgba(155, 93, 229, 0.4));
+    pointer-events: none;
+    z-index: 5;
+}
+
+
 :root {
     --bg-main: #0b131a; 
     --bg-panel: rgba(29, 53, 87, 0.6);
