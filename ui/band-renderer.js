@@ -1,4 +1,3 @@
-
 // js/ui/band-renderer.js
 import * as dom from '../core/dom.js';
 import { getState } from '../core/state.js';
