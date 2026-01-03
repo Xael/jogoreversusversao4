@@ -1,3 +1,4 @@
+
 // js/ui/player-area-renderer.js
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
@@ -47,7 +48,6 @@ export const renderPlayerArea = (player) => {
     const isMyArea = (gameState.isPvp && player.id === myPlayerId) || (!gameState.isPvp && player.isHuman);
     
     let handHTML = '';
-    // Only render the hand area for opponents. The main player's hand is now in the floating overlay.
     if (!isMyArea) {
         const context = 'opponent-hand';
         handHTML = `<div class="player-hand" id="hand-${player.id}">${player.hand.map(card => renderCard(card, context, player.id)).join('')}</div>`;
@@ -78,6 +78,19 @@ export const renderPlayerArea = (player) => {
         ${handHTML}
     `;
 
+    // Lógica para o Inversus usar vídeo em vez de imagem
+    if (player.aiType === 'inversus') {
+        const videoEl = document.createElement('video');
+        videoEl.src = './INVERSUSANIMACAO.mp4';
+        videoEl.className = 'inversus-portrait-video';
+        videoEl.autoplay = true;
+        videoEl.loop = true;
+        videoEl.muted = true;
+        videoEl.playsInline = true;
+        playerEl.appendChild(videoEl);
+        return;
+    }
+
     const portraitMap = {
         'necroverso_tutorial': { src: './necroverso.png', class: 'player-area-character-portrait necro-tutorial-portrait' },
         'contravox': { src: './contravox.png', class: 'player-area-character-portrait contravox-portrait' },
@@ -86,8 +99,7 @@ export const renderPlayerArea = (player) => {
         'necroverso_king': { src: './necroverso.png', class: 'player-area-character-portrait' },
         'necroverso_final': { src: './necroverso2.png', class: 'player-area-character-portrait final-boss-glow' },
         'narrador': { src: './narrador.png', class: 'player-area-character-portrait effect-glitch' },
-        'xael': { src: './xaeldesafio.png', class: 'player-area-character-portrait xael-glow' },
-        'inversus': { src: './INVERSUM1.png', class: 'inversus-character-portrait', id: 'inversus-character-portrait' }
+        'xael': { src: './xaeldesafio.png', class: 'player-area-character-portrait xael-glow' }
     };
     
     config.MONTHLY_EVENTS.forEach(event => {
@@ -96,22 +108,16 @@ export const renderPlayerArea = (player) => {
 
     let portraitSrc = null;
     let portraitClass = 'player-area-character-portrait';
-    let portraitId = null;
 
-    // Priority 1: A specific avatar_url on the player object (from PvP, Infinite Challenge, equipped avatar)
     if (player.avatar_url) {
         portraitSrc = player.avatar_url.startsWith('http') ? player.avatar_url : `./${player.avatar_url}`;
-        // Add special glows based on AI type even if they use a generic avatar
         if (player.aiType === 'oespectro') portraitClass += ' specter-glow';
-
     } 
-    // Priority 2: Fallback to the story/event map based on aiType for characters without a specific avatar_url
     else {
         const portraitInfo = portraitMap[player.aiType];
         if (portraitInfo) {
             portraitSrc = portraitInfo.src;
             portraitClass = portraitInfo.class;
-            if (portraitInfo.id) portraitId = portraitInfo.id;
         }
     }
 
@@ -119,22 +125,19 @@ export const renderPlayerArea = (player) => {
         const portraitImg = document.createElement('img');
         portraitImg.src = portraitSrc;
         portraitImg.className = portraitClass;
-        if (portraitId) portraitImg.id = portraitId;
         playerEl.appendChild(portraitImg);
     }
 };
 
 /**
  * Creates the HTML for a player's header area, including name, stats, and status.
- * @param {object} player - The player object.
- * @returns {string} The HTML string for the player header.
  */
 function renderPlayerHeader(player) {
     const { gameState } = getState();
     
     const pathDisplay = player.pathId === -1 ? 'N/A' : player.pathId + 1;
     const effectText = [player.effects.score, player.effects.movement]
-        .filter(Boolean) // Remove null/undefined effects
+        .filter(Boolean) 
         .map(e => e.toUpperCase())
         .join(' / ') || t('game.none');
     
@@ -156,10 +159,10 @@ function renderPlayerHeader(player) {
         heartsOrStarsHTML = `<div class="inversus-hearts-container">${'❤'.repeat(player.hearts)}</div>`;
     }
     if (gameState.isKingNecroBattle) {
-        heartsOrStarsHTML = `<div class="player-hearts-container" title="Corações restantes">${'❤'.repeat(player.hearts)}</div>`;
+        heartsOrStarsHTML = `<div class="player-hearts-container">${'❤'.repeat(player.hearts)}</div>`;
     }
     if (gameState.isXaelChallenge) {
-        heartsOrStarsHTML = `<div class="player-star-counter" title="Estrelas de Xael">⭐ ${player.stars}</div>`;
+        heartsOrStarsHTML = `<div class="player-star-counter">⭐ ${player.stars}</div>`;
     }
 
     const fieldEffectHTML = activeFieldEffect ? `
@@ -170,7 +173,7 @@ function renderPlayerHeader(player) {
     ` : '';
 
     const coinversusHTML = gameState.betAmount > 0 ? `
-        <span class="stat-item" title="${t('game.coinversus_header_title')}">🪙 <strong>${player.coinversus !== undefined ? player.coinversus : '...'}</strong></span>
+        <span class="stat-item">🪙 <strong>${player.coinversus !== undefined ? player.coinversus : '...'}</strong></span>
     ` : '';
 
     const positionDisplay = gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : player.position;
@@ -187,12 +190,12 @@ function renderPlayerHeader(player) {
                  </div>
             </div>
             <div class="player-stats">
-                 <span class="stat-item" title="${t('game.score_header_title')}">${t('game.score_header')}: <strong>${scoreValue}</strong></span>
+                 <span class="stat-item">${t('game.score_header')}: <strong>${scoreValue}</strong></span>
                  ${coinversusHTML}
-                 <span class="stat-item" title="${t('game.resto_header_title')}">${t('game.resto_header')}: <strong>${restoValue}</strong></span>
-                 <span class="stat-item" title="${t('game.path_header_title')}">${t('game.path_header')}: <strong>${pathDisplay}</strong></span>
-                 <span class="stat-item" title="${t('game.house_header_title')}">${gameState.isInfiniteChallenge ? t('ranking.header_level') : t('game.house_header')}: <strong>${positionDisplay}</strong></span>
-                 <span class="stat-item" title="${t('game.effect_header_title')}">${t('game.effect_header')}: <strong>${effectText}</strong></span>
+                 <span class="stat-item">${t('game.resto_header')}: <strong>${restoValue}</strong></span>
+                 <span class="stat-item">${t('game.path_header')}: <strong>${pathDisplay}</strong></span>
+                 <span class="stat-item">${gameState.isInfiniteChallenge ? t('ranking.header_level') : t('game.house_header')}: <strong>${positionDisplay}</strong></span>
+                 <span class="stat-item">${t('game.effect_header')}: <strong>${effectText}</strong></span>
                  ${fieldEffectHTML}
             </div>
         </div>
