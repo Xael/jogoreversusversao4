@@ -12,7 +12,7 @@ import { updateLog, shuffle } from '../core/utils.js';
 import * as config from '../core/config.js';
 import { AVATAR_CATALOG } from '../core/config.js';
 import * as network from '../core/network.js';
-import { shatterImage } from './animations.js';
+import { shatterImage, playInversusFinalCinematic, resetGameEffects } from './animations.js'; // Importação consolidada
 import { announceEffect } from '../core/sound.js';
 import { playCard } from '../game-logic/player-actions.js';
 import { advanceToNextPlayer, startNextInfiniteChallengeDuel, initiateGameStartSequence } from '../game-logic/turn-manager.js';
@@ -24,7 +24,6 @@ import { renderShopAvatars } from './shop-renderer.js';
 import { renderCard } from './card-renderer.js';
 import { renderTournamentView } from './torneio-renderer.js';
 import { renderBandPlaylist, closeBandModal } from './band-renderer.js';
-import { playInversusFinalCinematic } from './animations.js';
 
 let currentEventData = null;
 let infiniteChallengeIntroHandler = null;
@@ -1371,6 +1370,17 @@ export function initializeUiHandlers() {
         const { battle, won, reason } = e.detail;
         const { gameState } = getState();
         
+        // --- NOVO BLOCO: Cinemática do Inversus ---
+        // Garante que se o jogador vencer o Inversus, a cinemática roda imediatamente
+        // e o fluxo normal de Game Over é interrompido.
+        if (won && battle === 'inversus') {
+             resetGameEffects(); // Limpa efeitos visuais de caos
+             achievements.grantAchievement('inversus_win');
+             await playInversusFinalCinematic();
+             return; // Interrompe para não mostrar o modal padrão
+        }
+        // ------------------------------------------
+
         if (gameState) {
              updateState('lastStoryGameOptions', { mode: gameState.gameMode, options: gameState.gameOptions });
         }
@@ -1518,14 +1528,9 @@ export function initializeUiHandlers() {
                 }
                 break;
             case 'inversus':
-                if (won) {
-                    achievements.grantAchievement('inversus_win');
-                    message = "Você derrotou o Inversus! 100% do jogo completo. Um segredo foi revelado...";
-                    await playInversusFinalCinematic();
-                    buttonAction = 'menu';
-                } else {
-                    message = "O reflexo sombrio do Reversus te derrotou. Tentar novamente?";
-                }
+                // Nota: O caso de vitória (won) é tratado no bloco IF no topo da função.
+                // Aqui cai apenas a derrota.
+                message = "O reflexo sombrio do Reversus te derrotou. Tentar novamente?";
                 break;
             default:
                 message = won ? 'Você venceu o duelo!' : 'Você foi derrotado.';
@@ -1561,6 +1566,9 @@ export function initializeUiHandlers() {
                 sound.playSoundEffect('conquista');
                 achievements.grantAchievement('versatrix_card_collected');
                 e.target.remove();
+                
+                // Dispara evento global se houver lógica adicional
+                document.dispatchEvent(new CustomEvent('versatrixCardClicked'));
             }
         }
     });
