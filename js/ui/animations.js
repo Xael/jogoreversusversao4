@@ -140,12 +140,12 @@ export function createStarryBackground(container, color = '#FFFFFF', starCount =
     }
 }
 /**
- * Creates and starts the falling animation for the secret Versatrix card on the splash screen.
+ * Gerencia a animação da carta secreta da Versatrix no Splash Screen.
  */
 export const startVersatrixCardAnimation = () => {
     const state = getState();
 
-    // 1. Limpa estado anterior
+    // Limpa estado anterior se houver
     if (state.versatrixCardInterval) {
         clearInterval(state.versatrixCardInterval);
         updateState('versatrixCardInterval', null);
@@ -153,18 +153,23 @@ export const startVersatrixCardAnimation = () => {
     const oldCard = document.getElementById('secret-versatrix-card');
     if (oldCard) oldCard.remove();
 
-    // 2. Verifica se deve animar (Venceu Versatrix mas ainda não coletou a carta)
-    const shouldAnimate = state.achievements.has('versatrix_win') && !state.achievements.has('versatrix_card_collected');
+    // Verifica se o jogador venceu a Versatrix e ainda não coletou a carta
+    const hasWin = state.achievements && state.achievements.has('versatrix_win');
+    const hasCollected = state.achievements && state.achievements.has('versatrix_card_collected');
     
-    if (!shouldAnimate) return;
+    if (!hasWin || hasCollected) {
+        return;
+    }
 
     const createFallingCard = () => {
-        if (getState().achievements.has('versatrix_card_collected')) {
-            const { versatrixCardInterval } = getState();
-            if (versatrixCardInterval) {
-                clearInterval(versatrixCardInterval);
+        const currentState = getState();
+        if (currentState.achievements.has('versatrix_card_collected')) {
+            if (currentState.versatrixCardInterval) {
+                clearInterval(currentState.versatrixCardInterval);
                 updateState('versatrixCardInterval', null);
             }
+            const card = document.getElementById('secret-versatrix-card');
+            if (card) card.remove();
             return;
         }
 
@@ -173,17 +178,18 @@ export const startVersatrixCardAnimation = () => {
 
         const cardEl = document.createElement('div');
         cardEl.id = 'secret-versatrix-card';
-        
         const size = 150;
         cardEl.style.width = `${size}px`;
         cardEl.style.height = `${size * 1.4}px`;
-        cardEl.style.left = `${Math.random() * (1920 - size)}px`; 
+        cardEl.style.left = `${Math.random() * (1920 - size)}px`;
         
-        const fallDuration = 10; // segundos
+        const fallDuration = 10;
         cardEl.style.animation = `secret-fall ${fallDuration}s linear, versatrix-pulse-glow 2s infinite ease-in-out`;
 
-        const scalable = document.getElementById('scalable-container');
-        if (scalable) scalable.appendChild(cardEl);
+        const container = dom.scalableContainer || document.getElementById('scalable-container');
+        if (container) {
+            container.appendChild(cardEl);
+        }
 
         setTimeout(() => { if (cardEl.parentElement) cardEl.remove(); }, fallDuration * 1000);
     };
@@ -192,7 +198,6 @@ export const startVersatrixCardAnimation = () => {
     const intervalId = setInterval(createFallingCard, 15000);
     updateState('versatrixCardInterval', intervalId);
 };
-
 
 /**
  * Creates a spiral starry background effect for the final battle.
