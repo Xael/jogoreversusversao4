@@ -136,10 +136,8 @@
 }
 
 @keyframes secret-fall {
-    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { transform: translateY(1300px) rotate(720deg); opacity: 0; }
+    0% { top: -200px; transform: rotate(0deg); }
+    100% { top: 110vh; transform: rotate(360deg); }
 }
 
 @keyframes versatrix-pulse-glow {
