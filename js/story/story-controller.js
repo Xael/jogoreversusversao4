@@ -209,6 +209,9 @@ export async function playEndgameSequence() {
         });
     };
 
+    characterContainer.innerHTML = '';
+    endgameModal.classList.remove('hidden');
+    
     // Sequence Start
     const versatrixImg = document.createElement('img');
     versatrixImg.src = './versatrix.png';
