@@ -121,6 +121,34 @@
     animation: band-button-pulse 3s infinite ease-in-out;
 }
 
+/* Estilos da Carta Secreta da Versatrix */
+#secret-versatrix-card {
+    position: absolute;
+    top: -200px;
+    background-image: url('./cartaversatrix.png');
+    background-size: cover;
+    background-position: center;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 9000;
+    pointer-events: all;
+    box-shadow: 0 0 15px rgba(252, 163, 17, 0.6);
+}
+
+@keyframes secret-fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(1300px) rotate(720deg); opacity: 0; }
+}
+
+@keyframes versatrix-pulse-glow {
+    0%, 100% { filter: drop-shadow(0 0 10px #fca311); }
+    50% { filter: drop-shadow(0 0 30px #ffea00) brightness(1.2); }
+}
+
+
+
 @keyframes band-button-pulse {
     0%, 100% { box-shadow: 0 0 10px rgba(157, 78, 221, 0.5); transform: scale(1); }
     50% { box-shadow: 0 0 20px rgba(157, 78, 221, 0.8), 0 0 10px #c77dff inset; transform: scale(1.02); }
