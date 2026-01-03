@@ -440,13 +440,24 @@ function checkGameEnd() {
         }
     }
     
+    // VERIFICAÇÃO DE ELIMINAÇÃO (Modo Inversus ou Boss Rush)
     if (gameState.isKingNecroBattle || (gameState.isInversusMode && !gameState.isInfiniteChallenge)) {
         const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
+        
+        // Se só sobrou um jogador (ou nenhum), o jogo acaba
         if (activePlayers.length <= 1) {
             gameState.gamePhase = 'game_over';
             const player1Victorious = activePlayers.length === 1 && activePlayers[0] === 'player-1';
             
-            document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: gameState.currentStoryBattle || 'inversus', won: player1Victorious } }));
+            // GARANTE QUE O NOME DA BATALHA SEJA 'inversus' SE ESTIVER NO MODO INVERSUS
+            const battleName = gameState.isInversusMode ? 'inversus' : (gameState.currentStoryBattle || 'unknown_boss');
+            
+            document.dispatchEvent(new CustomEvent('storyWinLoss', { 
+                detail: { 
+                    battle: battleName, 
+                    won: player1Victorious 
+                } 
+            }));
             return true;
         }
     }
