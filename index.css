@@ -722,8 +722,8 @@ body.screen-flipped.screen-mirrored {
 
 video.player-area-character-portrait {
     /* Aumentado de 186px para 280px (Metade do tamanho real do vídeo) */
-    width: 280px !important; 
-    height: 280px !important;
+    width: 560px !important; 
+    height: 560px !important;
     
     /* Posicionamento no canto inferior direito */
     position: absolute !important;
