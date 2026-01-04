@@ -7,46 +7,89 @@ import { playSoundEffect } from '../core/sound.js';
 import { getCardImageUrl } from './card-renderer.js';
 
 /**
+ * Reseta todos os efeitos de distorção, rotação e caos do jogo.
+ * Limpa tanto o body quanto o container principal.
+ */
+export function resetGameEffects() {
+    const body = document.body;
+    const container = dom.scalableContainer || document.getElementById('scalable-container');
+    
+    const chaosClasses = [
+        'screen-flipped', 
+        'screen-inverted', 
+        'screen-mirrored', 
+        'screen-shaking'
+    ];
+    
+    // Limpeza profunda
+    body.classList.remove(...chaosClasses);
+    if (container) {
+        container.classList.remove(...chaosClasses);
+        container.style.filter = ''; // Limpa filtros inline se houver
+    }
+    
+    if (dom.boardEl) {
+        dom.boardEl.classList.remove(
+            'board-rotating', 
+            'board-rotating-fast', 
+            'board-rotating-super-fast', 
+            'final-battle-board',
+            'inverted'
+        );
+    }
+    
+    if (dom.appContainerEl) {
+        dom.appContainerEl.classList.remove('effect-monitor', 'reversus-total-active');
+    }
+}
+
+/**
  * Aplica efeitos visuais de caos na tela (Inversus).
- * Os efeitos agora duram a rodada inteira e aumentam em probabilidade com o tempo.
- * @param {number} turn - O turno atual do jogo para calcular a intensidade.
+ * O efeito escalona gradualmente:
+ * Rodada 1-2: Calmo (0%)
+ * Rodada 3-5: Leve (20-40%)
+ * Rodada 6-9: Intenso (60-80%)
+ * Rodada 10+: Caos Total (100%)
  */
 export function applyInversusChaos(turn = 1) {
     const container = dom.scalableContainer || document.getElementById('scalable-container');
     const body = document.body;
     
-    // 1. Limpa os efeitos de tela da rodada anterior
-    body.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
-    if (container) container.classList.remove('screen-flipped', 'screen-inverted', 'screen-mirrored');
+    // Limpeza inicial
+    const chaosClasses = ['screen-flipped', 'screen-inverted', 'screen-mirrored', 'screen-shaking'];
+    body.classList.remove(...chaosClasses);
+    if (container) container.classList.remove(...chaosClasses);
 
-    // 2. Calcula a probabilidade baseada no progresso da partida
-    const baseProbability = Math.min(0.15 + (turn * 0.05), 0.75);
-    
-    let effectsAppliedCount = 0;
-    const activeEffects = [];
+    // Escalonamento de probabilidade
+    let probability = 0;
+    if (turn >= 3 && turn <= 5) probability = 0.3;
+    else if (turn >= 6 && turn <= 9) probability = 0.7;
+    else if (turn >= 10) probability = 1.0;
 
-    const apply = (className, effectName) => {
-        if (Math.random() < baseProbability) {
-            body.classList.add(className);
-            if (container) container.classList.add(className);
-            effectsAppliedCount++;
-            activeEffects.push(effectName);
+    if (Math.random() < probability) {
+        // Escolhe efeitos aleatórios baseados na intensidade
+        const activeEffects = [];
+        
+        // Inversão de cores (Inverted)
+        if (Math.random() < probability) activeEffects.push('screen-inverted');
+        
+        // Rotação/Espelhamento (Flipped/Mirrored)
+        if (turn >= 6 && Math.random() < probability) {
+            activeEffects.push(Math.random() > 0.5 ? 'screen-flipped' : 'screen-mirrored');
         }
-    };
 
-    // Efeito 1: Cores Invertidas
-    apply('screen-inverted', 'Inversão de Cores');
+        // Tremor de tela (Shaking)
+        if (turn >= 10) activeEffects.push('screen-shaking');
 
-    // Efeito 2: Cabeça para Baixo (180 graus)
-    apply('screen-flipped', 'Tela Invertida (180°)');
+        activeEffects.forEach(effect => {
+            body.classList.add(effect);
+            if (container) container.classList.add(effect);
+        });
 
-    // Efeito 3: Espelhado (Mirror)
-    apply('screen-mirrored', 'Tela Espelhada');
-
-    // 3. Feedback no log se algo foi ativado
-    if (effectsAppliedCount > 0) {
-        playSoundEffect('confusao');
-        console.log(`[INVERSUS CHAOS] Turno ${turn}: ${activeEffects.join(' + ')}`);
+        if (activeEffects.length > 0) {
+            playSoundEffect('confusao');
+            console.log(`[INVERSUS CHAOS] Turno ${turn}: ${activeEffects.join(' + ')}`);
+        }
     } else {
         console.log(`[INVERSUS CHAOS] Turno ${turn}: Realidade estável.`);
     }
@@ -61,35 +104,44 @@ export async function playInversusFinalCinematic() {
     
     if (!overlay || !player) return;
 
-    // Reset visual imediato para evitar que o vídeo apareça torto/invertido pelo caos
+    // 1. Limpeza total antes de começar
     resetGameEffects();
-
-    // 1. Preparar cena e silenciar jogo
     dom.appContainerEl.classList.add('hidden');
     overlay.classList.remove('hidden');
-    if (dom.musicPlayer) dom.musicPlayer.pause();
+    
+    if (dom.musicPlayer) {
+        dom.musicPlayer.pause();
+        dom.musicPlayer.src = ''; // Para o áudio completamente
+    }
 
     return new Promise(resolve => {
         // Sequência 1: FIM.mp4 (560x560)
         player.src = './FIM.mp4';
         player.style.width = '560px';
         player.style.height = '560px';
-        player.style.transform = 'none'; // Garante escala real
-        
+        player.style.transform = 'none';
+
         const onFimEnded = async () => {
             player.removeEventListener('ended', onFimEnded);
+            console.log("[DEBUG] FIM.mp4 terminou. Iniciando CLIPE.mp4");
             
             // Sequência 2: CLIPE.mp4 (688x464)
             player.src = './CLIPE.mp4';
             player.style.width = '688px';
             player.style.height = '464px';
-            await player.play();
+            
+            try {
+                await player.play();
+            } catch (e) {
+                console.error("[ERRO] Erro ao dar play no segundo vídeo:", e);
+            }
 
             const onClipeEnded = () => {
+                console.log("[DEBUG] Sequência completa.");
                 player.removeEventListener('ended', onClipeEnded);
                 overlay.classList.add('hidden');
                 player.src = '';
-                // Retornar ao Splash Screen limpando tudo
+                // Dispara evento para voltar ao menu limpando tudo
                 document.dispatchEvent(new Event('showSplashScreen'));
                 resolve();
             };
@@ -98,7 +150,7 @@ export async function playInversusFinalCinematic() {
 
         player.addEventListener('ended', onFimEnded);
         player.play().catch(e => {
-            console.error("Erro ao reproduzir vídeos finais:", e);
+            console.error("[ERRO] Erro ao reproduzir FIM.mp4:", e);
             overlay.classList.add('hidden');
             document.dispatchEvent(new Event('showSplashScreen'));
             resolve();
@@ -108,13 +160,6 @@ export async function playInversusFinalCinematic() {
 
 /**
  * Animates a card moving from a starting element (in hand) or position to a target slot (in a play zone).
- * @param {object} card - The card object being played.
- * @param {HTMLElement | null} startElement - The card element in the player's hand (can be null if override is used).
- * @param {string} targetPlayerId - The ID of the player whose play zone is the destination.
- * @param {string} targetSlotLabel - The data-label of the target slot (e.g., 'Valor 1').
- * @param {boolean} [forceHiddenAnimation=false] - If true, the animation will show the card back.
- * @param {DOMRect | null} [startRectOverride=null] - An optional override for the starting position and size.
- * @returns {Promise<void>} A promise that resolves when the animation is complete.
  */
 export async function animateCardPlay(card, startElement, targetPlayerId, targetSlotLabel, forceHiddenAnimation = false, startRectOverride = null) {
      return new Promise(resolve => {
@@ -166,9 +211,6 @@ export async function animateCardPlay(card, startElement, targetPlayerId, target
 
 /**
  * Creates a reusable starry background effect.
- * @param {HTMLElement} container - The element to add the stars to.
- * @param {string} [color='#FFFFFF'] - The color of the stars.
- * @param {number} [starCount=100] - The number of stars to generate.
  */
 export function createStarryBackground(container, color = '#FFFFFF', starCount = 100) {
     if (!container) return;
@@ -251,7 +293,6 @@ export const startVersatrixCardAnimation = () => {
         cardEl.style.top = `-200px`; // Começa fora da tela (acima)
 
         // Definir imagem da carta (verso dourado ou imagem específica)
-        // Por padrão, usa uma classe CSS ou imagem inline se disponível
         cardEl.classList.add('card'); 
         cardEl.style.backgroundImage = "url('./verso_dourado.png')"; // Assumindo existência desta imagem ou similar
 
@@ -284,8 +325,6 @@ export const startVersatrixCardAnimation = () => {
 
 /**
  * Creates a spiral starry background effect for the final battle.
- * @param {HTMLElement} container - The element to add the stars to.
- * @param {number} [starCount=150] - The number of stars to generate.
  */
 export function createSpiralStarryBackground(container, starCount = 150) {
     if (!container) return;
@@ -314,7 +353,6 @@ export function createSpiralStarryBackground(container, starCount = 150) {
         container.appendChild(star);
     }
 }
-
 
 /**
  * Creates the cosmic glow overlay for the Xael challenge.
@@ -593,27 +631,4 @@ export function showInversusVictoryAnimation() {
         if(splashContent) splashContent.classList.remove('hidden');
         document.dispatchEvent(new Event('showSplashScreen'));
     }, 15000);
-}
-
-/**
- * Clears all reality-warping screen effects from the Inversus battle.
- */
-export function resetGameEffects() {
-    const body = document.body;
-    const container = dom.scalableContainer || document.getElementById('scalable-container');
-    
-    const chaosClasses = ['screen-flipped', 'screen-inverted', 'screen-mirrored', 'screen-shaking'];
-    
-    body.classList.remove(...chaosClasses);
-    if (container) {
-        container.classList.remove(...chaosClasses);
-    }
-    
-    if (dom.boardEl) {
-        dom.boardEl.classList.remove('board-rotating', 'board-rotating-fast', 'board-rotating-super-fast', 'final-battle-board');
-    }
-    
-    if (dom.appContainerEl) {
-        dom.appContainerEl.classList.remove('effect-monitor', 'reversus-total-active');
-    }
 }
