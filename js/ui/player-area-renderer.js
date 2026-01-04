@@ -1,4 +1,3 @@
-
 // js/ui/player-area-renderer.js
 import * as dom from '../core/dom.js';
 import * as config from '../core/config.js';
@@ -78,26 +77,54 @@ export const renderPlayerArea = (player) => {
         ${handHTML}
     `;
 
-    // Lógica para o Inversus usar vídeo em vez de imagem
-    if (player.aiType === 'inversus') {
+    // --- LÓGICA DE VÍDEOS ANIMADOS PARA CHEFES (ATUALIZADA) ---
+    const videoMap = {
+        'inversus': 'INVERSUSANIMACAO.mp4',
+        'necroverso_tutorial': 'necroverso.mp4', // Tutorial usa o mesmo do Rei
+        'necroverso_king': 'necroverso.mp4',     // Rei
+        'necroverso_final': 'necroverso2.mp4',   // True End
+        'versatrix': 'versatrix.mp4',
+        'contravox': 'contravox.mp4',
+        'reversum': 'reversum.mp4'
+    };
+
+    if (videoMap[player.aiType]) {
         const videoEl = document.createElement('video');
-        videoEl.src = './INVERSUSANIMACAO.mp4';
-        videoEl.className = 'inversus-portrait-video';
+        videoEl.src = `./${videoMap[player.aiType]}`;
+        
+        // Define as classes CSS corretas
+        let className = 'player-area-character-portrait';
+        
+        if (player.aiType === 'inversus') {
+            className = 'inversus-portrait-video';
+        } else {
+            // Glows e classes específicas
+            if (player.aiType === 'necroverso_final') className += ' final-boss-glow';
+            if (player.aiType === 'necroverso_tutorial') className += ' necro-tutorial-portrait';
+            if (player.aiType === 'contravox') className += ' contravox-portrait';
+            if (player.aiType === 'versatrix') className += ' versatrix-portrait';
+            if (player.aiType === 'reversum') className += ' reversum-portrait';
+        }
+
+        videoEl.className = className;
+        
+        // Configurações do vídeo
         videoEl.autoplay = true;
         videoEl.loop = true;
         videoEl.muted = true;
         videoEl.playsInline = true;
-        playerEl.appendChild(videoEl);
-        return;
-    }
+        
+        if (player.aiType !== 'inversus') {
+            videoEl.style.objectFit = 'cover';
+        }
 
+        playerEl.appendChild(videoEl);
+        return; // Interrompe aqui, usando vídeo
+    }
+    // ---------------------------------------------
+
+    // Mapa de retratos estáticos (Fallback)
     const portraitMap = {
-        'necroverso_tutorial': { src: './necroverso.png', class: 'player-area-character-portrait necro-tutorial-portrait' },
-        'contravox': { src: './contravox.png', class: 'player-area-character-portrait contravox-portrait' },
-        'versatrix': { src: './versatrix.png', class: 'player-area-character-portrait versatrix-portrait' },
-        'reversum': { src: './reversum.png', class: 'player-area-character-portrait reversum-portrait' },
-        'necroverso_king': { src: './necroverso.png', class: 'player-area-character-portrait' },
-        'necroverso_final': { src: './necroverso2.png', class: 'player-area-character-portrait final-boss-glow' },
         'narrador': { src: './narrador.png', class: 'player-area-character-portrait effect-glitch' },
         'xael': { src: './xaeldesafio.png', class: 'player-area-character-portrait xael-glow' }
     };
