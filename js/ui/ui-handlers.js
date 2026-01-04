@@ -31,6 +31,9 @@ let currentEventData = null;
 let infiniteChallengeIntroHandler = null;
 let introImageInterval = null;
 
+// --- CARROSSEL VARIAVEIS (Restaurado) ---
+let handScrollIndex = 0;
+
 // --- FLOATING HAND HELPER FUNCTIONS ---
 
 /**
@@ -57,12 +60,51 @@ function hideFloatingHand() {
     setTimeout(() => {
         dom.floatingHandOverlay.classList.add('hidden');
         dom.floatingHandContainer.innerHTML = '';
+        
+        // Remove os botões de navegação para limpar (Lógica do Carrossel)
+        const navBtns = dom.floatingHandOverlay.querySelectorAll('.hand-nav-button');
+        navBtns.forEach(btn => btn.remove());
+
         dom.floatingHandOverlay.classList.remove('hiding'); // Clean up class
+        handScrollIndex = 0;
     }, 400); 
 }
 
 /**
- * Renders the local player's hand and shows the floating overlay.
+ * Atualiza a posição do carrossel de cartas (Lógica do Carrossel)
+ */
+function updateHandScroll() {
+    const slider = dom.floatingHandContainer.querySelector('.floating-hand-slider');
+    const leftBtn = dom.floatingHandOverlay.querySelector('.hand-nav-button.left');
+    const rightBtn = dom.floatingHandOverlay.querySelector('.hand-nav-button.right');
+    
+    if (!slider) return;
+
+    // Tamanho da carta (200px) + Gap (15px) = 215px
+    const cardWidth = 215;
+    const offset = handScrollIndex * cardWidth;
+    
+    slider.style.transform = `translateX(-${offset}px)`;
+
+    // Lógica para mostrar/esconder botões
+    const totalCards = slider.children.length;
+    // Quantas cartas cabem na tela? (Aprox 6 no container de 1350px)
+    const cardsPerView = 6; 
+    const maxIndex = Math.max(0, totalCards - cardsPerView);
+
+    if (leftBtn) {
+        if (handScrollIndex <= 0) leftBtn.classList.add('hidden');
+        else leftBtn.classList.remove('hidden');
+    }
+
+    if (rightBtn) {
+        if (handScrollIndex >= maxIndex) rightBtn.classList.add('hidden');
+        else rightBtn.classList.remove('hidden');
+    }
+}
+
+/**
+ * Renders the local player's hand and shows the floating overlay with Carousel.
  */
 function showFloatingHand() {
     const { gameState } = getState();
@@ -72,7 +114,11 @@ function showFloatingHand() {
     const player = gameState.players[myPlayerId];
     if (!player) return;
 
-    dom.floatingHandContainer.innerHTML = player.hand.map(card => {
+    // 1. Reseta o scroll
+    handScrollIndex = 0;
+
+    // 2. Cria as cartas dentro do Slider
+    const cardsHTML = player.hand.map(card => {
         const cardHTML = renderCard(card, 'floating-hand', player.id);
         
         // Simplified wrapper, clicking the card itself is the action
@@ -83,8 +129,51 @@ function showFloatingHand() {
         `;
     }).join('');
 
+    // Encapsula no slider
+    dom.floatingHandContainer.innerHTML = `<div class="floating-hand-slider">${cardsHTML}</div>`;
+
+    // 3. Injeta os botões de navegação (Setas) dinamicamente
+    // Removemos anteriores para não duplicar
+    const oldBtns = dom.floatingHandOverlay.querySelectorAll('.hand-nav-button');
+    oldBtns.forEach(b => b.remove());
+
+    const leftBtn = document.createElement('button');
+    leftBtn.className = 'hand-nav-button left hidden'; // Começa escondido
+    leftBtn.innerHTML = '&#10094;'; // Seta Esquerda
+    
+    const rightBtn = document.createElement('button');
+    rightBtn.className = 'hand-nav-button right hidden'; // Começa escondido
+    rightBtn.innerHTML = '&#10095;'; // Seta Direita
+
+    // Adiciona lógica de clique nas setas
+    leftBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (handScrollIndex > 0) {
+            handScrollIndex--;
+            sound.playSoundEffect('jogarcarta'); 
+            updateHandScroll();
+        }
+    };
+
+    rightBtn.onclick = (e) => {
+        e.stopPropagation();
+        const totalCards = player.hand.length;
+        // 6 é o número de cartas visíveis
+        if (handScrollIndex < totalCards - 6) {
+            handScrollIndex++;
+            sound.playSoundEffect('jogarcarta');
+            updateHandScroll();
+        }
+    };
+
+    dom.floatingHandOverlay.appendChild(leftBtn);
+    dom.floatingHandOverlay.appendChild(rightBtn);
+
     dom.floatingHandOverlay.classList.remove('hiding', 'hidden');
     dom.floatingHandOverlay.classList.add('visible');
+
+    // 5. Atualiza estado inicial
+    setTimeout(updateHandScroll, 50);
 }
 
 function cancelPlayerAction() {
@@ -584,6 +673,11 @@ export function initializeUiHandlers() {
         if (!player) return;
 
         if (e.target.classList.contains('card-maximize-button')) {
+            return;
+        }
+        
+        // Use o botão de navegação para evitar fechar a mão ao clicar na seta
+        if (e.target.closest('.hand-nav-button')) {
             return;
         }
     
@@ -1606,271 +1700,6 @@ export function initializeUiHandlers() {
             gameState.revealedHands = gameState.playerIdsInGame.filter(id => id !== 'player-1' && !gameState.players[id].isEliminated);
             updateLog("Poder Estelar ativado! As mãos dos oponentes foram reveladas por esta rodada.");
             renderAll();
-        }
-    });
-
-    const sendChatMessage = () => {
-        const { isChatMuted } = getState();
-        if (isChatMuted) return;
-
-        const message = dom.chatInput.value.trim();
-        if (message) {
-            const { gameState, userProfile } = getState();
-            if (gameState && gameState.isPvp) {
-                 network.emitChatMessage(message);
-            } else {
-                updateLog({ type: 'dialogue', speaker: userProfile?.username || t('game.you'), message, googleId: userProfile?.google_id });
-            }
-            dom.chatInput.value = '';
-        }
-    };
-    
-    if (dom.chatInput) dom.chatInput.addEventListener('keypress', (e) => { 
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            sendChatMessage();
-        }
-    });
-    
-    if (dom.chatToggleBtn) dom.chatToggleBtn.addEventListener('click', () => {
-        const state = getState();
-        updateState('isChatMuted', !state.isChatMuted);
-        updateChatControls();
-    });
-
-    if (dom.chatFilterBtn) dom.chatFilterBtn.addEventListener('click', () => {
-        const state = getState();
-        const currentFilter = state.chatFilter;
-        const filterCycle = {
-            'all': 'log',
-            'log': 'chat',
-            'chat': 'all'
-        };
-        const nextFilter = filterCycle[currentFilter] || 'all';
-        updateState('chatFilter', nextFilter);
-        updateLog();
-        updateChatControls();
-    });
-
-
-    if (dom.pvpLobbyModal) {
-        dom.pvpLobbyModal.addEventListener('click', (e) => {
-            const inviteButton = e.target.closest('.invite-friend-slot-btn');
-            if (inviteButton) {
-                network.emitGetOnlineFriends();
-            }
-
-            const kickButton = e.target.closest('.kick-player-button');
-            if (kickButton) {
-                const kickId = kickButton.dataset.kickId;
-                const username = kickButton.title.match(/Expulsar (.*) da sala/)?.[1] || 'este jogador';
-                if (confirm(t('confirm.kick_player', { username }))) {
-                    network.emitKickPlayer(kickId);
-                }
-            }
-        });
-    }
-    
-    if (dom.inviteFriendsModal) {
-        dom.inviteFriendsModal.addEventListener('click', (e) => {
-            const inviteButton = e.target.closest('.invite-friend-btn');
-            if (inviteButton) {
-                const targetUserId = inviteButton.dataset.userId;
-                network.emitInviteFriendToLobby(parseInt(targetUserId, 10));
-                inviteButton.textContent = t('pvp.invite_sent_button') || 'Sent';
-                inviteButton.disabled = true;
-            }
-        });
-    }
-
-    if (dom.inviteFriendsCloseButton) {
-        dom.inviteFriendsCloseButton.addEventListener('click', () => {
-            dom.inviteFriendsModal.classList.add('hidden');
-        });
-    }
-
-    if (dom.lobbyInviteAcceptButton) {
-        dom.lobbyInviteAcceptButton.addEventListener('click', (e) => {
-            const roomId = e.target.dataset.roomId;
-            if (roomId) {
-                network.emitAcceptInvite({ roomId });
-            }
-            dom.lobbyInviteNotificationModal.classList.add('hidden');
-        });
-    }
-
-    if (dom.lobbyInviteDeclineButton) {
-        dom.lobbyInviteDeclineButton.addEventListener('click', (e) => {
-            const roomId = e.target.dataset.roomId;
-            if (roomId) {
-                 network.emitDeclineInvite({ roomId });
-            }
-            dom.lobbyInviteNotificationModal.classList.add('hidden');
-        });
-    }
-
-    if (dom.lobbyChatSendButton) dom.lobbyChatSendButton.addEventListener('click', () => {
-        const message = dom.lobbyChatInput.value.trim();
-        if(message) {
-            network.emitLobbyChat(message);
-            dom.lobbyChatInput.value = '';
-        }
-    });
-    
-    if (dom.lobbyChatInput) dom.lobbyChatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const message = dom.lobbyChatInput.value.trim();
-            if(message) {
-                network.emitLobbyChat(message);
-                dom.lobbyChatInput.value = '';
-            }
-        }
-    });
-
-    if (dom.pvpShowCreateRoomButton) dom.pvpShowCreateRoomButton.addEventListener('click', () => {
-        dom.pvpCreateRoomModal.classList.remove('hidden');
-    });
-
-    if (dom.pvpCreateRoomCancelButton) dom.pvpCreateRoomCancelButton.addEventListener('click', () => {
-        dom.pvpCreateRoomModal.classList.add('hidden');
-    });
-
-    if (dom.pvpCreateRoomConfirmButton) dom.pvpCreateRoomConfirmButton.addEventListener('click', () => {
-        const name = dom.roomNameInput.value.trim();
-        const password = dom.roomPasswordInput.value.trim();
-        const betAmountRadio = document.querySelector('input[name="bet-amount"]:checked');
-        const betAmount = betAmountRadio ? parseInt(betAmountRadio.value, 10) : 0;
-
-        if (!name) {
-            alert(t('pvp.room_name_required'));
-            return;
-        }
-
-        network.emitCreateRoom({ name, password, betAmount });
-        dom.pvpCreateRoomModal.classList.add('hidden');
-        dom.roomNameInput.value = '';
-        dom.roomPasswordInput.value = '';
-        const defaultBetRadio = document.querySelector('input[name="bet-amount"][value="0"]');
-        if (defaultBetRadio) {
-            defaultBetRadio.checked = true;
-        }
-    });
-    
-    let selectedRoomIdForPassword = null;
-    if (dom.pvpRoomGridEl) dom.pvpRoomGridEl.addEventListener('click', (e) => {
-        const button = e.target.closest('.join-room-button');
-        if (button) {
-            const roomId = button.dataset.roomId;
-            const hasPassword = button.dataset.hasPassword === 'true';
-
-            if (hasPassword) {
-                selectedRoomIdForPassword = roomId;
-                dom.pvpPasswordInput.value = '';
-                dom.pvpPasswordModal.classList.remove('hidden');
-            } else {
-                if (roomId) network.emitJoinRoom({ roomId });
-            }
-        }
-    });
-
-    if (dom.pvpPasswordSubmit) dom.pvpPasswordSubmit.addEventListener('click', () => {
-        if (selectedRoomIdForPassword) {
-            const password = dom.pvpPasswordInput.value;
-            network.emitJoinRoom({ roomId: selectedRoomIdForPassword, password });
-            dom.pvpPasswordModal.classList.add('hidden');
-            selectedRoomIdForPassword = null;
-        }
-    });
-
-    if (dom.pvpPasswordCancel) dom.pvpPasswordCancel.addEventListener('click', () => {
-        dom.pvpPasswordModal.classList.add('hidden');
-        selectedRoomIdForPassword = null;
-    });
-
-    if (dom.pvpRoomListCloseButton) dom.pvpRoomListCloseButton.addEventListener('click', () => {
-        dom.pvpRoomListModal.classList.add('hidden');
-        showSplashScreen();
-    });
-    
-    if (dom.pvpLobbyCloseButton) dom.pvpLobbyCloseButton.addEventListener('click', () => network.emitLeaveRoom());
-    if (dom.lobbyGameModeEl) dom.lobbyGameModeEl.addEventListener('change', (e) => network.emitChangeMode(e.target.value));
-    if (dom.lobbyStartGameButton) dom.lobbyStartGameButton.addEventListener('click', () => network.emitStartGame());
-    
-    if (dom.fieldEffectTargetModal) dom.fieldEffectTargetModal.addEventListener('click', (e) => {
-        const button = e.target.closest('button');
-        if (!button) return;
-        const { fieldEffectTargetResolver } = getState();
-        if (fieldEffectTargetResolver) {
-            let targetId = null;
-            if (button.id !== 'field-effect-target-cancel-button') {
-                targetId = button.dataset.playerId;
-            }
-            fieldEffectTargetResolver(targetId);
-            updateState('fieldEffectTargetResolver', null);
-            dom.fieldEffectTargetModal.classList.add('hidden');
-        }
-    });
-    
-    if (dom.tournamentButton) dom.tournamentButton.addEventListener('click', () => {
-        if (!getState().isLoggedIn) {
-            alert(t('common.login_required', { feature: t('splash.tournament') }));
-            return;
-        }
-        if (dom.splashScreenEl) dom.splashScreenEl.classList.add('hidden');
-        sound.playStoryMusic('tela.ogg'); // Use main menu music
-        renderTournamentView({ status: 'hub' });
-    });
-
-    if (dom.tournamentPlayOnlineButton) dom.tournamentPlayOnlineButton.addEventListener('click', () => {
-        network.emitJoinTournamentQueue({ type: 'online' });
-    });
-
-    if (dom.tournamentPlayOfflineButton) dom.tournamentPlayOfflineButton.addEventListener('click', () => {
-        network.emitJoinTournamentQueue({ type: 'offline' });
-    });
-
-    if (dom.tournamentCancelQueueButton) dom.tournamentCancelQueueButton.addEventListener('click', () => {
-        network.emitCancelTournamentQueue();
-    });
-
-    if (dom.tournamentCloseButton) dom.tournamentCloseButton.addEventListener('click', () => {
-        const { gameState } = getState();
-        if (gameState && gameState.isTournamentMatch) {
-            if (confirm("Tem certeza que deseja desistir do torneio?")) {
-                 showSplashScreen();
-                 sound.stopStoryMusic();
-            }
-        } else {
-            dom.tournamentModal.classList.add('hidden');
-            showSplashScreen();
-            sound.stopStoryMusic();
-        }
-    });
-
-    // --- CHEAT: F9 para vencer instantaneamente ---
-    document.addEventListener('keydown', (e) => {
-        if (e.code === 'F9') {
-            const { gameState } = getState();
-            if (gameState) {
-                console.log("CHEAT: Vitoria instantanea ativada!");
-                // Se for Inversus, dispara o evento direto para testar o video
-                if (gameState.currentStoryBattle === 'inversus') {
-                    document.dispatchEvent(new CustomEvent('storyWinLoss', {
-                        detail: { battle: 'inversus', won: true }
-                    }));
-                } else {
-                    // Para outros modos, força o fim de jogo padrão
-                     import('../game-logic/turn-manager.js').then(module => {
-                        // Força pontuação alta ou posição final
-                        if (gameState.players['player-1']) {
-                             gameState.players['player-1'].position = 100; // Valor alto para garantir
-                             gameState.players['player-1'].liveScore = 999;
-                             module.checkGameEnd();
-                        }
-                     });
-                }
-            }
         }
     });
 }
