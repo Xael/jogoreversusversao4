@@ -204,9 +204,9 @@ async function finalizeGameStart() {
 export async function advanceToNextPlayer() {
     const { gameState } = getState();
     if (gameState.gamePhase !== 'playing') return;
-
-    // --- ROTAÇÃO DE CAOS REMOVIDA DAQUI ---
-    // Agora o caos é estável e muda apenas no INÍCIO da rodada (startNewRound).
+    
+    // VERIFICAÇÃO DE FIM DE JOGO
+    if (checkGameEnd()) return;
 
     const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
     
@@ -285,6 +285,10 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
     if (!isFirstRound) {
         gameState.turn++;
     }
+
+    // --- NOVO: Reset de flags de habilidades especiais do Inversus ---
+    gameState.inversusSpecialUsedThisTurn = false;
+
     updateLog(`--- ${t('log.new_round', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn })} ---`);
     if(autoStartTurn) {
         announceEffect(t('log.new_round_announcement', { turn: gameState.isInfiniteChallenge ? gameState.infiniteChallengeLevel : gameState.turn }), 'default', 2000);
@@ -417,7 +421,11 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
     }
 }
 
-function checkGameEnd() {
+/**
+ * Verifica se algum jogador atingiu a condição de vitória e dispara os eventos apropriados.
+ * Integração robusta: Lida com Bosses, PvP, Eliminação e Posição.
+ */
+export function checkGameEnd() {
     const { gameState } = getState();
     
     // In tournament matches, the game does not end based on board position.
@@ -425,6 +433,8 @@ function checkGameEnd() {
     if (gameState.isTournamentMatch) {
         return false;
     }
+
+    if (!gameState || gameState.gamePhase === 'game_over') return false;
 
     // Specific win/loss condition for heart-based battles
     if (gameState.currentStoryBattle === 'necroverso_final') {
@@ -440,10 +450,10 @@ function checkGameEnd() {
         }
     }
     
+    const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
+
     // VERIFICAÇÃO DE ELIMINAÇÃO (Modo Inversus ou Boss Rush)
     if (gameState.isKingNecroBattle || (gameState.isInversusMode && !gameState.isInfiniteChallenge)) {
-        const activePlayers = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated);
-        
         // Se só sobrou um jogador (ou nenhum), o jogo acaba
         if (activePlayers.length <= 1) {
             gameState.gamePhase = 'game_over';
@@ -462,12 +472,13 @@ function checkGameEnd() {
         }
     }
 
-    // CRITICAL FIX: In heart-based battles, the game should NOT end by reaching position 10.
-    if (gameState.currentStoryBattle === 'necroverso_final' || gameState.isKingNecroBattle || gameState.isInversusMode) {
-        return false; // Only heart-based win/loss applies.
+    // Critical: For Inversus or King Necro, usually Position 10 doesn't win, hearts do.
+    // BUT, if the new code requires standard position victory to also trigger the event, we handle it here.
+    if (gameState.currentStoryBattle === 'necroverso_final' || gameState.isKingNecroBattle) {
+        return false; // Only heart-based win/loss applies for these.
     }
 
-    // Standard win condition for all other modes (reaching position 10)
+    // Standard win condition for all other modes (reaching position 10) including Inversus if configured to allow it.
     const gameWinners = gameState.playerIdsInGame.filter(id => !gameState.players[id].isEliminated && gameState.players[id].position >= config.WINNING_POSITION);
 
     if (gameWinners.length > 0) {
@@ -510,11 +521,15 @@ function checkGameEnd() {
                 }
             }
 
-            if (gameState.isStoryMode) {
+            // MODIFICAÇÃO: Se for Modo História OU Inversus, dispara o evento storyWinLoss
+            if (gameState.isStoryMode || gameState.isInversusMode) {
                  const player1Victorious = gameState.gameMode === 'duo'
                     ? actualWinners.some(id => (gameState.currentStoryBattle === 'necroverso_final' ? ['player-1', 'player-4'] : config.TEAM_A).includes(id))
                     : actualWinners.includes('player-1');
-                document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: gameState.currentStoryBattle, won: player1Victorious } }));
+                
+                const battleName = gameState.isInversusMode ? 'inversus' : gameState.currentStoryBattle;
+                
+                document.dispatchEvent(new CustomEvent('storyWinLoss', { detail: { battle: battleName, won: player1Victorious } }));
             } else {
                 const winnerNames = actualWinners.map(id => gameState.players[id].name).join(' e ');
                 const player1Won = actualWinners.includes('player-1');
