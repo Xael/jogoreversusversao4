@@ -12,7 +12,7 @@ import { updateLog, shuffle } from '../core/utils.js';
 import * as config from '../core/config.js';
 import { AVATAR_CATALOG } from '../core/config.js';
 import * as network from '../core/network.js';
-import { shatterImage, playInversusFinalCinematic } from './animations.js'; // Adicionado playInversusFinalCinematic
+import { shatterImage, playInversusFinalCinematic } from './animations.js';
 import { announceEffect } from '../core/sound.js';
 import { playCard } from '../game-logic/player-actions.js';
 import { advanceToNextPlayer, startNextInfiniteChallengeDuel, initiateGameStartSequence } from '../game-logic/turn-manager.js';
@@ -1376,20 +1376,18 @@ export function initializeUiHandlers() {
         const { battle, won, reason } = e.detail;
         const { gameState } = getState();
         
-        // --- LÓGICA DE VITÓRIA DO INVERSUS (Cinemática) ---
+        // --- FIX: Use the IMPORTED module directly, NOT from state ---
         if (battle === 'inversus' && won) {
-            const { achievements: currentAchievements } = getState();
-            currentAchievements.grantAchievement('inversus_win');
+            // Correct usage: achievements.grantAchievement
+            achievements.grantAchievement('inversus_win');
             
-            // Esconde toda a UI do jogo para dar lugar ao vídeo
             dom.appContainerEl.classList.add('hidden');
             dom.gameOverModal.classList.add('hidden'); 
 
-            // Inicia a sequência de vídeos
             await playInversusFinalCinematic();
-            return; // Interrompe o fluxo padrão para não mostrar Game Over
+            return; 
         }
-        // --------------------------------------------------
+        // -------------------------------------------------------------
 
         if (gameState) {
              updateState('lastStoryGameOptions', { mode: gameState.gameMode, options: gameState.gameOptions });
@@ -1537,7 +1535,7 @@ export function initializeUiHandlers() {
                     message = "O Narrador reescreveu a história para te derrotar. Tentar de novo?";
                 }
                 break;
-            // Case inversus removido daqui pois é tratado no topo da função
+            // Case inversus handled at top
             default:
                 message = won ? 'Você venceu o duelo!' : 'Você foi derrotado.';
         }
