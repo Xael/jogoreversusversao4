@@ -318,7 +318,7 @@
                         <li data-i18n="info.special_card_reversus"><strong>Reversus:</strong> Inverte um efeito ('Mais' vira 'Menos', 'Sobe' vira 'Desce', etc.) em um único jogador.</li>
                         <li data-i18n="info.special_card_reversus_total"><strong>Reversus Total:</strong> A carta mais poderosa. Inverte TODOS os efeitos em TODOS os jogadores na rodada (efeito Global). Pode também ser usada para aplicar e travar um efeito básico ('Mais', 'Menos', etc.) em um único alvo por uma rodada (efeito Individual).</li>
                     </ul>
-                     <p><strong data-i18n="info.field_effects_title">Efeitos de Campo:</strong> <span data-i18n="info.field_effects_text">Parar em casas coloridas no tabuleiro ativa efeitos especiais que duram a rodada inteira!</span></p>
+                      <p><strong data-i18n="info.field_effects_title">Efeitos de Campo:</strong> <span data-i18n="info.field_effects_text">Parar em casas coloridas no tabuleiro ativa efeitos especiais que duram a rodada inteira!</span></p>
                 </div>
             </div>
 
@@ -960,6 +960,9 @@
         <video id="final-video-player" playsinline></video>
     </div>
 
+    <div id="cinematic-overlay" class="modal-overlay hidden" style="background: black; z-index: 99999; display: flex; justify-content: center; align-items: center;">
+        <video id="cinematic-video-player" style="max-width: 100%; max-height: 100%;"></video>
+    </div>
 
 </div>
 <script type="module" src="js/core/index.js"></script>
