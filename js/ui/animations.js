@@ -45,11 +45,7 @@ export function resetGameEffects() {
 
 /**
  * Aplica efeitos visuais de caos na tela (Inversus).
- * O efeito escalona gradualmente:
- * Rodada 1-2: Calmo (0%)
- * Rodada 3-5: Leve (20-40%)
- * Rodada 6-9: Intenso (60-80%)
- * Rodada 10+: Caos Total (100%)
+ * O efeito escalona gradualmente.
  */
 export function applyInversusChaos(turn = 1) {
     const container = dom.scalableContainer || document.getElementById('scalable-container');
@@ -67,18 +63,14 @@ export function applyInversusChaos(turn = 1) {
     else if (turn >= 10) probability = 1.0;
 
     if (Math.random() < probability) {
-        // Escolhe efeitos aleatórios baseados na intensidade
         const activeEffects = [];
         
-        // Inversão de cores (Inverted)
         if (Math.random() < probability) activeEffects.push('screen-inverted');
         
-        // Rotação/Espelhamento (Flipped/Mirrored)
         if (turn >= 6 && Math.random() < probability) {
             activeEffects.push(Math.random() > 0.5 ? 'screen-flipped' : 'screen-mirrored');
         }
 
-        // Tremor de tela (Shaking)
         if (turn >= 10) activeEffects.push('screen-shaking');
 
         activeEffects.forEach(effect => {
@@ -182,7 +174,6 @@ export async function animateCardPlay(card, startElement, targetPlayerId, target
         const clone = document.createElement('div');
         clone.className = 'card card-animation-clone';
 
-        // Correctly get the card image URL using the helper function. This handles all card types and visibility states.
         const imageUrl = getCardImageUrl(card, forceHiddenAnimation);
         clone.style.backgroundImage = `url('./${imageUrl}')`;
         
@@ -205,7 +196,7 @@ export async function animateCardPlay(card, startElement, targetPlayerId, target
             clone.remove();
             if (startElement) startElement.style.visibility = 'visible';
             resolve();
-        }, 600); // Duration must match the transition time in index.css
+        }, 600);
     });
 }
 
@@ -218,10 +209,11 @@ export function createStarryBackground(container, color = '#FFFFFF', starCount =
 
     for (let i = 0; i < starCount; i++) {
         const star = document.createElement('div');
-        star.className = 'story-bg-star';
-        star.style.color = color;
         const startX = `${Math.random() * 100}vw`, startY = `${Math.random() * 100}vh`;
         const endX = `${Math.random() * 100}vw`, endY = `${Math.random() * 100}vh`;
+        
+        star.className = 'story-bg-star';
+        star.style.color = color;
         star.style.setProperty('--start-x', startX);
         star.style.setProperty('--start-y', startY);
         star.style.setProperty('--end-x', endX);
@@ -240,17 +232,14 @@ export function createStarryBackground(container, color = '#FFFFFF', starCount =
 export const startVersatrixCardAnimation = () => {
     const state = getState();
 
-    // Limpa estado anterior se houver
     if (state.versatrixCardInterval) {
         clearInterval(state.versatrixCardInterval);
         updateState('versatrixCardInterval', null);
     }
     
-    // Remove carta remanescente para evitar duplicatas
     const oldCard = document.getElementById('secret-versatrix-card');
     if (oldCard) oldCard.remove();
 
-    // Verifica se o jogador venceu a Versatrix e ainda não coletou a carta
     const hasWin = state.achievements && state.achievements.has('versatrix_win');
     const hasCollected = state.achievements && state.achievements.has('versatrix_card_collected');
     
@@ -259,7 +248,6 @@ export const startVersatrixCardAnimation = () => {
     }
 
     const createFallingCard = () => {
-        // Re-checagem de estado para garantir que não coletou no meio do intervalo
         const currentState = getState();
         if (currentState.achievements.has('versatrix_card_collected')) {
             if (currentState.versatrixCardInterval) {
@@ -274,7 +262,6 @@ export const startVersatrixCardAnimation = () => {
         const existing = document.getElementById('secret-versatrix-card');
         if (existing) existing.remove();
 
-        // Garante o container correto
         const container = dom.scalableContainer || document.getElementById('scalable-container') || document.body;
         
         const cardEl = document.createElement('div');
@@ -284,17 +271,15 @@ export const startVersatrixCardAnimation = () => {
         cardEl.style.position = 'absolute';
         cardEl.style.width = `${size}px`;
         cardEl.style.height = `${size * 1.4}px`;
-        cardEl.style.zIndex = '9999'; // Garante que fique acima de tudo
-        cardEl.style.cursor = 'pointer'; // Indica que é clicável
+        cardEl.style.zIndex = '9999';
+        cardEl.style.cursor = 'pointer';
         
-        // Responsividade: Usa a largura real do container
         const containerWidth = container.clientWidth || window.innerWidth;
         cardEl.style.left = `${Math.random() * (containerWidth - size)}px`;
-        cardEl.style.top = `-200px`; // Começa fora da tela (acima)
+        cardEl.style.top = `-200px`;
 
-        // Definir imagem da carta (verso dourado ou imagem específica)
         cardEl.classList.add('card'); 
-        cardEl.style.backgroundImage = "url('./verso_dourado.png')"; // Assumindo existência desta imagem ou similar
+        cardEl.style.backgroundImage = "url('./verso_dourado.png')";
 
         const fallDuration = 10;
         cardEl.style.animation = `secret-fall ${fallDuration}s linear forwards, versatrix-pulse-glow 2s infinite ease-in-out`;
@@ -309,16 +294,12 @@ export const startVersatrixCardAnimation = () => {
             container.appendChild(cardEl);
         }
 
-        // Remove após a animação acabar se não for clicada
         setTimeout(() => { 
             if (cardEl.parentElement) cardEl.remove(); 
         }, fallDuration * 1000);
     };
 
-    // Cria a primeira imediatamente
     createFallingCard();
-    
-    // Configura o intervalo
     const intervalId = setInterval(createFallingCard, 15000);
     updateState('versatrixCardInterval', intervalId);
 };
@@ -328,9 +309,8 @@ export const startVersatrixCardAnimation = () => {
  */
 export function createSpiralStarryBackground(container, starCount = 150) {
     if (!container) return;
-    container.innerHTML = ''; // Clear previous stars
+    container.innerHTML = ''; 
     
-    // Use fixed dimensions for consistency or container dimensions
     const centerX = 1920 / 2;
     const centerY = 1080 / 2;
 
@@ -360,7 +340,7 @@ export function createSpiralStarryBackground(container, starCount = 150) {
 export function createCosmicGlowOverlay() {
     const container = dom.cosmicGlowOverlay;
     if (!container) return;
-    container.innerHTML = ''; // Clear previous particles
+    container.innerHTML = '';
     const colors = ['#e63946', '#00b4d8', '#52b788', '#fca311', '#9b5de5', '#f1faee'];
     
     for (let i = 0; i < 70; i++) {
@@ -387,7 +367,6 @@ export const animateNecroX = () => {
     const { gameState } = getState();
     const overlay = document.getElementById('necro-x-animation-overlay');
     const casterImg = document.getElementById('necro-x-caster-img');
-    const cardImg = document.getElementById('necro-x-card-img');
 
     if (overlay) {
         if (casterImg && gameState) {
@@ -399,9 +378,7 @@ export const animateNecroX = () => {
 };
 
 /**
- * Creates and starts the floating items animation for the splash screen or other effects.
- * @param {HTMLElement} containerEl - The container element to fill with animated items.
- * @param {string} [context='splash'] - The context ('splash' or 'credits').
+ * Creates and starts the floating items animation.
  */
 export const initializeFloatingItemsAnimation = (containerEl, context = 'splash') => {
     if (!containerEl) return;
@@ -413,7 +390,7 @@ export const initializeFloatingItemsAnimation = (containerEl, context = 'splash'
 
     if (context === 'credits') {
         imagePool = [...config.BASE_CARD_IMAGES, ...config.BOSS_CARD_IMAGES, ...config.AVATAR_IMAGES];
-    } else { // 'splash' context
+    } else { 
         imagePool = [...config.BASE_CARD_IMAGES];
         if (achievements.has('contravox_win')) bossPool.push({ image: 'cartacontravox.png', direction: 'up' });
         if (achievements.has('versatrix_win')) bossPool.push({ image: 'cartaversatrix.png', direction: 'up' });
@@ -423,7 +400,7 @@ export const initializeFloatingItemsAnimation = (containerEl, context = 'splash'
     
     const effectNamePool = config.EFFECT_DECK_CONFIG.map(item => item.name);
     const itemsToCreate = [];
-    const totalItems = context === 'credits' ? 12 : 30; // Reduced for credits
+    const totalItems = context === 'credits' ? 12 : 30; 
     const numCards = context === 'credits' ? totalItems : 15;
 
     for (let i = 0; i < totalItems; i++) {
@@ -434,7 +411,7 @@ export const initializeFloatingItemsAnimation = (containerEl, context = 'splash'
     const createItem = (config) => {
         const item = document.createElement('div');
         item.classList.add('animated-item');
-        item.classList.add(config.direction === 'down' ? 'drift-down' : 'drift'); // default to 'drift' (up)
+        item.classList.add(config.direction === 'down' ? 'drift-down' : 'drift'); 
 
         item.classList.add('card-shape');
         item.style.backgroundImage = `url('./${config.image}')`;
@@ -450,10 +427,8 @@ export const initializeFloatingItemsAnimation = (containerEl, context = 'splash'
         containerEl.appendChild(item);
     };
 
-    // Create boss card animations
     bossPool.forEach(boss => createItem(boss));
 
-    // Create regular floating items
     for (const itemConfig of itemsToCreate) {
         const item = document.createElement('div');
         item.classList.add('animated-item');
@@ -489,7 +464,6 @@ export const initializeFloatingItemsAnimation = (containerEl, context = 'splash'
 
 /**
  * Toggles the visibility and animation of the Reversus Total background effect.
- * @param {boolean} isActive - Whether to activate or deactivate the effect.
  */
 export const toggleReversusTotalBackground = (isActive) => {
     if (isActive) {
@@ -502,34 +476,58 @@ export const toggleReversusTotalBackground = (isActive) => {
 };
 
 /**
- * Creates a shattering effect for an image element.
- * @param {HTMLElement} imageEl - The image element to shatter.
- * @returns {Promise<void>} A promise that resolves when the animation is complete.
+ * Cria o efeito de despedaçar (shatter) para uma imagem OU vídeo.
+ * Converte o elemento atual (seja img ou video) em um canvas estático
+ * para poder recortar os pedaços e explodir.
+ * * @param {HTMLElement} element - O elemento (img ou video) para despedaçar.
  */
-export async function shatterImage(imageEl) {
-    if (!imageEl || !imageEl.parentNode) return;
+export async function shatterImage(element) {
+    // Verifica se o elemento existe e está no DOM
+    if (!element || !element.parentNode) return;
     
+    // Toca o som (já existente)
     playSoundEffect('destruido');
 
     return new Promise(resolve => {
         requestAnimationFrame(() => {
-            const parent = imageEl.parentNode;
-            const rect = imageEl.getBoundingClientRect();
-
+            // 1. Criar um "Snapshot" do elemento atual (Frame do vídeo ou Imagem)
+            const rect = element.getBoundingClientRect();
+            
+            // Segurança contra elementos invisíveis
             if (rect.width === 0 || rect.height === 0) {
-                console.warn('Shatter animation skipped: image has no dimensions.', imageEl);
+                console.warn('Shatter animation skipped: element has no dimensions.', element);
                 setTimeout(resolve, 500);
                 return;
             }
 
+            // Canvas temporário para capturar a imagem/frame
+            const canvas = document.createElement('canvas');
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            const ctx = canvas.getContext('2d');
+            
+            try {
+                // drawImage funciona para Video e Img nativamente
+                ctx.drawImage(element, 0, 0, rect.width, rect.height);
+            } catch (e) {
+                console.error("Erro ao capturar frame para shatter:", e);
+                resolve(); // Evita travar se der erro de CORS ou carregamento
+                return;
+            }
+
+            // Converte o canvas para uma URL de imagem (base64)
+            const snapshotUrl = canvas.toDataURL();
+
+            // 2. Ocultar o elemento original imediatamente
+            element.style.opacity = '0';
+
+            // 3. Criar container da explosão
             const container = document.createElement('div');
             container.className = 'shatter-container';
             container.style.position = 'absolute';
-            container.style.zIndex = '3000'; // FIX: Ensure shatter effect is on top of everything
+            container.style.zIndex = '3000';
             
-            // Adjust coordinates to be relative to the parent if needed, 
-            // but for absolute positioned effects over fixed UI, body relative is often safer.
-            // Using body appending below for safer positioning overlap.
+            // Posiciona no corpo para garantir que fique por cima de tudo
             document.body.appendChild(container);
 
             container.style.left = `${rect.left}px`;
@@ -537,8 +535,7 @@ export async function shatterImage(imageEl) {
             container.style.width = `${rect.width}px`;
             container.style.height = `${rect.height}px`;
 
-            imageEl.style.opacity = '0';
-
+            // 4. Criar partículas usando o Snapshot como background
             const particles = [];
             const rows = 10, cols = 10;
 
@@ -546,13 +543,18 @@ export async function shatterImage(imageEl) {
                 for (let c = 0; c < cols; c++) {
                     const particle = document.createElement('div');
                     particle.className = 'shatter-particle';
-                    particle.style.backgroundImage = `url(${imageEl.src})`;
-                    particle.style.backgroundPosition = `${c * 100 / (cols - 1)}% ${r * 100 / (rows - 1)}%`;
+                    
+                    // AQUI ESTÁ O TRUQUE: Usamos o snapshot gerado como background
+                    particle.style.backgroundImage = `url(${snapshotUrl})`;
+                    particle.style.backgroundSize = `${rect.width}px ${rect.height}px`; // Garante a escala correta
+                    particle.style.backgroundPosition = `${-c * (rect.width / cols)}px ${-r * (rect.height / rows)}px`;
+                    
                     container.appendChild(particle);
                     particles.push(particle);
                 }
             }
 
+            // 5. Animar a explosão
             requestAnimationFrame(() => {
                 particles.forEach(p => {
                     const x = (Math.random() - 0.5) * window.innerWidth * 1.5;
@@ -563,6 +565,7 @@ export async function shatterImage(imageEl) {
                 });
             });
 
+            // 6. Limpeza
             setTimeout(() => {
                 if (container.parentNode) {
                     container.remove();
