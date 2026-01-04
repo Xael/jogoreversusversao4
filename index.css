@@ -720,25 +720,27 @@ body.screen-flipped.screen-mirrored {
     opacity: 0.8;
 }
 
-/* --- CORREÇÃO FINAL PARA VÍDEOS DOS CHEFES --- */
+/* --- CORREÇÃO DE RESPONSIVIDADE DOS CHEFES --- */
 video.player-area-character-portrait {
-    width: 560px !important;
-    height: 560px !important;
+    /* Ocupa todo o espaço disponível no cartão do jogador */
+    width: 100% !important;
+    height: 100% !important;
 
-    /* Centralização Horizontal (Igual ao Inversus) */
+    /* Centralização */
     position: absolute !important;
     left: 50% !important;
+    bottom: 0 !important;
     transform: translateX(-50%) !important;
-    
-    /* Alinhamento Vertical */
-    bottom: -10px !important; /* Levemente para baixo para assentar na base */
-    right: auto !important;   /* Anula o alinhamento à direita anterior */
+
+    /* O SEGREDO: 'contain' força o vídeo a caber INTEIRO dentro do quadrado,
+       seja ele grande (1x1) ou pequeno (1x4), sem cortar pedaços e sem vazar. */
+    object-fit: contain !important; 
+    object-position: bottom center !important; /* Cola o personagem no chão do cartão */
 
     /* Visual */
-    object-fit: cover !important;
-    z-index: 0 !important; /* Garante que fique atrás dos textos e cartas */
+    z-index: 0 !important;
     pointer-events: none;
-    opacity: 0.9;
+    opacity: 0.95;
     box-shadow: none !important;
     border-radius: 0 0 10px 10px;
 }
