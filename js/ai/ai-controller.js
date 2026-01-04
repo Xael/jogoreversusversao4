@@ -1,4 +1,3 @@
-
 // js/ai/ai-controller.js
 
 import { getState } from '../core/state.js';
@@ -31,8 +30,12 @@ function getDifficulty(gameState) {
         return 'easy';
     }
 
-    if (gameState.currentStoryBattle) {
-        switch (gameState.currentStoryBattle) {
+    if (gameState.currentStoryBattle || gameState.isInversusMode) {
+        // Normaliza o nome da batalha para checagem
+        const battle = gameState.currentStoryBattle || (gameState.isInversusMode ? 'inversus' : '');
+        
+        switch (battle) {
+            case 'inversus':
             case 'necroverso_king':
             case 'necroverso_final':
             case 'narrador':
@@ -41,7 +44,7 @@ function getDifficulty(gameState) {
             case 'reversum':
                 return 'medium';
             default:
-                if (gameState.currentStoryBattle.startsWith('event_')) {
+                if (battle.startsWith('event_')) {
                     return 'hard';
                 }
                 return 'easy'; // tutorial, contravox, versatrix
@@ -70,7 +73,49 @@ export async function executeAiTurn(player) {
     let specialAbilityUsed = false;
 
     try {
-        // --- Part 1: Story & Event Boss Special Abilities ---
+        // --- Part 1: Story, Event Boss & Inversus Special Abilities ---
+
+        // LÓGICA ESPECIAL DO INVERSUS (Múltiplos Poderes)
+        // Inserido do novo código, mantendo a estrutura original
+        if (player.aiType === 'inversus' && !gameState.inversusSpecialUsedThisTurn) {
+            const player1 = gameState.players['player-1'];
+            const choices = ['contravox', 'reversum', 'necroverso'];
+            const chosenPower = choices[Math.floor(Math.random() * choices.length)];
+
+            updateLog({ type: 'dialogue', speaker: 'inversus', message: 'Inversus: "Eu sou o reflexo de todos os seus medos!"' });
+
+            switch(chosenPower) {
+                case 'contravox':
+                    gameState.player1CardsObscured = true;
+                    playSoundEffect('confusao');
+                    announceEffect('!OÃSUFNOC', 'reversus');
+                    updateLog("Inversus usou o poder do Contravox! Suas cartas foram obscurecidas.");
+                    specialAbilityUsed = true;
+                    break;
+                case 'reversum':
+                    if (player1.effects.score || player1.effects.movement) {
+                        if (player1.effects.score) player1.effects.score = getInverseEffect(player1.effects.score);
+                        if (player1.effects.movement) player1.effects.movement = getInverseEffect(player1.effects.movement);
+                        playSoundEffect('reversus');
+                        announceEffect('REVERSUS!', 'reversus');
+                        updateLog("Inversus usou o poder do Rei Reversum! Seus efeitos foram invertidos.");
+                        specialAbilityUsed = true;
+                    }
+                    break;
+                case 'necroverso':
+                    await triggerNecroX(player, player1);
+                    updateLog("Inversus usou o poder do Necroverso! Uma maldição foi lançada.");
+                    specialAbilityUsed = true;
+                    break;
+            }
+            if (specialAbilityUsed) {
+                gameState.inversusSpecialUsedThisTurn = true;
+                renderAll();
+                await new Promise(res => setTimeout(res, 1500));
+            }
+        }
+
+        // HABILIDADE VERSATRIX (Mantido do original - mais robusto que o novo snippet)
         if (player.aiType === 'versatrix' && gameState.currentStoryBattle === 'versatrix' && !gameState.versatrixSwapActive) {
             const player1 = gameState.players['player-1'];
             const player1IsLeading = player1.position > player.position + 1; // Condition: player is winning by a lot
@@ -107,6 +152,7 @@ export async function executeAiTurn(player) {
             }
         }
 
+        // BOSSES DE EVENTO (Mantido do original - crucial para o funcionamento dos eventos)
         if (player.isEventBoss) {
             const player1 = gameState.players['player-1'];
             switch(player.aiType) {
@@ -150,10 +196,7 @@ export async function executeAiTurn(player) {
                         updateLog({ type: 'dialogue', speaker: player.aiType, message: `Detetive Misterioso: "Hum... um movimento interessante. Vejamos suas cartas mais de perto."` });
                         await new Promise(res => setTimeout(res, 500));
 
-                        const playerEffectCards = player1.hand.filter(c => {
-                             // Check for effect cards. Contravox obscuring might happen, but here we check data
-                             return c.type === 'effect';
-                        });
+                        const playerEffectCards = player1.hand.filter(c => c.type === 'effect');
                         const aiEffectCards = player.hand.filter(c => c.type === 'effect');
 
                         if (playerEffectCards.length > 0 && aiEffectCards.length > 0) {
@@ -224,7 +267,8 @@ export async function executeAiTurn(player) {
         }
 
         // --- Part 2: Play a value card if necessary ---
-        const valueCards = player.hand.filter(c => c.type === 'value');
+        // Adicionado filtro !c.isFrozen para o Necroverso
+        const valueCards = player.hand.filter(c => c.type === 'value' && !c.isFrozen);
         if (valueCards.length > 1 && !player.playedValueCardThisTurn) {
             let cardToPlay;
             const sortedValueCards = [...valueCards].sort((a, b) => a.value - b.value);
@@ -260,6 +304,7 @@ export async function executeAiTurn(player) {
         }
 
         // --- Part 3: Consider playing one effect card ---
+        // Mantido o algoritmo original pois é mais robusto para Duo e lógica de "Best Move"
         const effectCards = player.hand.filter(c => c.type === 'effect' && !c.isBlocked);
         let bestMove = { score: -1 };
 
@@ -400,7 +445,7 @@ export async function executeAiTurn(player) {
         if (!playedACard && !specialAbilityUsed) {
             updateLog(`AI ${player.name}: Passando o turno.`);
         }
-        gameState.consecutivePasses = playedACard ? 0 : gameState.consecutivePasses + 1;
+        gameState.consecutivePasses = (playedACard || specialAbilityUsed) ? 0 : gameState.consecutivePasses + 1;
         
         gameState.gamePhase = 'playing'; // Resume game
         document.dispatchEvent(new Event('aiTurnEnded'));
