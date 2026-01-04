@@ -6,8 +6,7 @@ import { getCardImageUrl, renderCard } from './card-renderer.js';
 import { t } from '../core/i18n.js';
 
 /**
- * Renders a single player's entire area, including header, hand, and play zone.
- * @param {object} player - The player object to render.
+ * Renders a single player's entire area.
  */
 export const renderPlayerArea = (player) => {
     const playerEl = document.getElementById(`player-area-${player.id}`);
@@ -77,12 +76,12 @@ export const renderPlayerArea = (player) => {
         ${handHTML}
     `;
 
-    // --- LÓGICA DE VÍDEOS ANIMADOS PARA CHEFES (CORRIGIDA TAMANHO) ---
+    // --- LÓGICA DE VÍDEOS ANIMADOS PARA CHEFES ---
     const videoMap = {
         'inversus': 'INVERSUSANIMACAO.mp4',
-        'necroverso_tutorial': 'necroverso.mp4', 
-        'necroverso_king': 'necroverso.mp4',     
-        'necroverso_final': 'necroverso2.mp4',   
+        'necroverso_tutorial': 'necroverso.mp4',
+        'necroverso_king': 'necroverso.mp4',
+        'necroverso_final': 'necroverso2.mp4',
         'versatrix': 'versatrix.mp4',
         'contravox': 'contravox.mp4',
         'reversum': 'reversum.mp4'
@@ -92,13 +91,14 @@ export const renderPlayerArea = (player) => {
         const videoEl = document.createElement('video');
         videoEl.src = `./${videoMap[player.aiType]}`;
         
-        // Define as classes CSS corretas
         let className = 'player-area-character-portrait';
         
         if (player.aiType === 'inversus') {
+            // Inversus usa a classe especial dele que já está configurada no CSS
             className = 'inversus-portrait-video';
         } else {
-            // Glows e classes específicas
+            // Os outros usam a classe padrão + efeitos
+            // O CSS novo (video.player-area-character-portrait) vai redimensionar estes corretamente
             if (player.aiType === 'necroverso_final') className += ' final-boss-glow';
             if (player.aiType === 'necroverso_tutorial') className += ' necro-tutorial-portrait';
             if (player.aiType === 'contravox') className += ' contravox-portrait';
@@ -107,27 +107,12 @@ export const renderPlayerArea = (player) => {
         }
 
         videoEl.className = className;
-        
-        // Configurações do vídeo
         videoEl.autoplay = true;
         videoEl.loop = true;
         videoEl.muted = true;
         videoEl.playsInline = true;
         
-        // --- CORREÇÃO DE TAMANHO ---
-        // Força o vídeo a respeitar o tamanho do container (como a imagem fazia)
-        if (player.aiType !== 'inversus') {
-            videoEl.style.width = '100%';
-            videoEl.style.height = '100%';
-            videoEl.style.objectFit = 'cover'; // Garante que preencha sem distorcer
-            
-            // Opcional: Se ainda ficar grande, forçamos um tamanho máximo fixo
-            // baseado no tamanho padrão dos avatares do jogo (geralmente ~80px-100px)
-            // Descomente abaixo se o width 100% não for suficiente:
-            // videoEl.style.maxWidth = '120px'; 
-            // videoEl.style.maxHeight = '120px';
-        }
-        // ---------------------------
+        // Removemos estilos inline manuais pois o CSS agora cuida disso
 
         playerEl.appendChild(videoEl);
         return; 
@@ -168,7 +153,7 @@ export const renderPlayerArea = (player) => {
 };
 
 /**
- * Creates the HTML for a player's header area, including name, stats, and status.
+ * Creates the HTML for a player's header area.
  */
 function renderPlayerHeader(player) {
     const { gameState } = getState();
