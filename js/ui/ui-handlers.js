@@ -1703,49 +1703,30 @@ export function initializeUiHandlers() {
         }
     });
 
-  // --- CHEAT: F9 para vencer instantaneamente ---
-
+// --- CHEAT: F9 para vencer instantaneamente ---
     document.addEventListener('keydown', (e) => {
-
         if (e.code === 'F9') {
-
             const { gameState } = getState();
-
             if (gameState) {
-
                 console.log("CHEAT: Vitoria instantanea ativada!");
-
+                
                 // Se for Inversus, dispara o evento direto para testar o video
-
                 if (gameState.currentStoryBattle === 'inversus') {
-
                     document.dispatchEvent(new CustomEvent('storyWinLoss', {
-
                         detail: { battle: 'inversus', won: true }
-
                     }));
-
                 } else {
-
                     // Para outros modos, força o fim de jogo padrão
-
                      import('../game-logic/turn-manager.js').then(module => {
-
                         // Força pontuação alta ou posição final
-
                         if (gameState.players['player-1']) {
-
                              gameState.players['player-1'].position = 100; // Valor alto para garantir
-
                              gameState.players['player-1'].liveScore = 999;
-
                              module.checkGameEnd();
-
                         }
-
                      });
-
-
-
-    
+                }
+            }
+        }
+    });
 }
