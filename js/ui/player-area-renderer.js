@@ -77,12 +77,12 @@ export const renderPlayerArea = (player) => {
         ${handHTML}
     `;
 
-    // --- LÓGICA DE VÍDEOS ANIMADOS PARA CHEFES (ATUALIZADA) ---
+    // --- LÓGICA DE VÍDEOS ANIMADOS PARA CHEFES (CORRIGIDA TAMANHO) ---
     const videoMap = {
         'inversus': 'INVERSUSANIMACAO.mp4',
-        'necroverso_tutorial': 'necroverso.mp4', // Tutorial usa o mesmo do Rei
-        'necroverso_king': 'necroverso.mp4',     // Rei
-        'necroverso_final': 'necroverso2.mp4',   // True End
+        'necroverso_tutorial': 'necroverso.mp4', 
+        'necroverso_king': 'necroverso.mp4',     
+        'necroverso_final': 'necroverso2.mp4',   
         'versatrix': 'versatrix.mp4',
         'contravox': 'contravox.mp4',
         'reversum': 'reversum.mp4'
@@ -114,12 +114,23 @@ export const renderPlayerArea = (player) => {
         videoEl.muted = true;
         videoEl.playsInline = true;
         
+        // --- CORREÇÃO DE TAMANHO ---
+        // Força o vídeo a respeitar o tamanho do container (como a imagem fazia)
         if (player.aiType !== 'inversus') {
-            videoEl.style.objectFit = 'cover';
+            videoEl.style.width = '100%';
+            videoEl.style.height = '100%';
+            videoEl.style.objectFit = 'cover'; // Garante que preencha sem distorcer
+            
+            // Opcional: Se ainda ficar grande, forçamos um tamanho máximo fixo
+            // baseado no tamanho padrão dos avatares do jogo (geralmente ~80px-100px)
+            // Descomente abaixo se o width 100% não for suficiente:
+            // videoEl.style.maxWidth = '120px'; 
+            // videoEl.style.maxHeight = '120px';
         }
+        // ---------------------------
 
         playerEl.appendChild(videoEl);
-        return; // Interrompe aqui, usando vídeo
+        return; 
     }
     // ---------------------------------------------
 
