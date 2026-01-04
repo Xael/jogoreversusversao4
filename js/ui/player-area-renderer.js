@@ -12,6 +12,15 @@ import { t } from '../core/i18n.js';
 export const renderPlayerArea = (player) => {
     const playerEl = document.getElementById(`player-area-${player.id}`);
     if (!playerEl) return;
+
+    // --- CORREÇÃO DE LOOP: 1. SALVAR O TEMPO DO VÍDEO ATUAL ---
+    // Antes de apagar o HTML, verificamos se já existe um vídeo rodando e em que segundo ele está.
+    let savedVideoTime = 0;
+    const existingVideo = playerEl.querySelector('video');
+    if (existingVideo) {
+        savedVideoTime = existingVideo.currentTime;
+    }
+    // -----------------------------------------------------------
     
     const { gameState, playerId: myPlayerId } = getState();
     const pIdNum = parseInt(player.id.split('-')[1]);
@@ -71,13 +80,14 @@ export const renderPlayerArea = (player) => {
         
     const headerHTML = renderPlayerHeader(player);
     
+    // AQUI O HTML É LIMPO (O VÍDEO ANTIGO MORRE AQUI)
     playerEl.innerHTML = `
         ${headerHTML}
         ${playZoneHTML}
         ${handHTML}
     `;
 
-    // --- LÓGICA DE VÍDEOS ANIMADOS PARA CHEFES (VERSÃO CORRIGIDA) ---
+    // --- LÓGICA DE VÍDEOS ANIMADOS PARA CHEFES ---
     const videoMap = {
         'inversus': 'INVERSUSANIMACAO.mp4',
         'necroverso_tutorial': 'necroverso.mp4', 
@@ -92,15 +102,11 @@ export const renderPlayerArea = (player) => {
         const videoEl = document.createElement('video');
         videoEl.src = `./${videoMap[player.aiType]}`;
         
-        // Define as classes CSS corretas
         let className = 'player-area-character-portrait';
         
         if (player.aiType === 'inversus') {
-            // O Inversus usa uma classe ESPECIAL (veja no CSS .inversus-portrait-video) que já tem 560px
             className = 'inversus-portrait-video';
         } else {
-            // Os outros usam a classe PADRÃO.
-            // O CSS que adicionamos agora vai forçar eles a terem 186px (1/3 do tamanho).
             if (player.aiType === 'necroverso_final') className += ' final-boss-glow';
             if (player.aiType === 'necroverso_tutorial') className += ' necro-tutorial-portrait';
             if (player.aiType === 'contravox') className += ' contravox-portrait';
@@ -109,14 +115,17 @@ export const renderPlayerArea = (player) => {
         }
 
         videoEl.className = className;
-        
-        // Configurações do vídeo
         videoEl.autoplay = true;
         videoEl.loop = true;
         videoEl.muted = true;
         videoEl.playsInline = true;
-        
-        // REMOVEMOS os estilos inline de width/height aqui para deixar o CSS controlar o tamanho (186px)
+
+        // --- CORREÇÃO DE LOOP: 2. RESTAURAR O TEMPO ---
+        // Se tínhamos um tempo salvo, aplicamos no novo vídeo
+        if (savedVideoTime > 0) {
+            videoEl.currentTime = savedVideoTime;
+        }
+        // ----------------------------------------------
 
         playerEl.appendChild(videoEl);
         return; 
