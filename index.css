@@ -720,27 +720,27 @@ body.screen-flipped.screen-mirrored {
     opacity: 0.8;
 }
 
+/* --- CORREÇÃO FINAL PARA VÍDEOS DOS CHEFES --- */
 video.player-area-character-portrait {
-    /* Aumentado de 186px para 280px (Metade do tamanho real do vídeo) */
-    width: 560px !important; 
+    width: 560px !important;
     height: 560px !important;
-    
-    /* Posicionamento no canto inferior direito */
+
+    /* Centralização Horizontal (Igual ao Inversus) */
     position: absolute !important;
-    bottom: 0 !important;
-    right: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
     
-    /* Garante que o vídeo preencha o quadrado */
+    /* Alinhamento Vertical */
+    bottom: -10px !important; /* Levemente para baixo para assentar na base */
+    right: auto !important;   /* Anula o alinhamento à direita anterior */
+
+    /* Visual */
     object-fit: cover !important;
-    
-    /* Visual e Camadas */
-    z-index: 0 !important; /* Fica atrás do texto e das cartas */
+    z-index: 0 !important; /* Garante que fique atrás dos textos e cartas */
     pointer-events: none;
-    border-radius: 0 0 10px 0; /* Arredonda apenas o canto inferior direito */
-    opacity: 0.9; /* Leve transparência para integrar melhor ao fundo */
-    
-    /* Removemos a sombra forte para não ficar um quadrado marcado */
-    box-shadow: none !important; 
+    opacity: 0.9;
+    box-shadow: none !important;
+    border-radius: 0 0 10px 10px;
 }
 
 .splash-logo.effect-glitch::before,
