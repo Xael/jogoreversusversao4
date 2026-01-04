@@ -4569,3 +4569,41 @@ body.screen-shaking {
     font-size: 0.95rem;
     line-height: 1.5;
 }
+/* --- CORREÇÃO DE LEGIBILIDADE PARA CHEFES COM VÍDEO ESCURO --- */
+/* Aplica para: Contravox, Versatrix, Reversum, Necroverso Tutorial e Final */
+
+.player-area.contravox-glow .player-stats,
+.player-area.versatrix-glow .player-stats,
+.player-area.reversum-glow .player-stats,
+.player-area.player-area-necro-tutorial .player-stats,
+.player-area.player-area-necro-final .player-stats {
+    /* Deixa o fundo da caixinha de status um pouco mais claro para ajudar */
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Mira no texto (Pontos, Resto, etc) e nos Valores (os números) */
+.player-area.contravox-glow .stat-item,
+.player-area.versatrix-glow .stat-item,
+.player-area.reversum-glow .stat-item,
+.player-area.player-area-necro-tutorial .stat-item,
+.player-area.player-area-necro-final .stat-item,
+.player-area.contravox-glow .stat-item strong,
+.player-area.versatrix-glow .stat-item strong,
+.player-area.reversum-glow .stat-item strong,
+.player-area.player-area-necro-tutorial .stat-item strong,
+.player-area.player-area-necro-final .stat-item strong {
+    
+    /* Muda a cor do texto para BRANCO */
+    color: #ffffff !important;
+    
+    /* Cria um contorno/sombra PRETA forte ao redor para destacar do vídeo */
+    text-shadow: 
+        2px 2px 0 #000, 
+       -1px -1px 0 #000,  
+        1px -1px 0 #000,
+       -1px  1px 0 #000,
+        1px  1px 0 #000 !important;
+        
+    font-weight: 700 !important;
+}
