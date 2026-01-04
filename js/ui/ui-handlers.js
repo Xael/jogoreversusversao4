@@ -1376,9 +1376,9 @@ export function initializeUiHandlers() {
         const { battle, won, reason } = e.detail;
         const { gameState } = getState();
         
-        // --- FIX: Use the IMPORTED module directly, NOT from state ---
+        // --- LÓGICA DE VITÓRIA DO INVERSUS (Cinemática) ---
         if (battle === 'inversus' && won) {
-            // Correct usage: achievements.grantAchievement
+            // FIX: Usando o módulo importado corretamente
             achievements.grantAchievement('inversus_win');
             
             dom.appContainerEl.classList.add('hidden');
@@ -1387,7 +1387,7 @@ export function initializeUiHandlers() {
             await playInversusFinalCinematic();
             return; 
         }
-        // -------------------------------------------------------------
+        // --------------------------------------------------
 
         if (gameState) {
              updateState('lastStoryGameOptions', { mode: gameState.gameMode, options: gameState.gameOptions });
@@ -1535,7 +1535,7 @@ export function initializeUiHandlers() {
                     message = "O Narrador reescreveu a história para te derrotar. Tentar de novo?";
                 }
                 break;
-            // Case inversus handled at top
+            // Case inversus removido daqui pois é tratado no topo da função
             default:
                 message = won ? 'Você venceu o duelo!' : 'Você foi derrotado.';
         }
@@ -1838,6 +1838,32 @@ export function initializeUiHandlers() {
             dom.tournamentModal.classList.add('hidden');
             showSplashScreen();
             sound.stopStoryMusic();
+        }
+    });
+
+    // --- CHEAT: F9 para vencer instantaneamente ---
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'F9') {
+            const { gameState } = getState();
+            if (gameState) {
+                console.log("CHEAT: Vitoria instantanea ativada!");
+                // Se for Inversus, dispara o evento direto para testar o video
+                if (gameState.currentStoryBattle === 'inversus') {
+                    document.dispatchEvent(new CustomEvent('storyWinLoss', {
+                        detail: { battle: 'inversus', won: true }
+                    }));
+                } else {
+                    // Para outros modos, força o fim de jogo padrão
+                     import('../game-logic/turn-manager.js').then(module => {
+                        // Força pontuação alta ou posição final
+                        if (gameState.players['player-1']) {
+                             gameState.players['player-1'].position = 100; // Valor alto para garantir
+                             gameState.players['player-1'].liveScore = 999;
+                             module.checkGameEnd();
+                        }
+                     });
+                }
+            }
         }
     });
 }
