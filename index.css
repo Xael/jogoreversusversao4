@@ -720,6 +720,19 @@ body.screen-flipped.screen-mirrored {
     opacity: 0.8;
 }
 
+video.player-area-character-portrait {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important; /* Preenche o espaço sem distorcer */
+    object-position: center 20% !important; /* Foca mais no rosto (topo) */
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: 0 0 10px 0; /* Arredonda canto inferior direito se necessário */
+}
+
 .splash-logo.effect-glitch::before,
 .splash-logo.effect-glitch::after {
     background-image: url('./logo.png');
