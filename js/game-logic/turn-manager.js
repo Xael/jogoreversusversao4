@@ -784,7 +784,8 @@ async function calculateScoresAndEndRound() {
         if (checkGameEnd()) return; // Stop if game ended due to heart loss
     }
     
-    if (!gameState.isInversusMode && !gameState.isKingNecroBattle) {
+    // CORREÇÃO AQUI: Removemos o bloqueio do KingNecroBattle
+    if (!gameState.isInversusMode) {
         for (const id of gameState.playerIdsInGame) {
             const p = gameState.players[id];
             if (p.isEliminated) continue;
