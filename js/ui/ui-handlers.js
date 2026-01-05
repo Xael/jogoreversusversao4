@@ -1215,10 +1215,24 @@ export function initializeUiHandlers() {
                     }, 1000);
                 }
             }
-        } else {
-            // AQUI É A CORREÇÃO PRINCIPAL: 
-            // Recarrega a página para limpar o estado e voltar ao menu limpo
-            window.location.reload(); 
+} else {
+            // CORREÇÃO: Removemos o reload() para não deslogar o usuário.
+            // Em vez disso, escondemos o modal e voltamos para a tela inicial.
+            
+            // 1. Esconde o modal de Game Over (se estiver aberto)
+            const gameOverModal = document.getElementById('game-over-modal');
+            if (gameOverModal) {
+                gameOverModal.classList.add('hidden');
+            }
+
+            // 2. Para a música da fase e volta a do menu (se necessário)
+            if (window.sound && typeof window.sound.stopStoryMusic === 'function') {
+                 window.sound.stopStoryMusic();
+            }
+
+            // 3. Volta para o Menu Principal mantendo a sessão
+            // Certifique-se de importar showSplashScreen no topo do arquivo se ainda não estiver
+            showSplashScreen(); 
         }
     });
     
