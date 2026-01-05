@@ -865,18 +865,18 @@
         "year_end_light": "Year-End Light"
     },
     "event_abilities": {
-        "january_new": "Can make a red path appear in front of them at the start of each round (50% chance).",
+        "january_new": "Shadow of Fate: Has a 50% chance to invert the first positive effect (More or Up) you use on yourself each round.",
         "february_new": "Swaps 'Rest' cards with the opponent at the start of each round, if favorable.",
-        "march_new": "At the start of their turn, draws 2 value cards and discards 2, prioritizing keeping the highest values.",
-        "april_new": "Once per turn, can ignore a negative effect played against them.",
+        "march_new": "Fortune's Blessing: At the start of each turn, draws 2 extra value cards and discards their 2 worst cards.",
+        "april_new": "Sacred Scale: Once per turn, ignores the first negative effect (Less, Down, or Jump) played against them.",
         "may_new": "Plays their value and effect cards face down, revealing them only at the end of the round.",
-        "june_new": "Can reuse one effect card that was used this round, once per round.",
-        "july_new": "Has a 50% chance to steal a random card from your hand per round.",
-        "august_new": "Can swap places on the board with the opponent once per match.",
-        "september_new": "Once per round, can peek at and swap a card from your hand with one of their own.",
-        "october_new": "Once per round (50% chance), can force everyone to discard the highest value card from their hands.",
-        "november_new": "Once per round, can 'freeze' an opponent's effect card, preventing it from being played this round.",
-        "december_new": "At the start of each round, they can swap hands with you (50% chance)."
+        "june_new": "Lingering Flame: The first effect card they play each round has its effect applied twice.",
+        "july_new": "Agile Hook: Has a 50% chance to steal a random card from your hand each round.",
+        "august_new": "Cosmic Chaos: If you are winning by a large margin, they swap places with you on the board (Once per match).",
+        "september_new": "Detective's Gaze: Once per round, peeks at your hand and swaps one of your cards for one of theirs to hinder you.",
+        "october_new": "Sacrificial Spell: Can discard their highest card and yours to create an unbeatable Rest for themselves this round.",
+        "november_new": "Freezing Breath: Once per round, freezes an effect card in your hand, preventing you from using it.",
+        "december_new": "Eternal Dawn: At the end of the round, they recover the card they just used as Rest to use it again."
     },
     "event": {
         "title": "Monthly Event",
