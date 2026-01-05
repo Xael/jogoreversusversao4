@@ -95,8 +95,6 @@ export async function applyEffect(card, targetId, casterId, effectTypeToReverse,
             case 'Reversus Total':
                 // These cards have no effect in tournament mode as per the new rules.
                 updateLog(`A carta ${cardName} não tem efeito especial no modo Torneio.`);
-                // We still need to discard it from hand, which happens outside this function.
-                // The animation will play, but the game state won't change.
                 return;
         }
     }
@@ -110,10 +108,24 @@ export async function applyEffect(card, targetId, casterId, effectTypeToReverse,
         effectName = card.name;
     }
 
-    // --- Habilidades de Evento Passivas ---
-    // Habilidade do Dragão Dourado: Ignora 1 efeito negativo por turno.
+    // --- HABILIDADE DE EVENTO: O PROFETA SOMBRIO (Adicionado do Código 2) ---
+    // Janeiro - Sombra do Destino: Pode inverter o próprio buff do jogador contra ele
+    if (casterId === 'player-1' && targetId === 'player-1' && !gameState.eventBossAbilityUsedThisRound && ['Mais', 'Sobe'].includes(effectName)) {
+        const prophet = Object.values(gameState.players).find(p => p.aiType === 'oprofetasombrio' && !p.isEliminated);
+        if (prophet && Math.random() < 0.5) {
+            const inverted = (effectName === 'Mais' ? 'Menos' : 'Desce');
+            updateLog(`${prophet.name} usou 'Sombra do Destino' e a sua própria profecia se voltou contra você! Seu efeito virou ${inverted}.`);
+            effectName = inverted;
+            gameState.eventBossAbilityUsedThisRound = true;
+            playSoundEffect('confusao');
+            announceEffect('PROFECIA!', 'reversus');
+        }
+    }
+
+    // --- Habilidade de Evento: Dragão Dourado (Mantido do Código 1) ---
+    // Abril: Ignora 1 efeito negativo por turno.
     if (target.isEventBoss && target.aiType === 'dragaodourado' && !target.eventAbilityUsedThisTurn && ['Menos', 'Desce', 'Pula'].includes(effectName)) {
-        updateLog(`Dragão Dourado usou sua habilidade e ignorou o efeito de ${effectName}!`);
+        updateLog(`O Dragão Dourado ignorou o efeito de ${effectName} com sua escama sagrada!`);
         target.eventAbilityUsedThisTurn = true;
         return; // Efeito é ignorado
     }
@@ -121,9 +133,8 @@ export async function applyEffect(card, targetId, casterId, effectTypeToReverse,
     // Check for field effect immunity AND the player's own immunity buff from Infinite Challenge
     if (((gameState.activeFieldEffects || []).some(fe => fe.name === 'Imunidade' && fe.appliesTo === targetId) || target.isImmuneToNegativeEffects) && (effectName === 'Menos' || effectName === 'Desce')) {
         updateLog(`${target.name} está imune a ${effectName} nesta rodada!`);
-        return; // Buff lasts for the whole duel, so we don't consume it here.
+        return; 
     }
-
 
     const getInverseEffect = (effect) => {
         const map = { 'Mais': 'Menos', 'Menos': 'Mais', 'Sobe': 'Desce', 'Desce': 'Sobe', 'NECRO X': 'NECRO X Invertido', 'NECRO X Invertido': 'NECRO X' };
@@ -151,7 +162,6 @@ export async function applyEffect(card, targetId, casterId, effectTypeToReverse,
     } else if (card.name !== 'Carta da Versatrix' && card.name !== 'Reversus Total') {
         setTimeout(() => announceEffect(effectName), 150);
     }
-
 
     switch (effectName) {
         case 'Mais': case 'Menos': case 'NECRO X': case 'NECRO X Invertido':
@@ -255,7 +265,6 @@ export async function applyEffect(card, targetId, casterId, effectTypeToReverse,
                 if(caster) {
                     caster.hand.push(removedCard);
                 } else {
-                    // Fallback: if caster not found, discard it to prevent card loss
                     gameState.discardPiles.effect.push(removedCard);
                 }
             }
