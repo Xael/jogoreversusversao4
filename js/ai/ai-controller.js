@@ -1,7 +1,7 @@
 // js/ai/ai-controller.js
 
 import { getState } from '../core/state.js';
-import { updateLog } from '../core/utils.js';
+import { updateLog, dealCard } from '../core/utils.js'; // Adicionado dealCard para o Goblin
 import { renderAll } from '../ui/ui-renderer.js';
 import { playCard } from '../game-logic/player-actions.js';
 import { tryToSpeak, triggerNecroX } from '../story/story-abilities.js';
@@ -152,10 +152,59 @@ export async function executeAiTurn(player) {
             }
         }
 
-        // BOSSES DE EVENTO (Mantido do original - crucial para o funcionamento dos eventos)
+        // BOSSES DE EVENTO (União do Código 1 e Código 2)
         if (player.isEventBoss) {
             const player1 = gameState.players['player-1'];
             switch(player.aiType) {
+                // --- NOVOS BOSSES DO CODIGO 2 ---
+                case 'goblindafortuna': // March
+                    if (!gameState.eventBossAbilityUsedThisRound) {
+                        updateLog(`${player.name} usa 'Bênção da Fortuna'!`);
+                        playSoundEffect('conquista');
+                        for(let i = 0; i < 2; i++) {
+                            const newCard = dealCard('value');
+                            if(newCard) player.hand.push(newCard);
+                        }
+                        player.hand.sort((a, b) => b.value - a.value); // Maiores primeiro
+                        const discarded = player.hand.splice(-2); // Remove as duas menores (últimas)
+                        gameState.discardPiles.value.push(...discarded);
+                        gameState.eventBossAbilityUsedThisRound = true;
+                        specialAbilityUsed = true;
+                        renderAll();
+                        await new Promise(res => setTimeout(res, 1000));
+                    }
+                    break;
+                case 'capitaobarbacurta': // July
+                    if (!gameState.eventBossAbilityUsedThisRound && Math.random() < 0.5) {
+                        if (player1.hand.length > 0) {
+                            const randIdx = Math.floor(Math.random() * player1.hand.length);
+                            const stolenCard = player1.hand.splice(randIdx, 1)[0];
+                            player.hand.push(stolenCard);
+                            gameState.eventBossAbilityUsedThisRound = true;
+                            specialAbilityUsed = true;
+                            updateLog(`${player.name} usou 'Gancho Ágil' e roubou uma carta da sua mão!`);
+                            playSoundEffect('reversus');
+                            renderAll();
+                            await new Promise(res => setTimeout(res, 1000));
+                        }
+                    }
+                    break;
+                case 'yeti': // November
+                    if (!gameState.eventBossAbilityUsedThisRound) {
+                        const effectCardsToFreeze = player1.hand.filter(c => c.type === 'effect' && !c.isFrozen);
+                        if (effectCardsToFreeze.length > 0) {
+                            const targetCard = effectCardsToFreeze[Math.floor(Math.random() * effectCardsToFreeze.length)];
+                            targetCard.isFrozen = true;
+                            gameState.eventBossAbilityUsedThisRound = true;
+                            specialAbilityUsed = true;
+                            updateLog(`${player.name} usou 'Sopro Congelante' e congelou sua carta ${targetCard.name}!`);
+                            playSoundEffect('confusao');
+                            renderAll();
+                            await new Promise(res => setTimeout(res, 1000));
+                        }
+                    }
+                    break;
+                // --- BOSSES ORIGINAIS DO CODIGO 1 ---
                 case 'abruxadoresto': // October
                     if (!gameState.eventBossAbilityUsedThisRound && Math.random() < 0.5) {
                         const hasMaisCard = player.hand.some(c => c.name === 'Mais');
@@ -267,7 +316,7 @@ export async function executeAiTurn(player) {
         }
 
         // --- Part 2: Play a value card if necessary ---
-        // Adicionado filtro !c.isFrozen para o Necroverso
+        // Adicionado filtro !c.isFrozen para o Necroverso (Conforme Código 2)
         const valueCards = player.hand.filter(c => c.type === 'value' && !c.isFrozen);
         if (valueCards.length > 1 && !player.playedValueCardThisTurn) {
             let cardToPlay;
@@ -305,7 +354,8 @@ export async function executeAiTurn(player) {
 
         // --- Part 3: Consider playing one effect card ---
         // Mantido o algoritmo original pois é mais robusto para Duo e lógica de "Best Move"
-        const effectCards = player.hand.filter(c => c.type === 'effect' && !c.isBlocked);
+        // Adicionado filtro !c.isFrozen do Codigo 2
+        const effectCards = player.hand.filter(c => c.type === 'effect' && !c.isBlocked && !c.isFrozen);
         let bestMove = { score: -1 };
 
         // Define strategic card sets based on difficulty and game state
@@ -315,7 +365,7 @@ export async function executeAiTurn(player) {
         const selfDefenseReversusCondition = (p) => isReversusTotalActive ? (p.effects.score === 'Mais' || p.effects.movement === 'Sobe') : (p.effects.score === 'Menos' || p.effects.movement === 'Desce');
         const opponentOffenseReversusCondition = (p) => isReversusTotalActive ? (p.effects.score === 'Menos' || p.effects.movement === 'Desce') : (p.effects.score === 'Mais' || p.effects.movement === 'Sobe');
         
-        // --- AI PERSONALITY LOGIC ---
+        // --- AI PERSONALITY LOGIC (Fiel ao Código 1) ---
         if (gameState.gameMode === 'duo' && !player.isHuman && !gameState.isFinalBoss) { // Generic Duo Partner Logic
             const playerTeamIds = config.TEAM_A.includes(player.id) ? config.TEAM_A : config.TEAM_B;
             const ally = gameState.players[playerTeamIds.find(id => id !== player.id)];
@@ -413,7 +463,7 @@ export async function executeAiTurn(player) {
         }
 
         if (bestMove.score > -1) {
-            updateLog(`AI ${player.name}: Jogando ${bestMove.card.name} ${bestMove.reason}.`);
+            updateLog(`AI ${player.name}: Jogando ${bestMove.card.name} ${bestMove.reason || ""}.`);
             
             if (bestMove.isReversumAbility) {
                 gameState.reversumAbilityUsedThisRound = true;
@@ -433,6 +483,17 @@ export async function executeAiTurn(player) {
                 }
             } else {
                 await playCard(player, bestMove.card, bestMove.target, bestMove.effectType);
+                
+                // --- NOVA LOGICA SALAMANDRA (Codigo 2) ---
+                if (player.aiType === 'salamandra' && !gameState.eventBossAbilityUsedThisRound) {
+                    updateLog(`${player.name} usa 'Chama Persistente' e o efeito se repete!`);
+                    await new Promise(res => setTimeout(res, 500));
+                    const targetPlayer = gameState.players[bestMove.target];
+                    if (['Mais', 'Menos'].includes(bestMove.card.name)) {
+                        targetPlayer.liveScore += (bestMove.card.name === 'Mais' ? (targetPlayer.resto?.value || 0) : -(targetPlayer.resto?.value || 0));
+                    }
+                    gameState.eventBossAbilityUsedThisRound = true;
+                }
             }
             playedACard = true;
             await new Promise(res => setTimeout(res, 800));
