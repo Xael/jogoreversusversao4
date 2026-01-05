@@ -876,18 +876,18 @@
         "year_end_light": "Luz do Fim de Ano"
     },
     "event_abilities": {
-        "january_new": "Pode fazer um caminho vermelho aparecer à sua frente no início de cada rodada (50% de chance).",
+        "january_new": "Ele poderá inverter o primeiro efeito positivo (Mais ou Sobe) que você usar em si mesmo em cada rodada.",
         "february_new": "Troca as cartas de 'Resto' com o oponente no início de cada rodada, se for favorável.",
         "march_new": "No início do seu turno, compra 2 cartas de valor e descarta 2, priorizando manter os valores mais altos.",
         "april_new": "Uma vez por turno, pode ignorar um efeito negativo jogado contra ele.",
         "may_new": "Joga suas cartas de valor e efeito viradas para baixo, revelando-as apenas no final da rodada.",
         "june_new": "Pode reutilizar uma carta de efeito que foi usada nesta rodada, uma vez por rodada.",
-        "july_new": "Tem 50% de chance de roubar uma carta aleatória da sua mão por rodada.",
+        "july_new": "Pode roubar uma carta aleatória da sua mão por rodada.",
         "august_new": "Pode trocar de lugar no tabuleiro com o oponente uma vez por partida.",
         "september_new": "Uma vez por rodada, pode espiar e trocar uma carta da sua mão por uma das suas.",
         "october_new": "Uma vez por rodada (50% de chance), pode forçar todos a descartar a carta de maior valor de suas mãos.",
         "november_new": "Uma vez por rodada, pode 'congelar' uma carta de efeito de um oponente, impedindo que ela seja jogada nesta rodada.",
-        "december_new": "No início de cada rodada, pode trocar de mão com você (50% de chance)."
+        "december_new": "Ao final da rodada, ele recupera a carta que acabou de usar como Resto para usá-la novamente."
     },
     "event": {
         "title": "Evento Mensal",
