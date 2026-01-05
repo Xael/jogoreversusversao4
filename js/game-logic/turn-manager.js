@@ -180,6 +180,7 @@ async function finalizeGameStart() {
         gameState.playerIdsInGame.forEach(id => {
             gameState.players[id].resto = gameState.initialDrawCards[id];
             updateLog(`Resto inicial de ${gameState.players[id].name} é ${gameState.initialDrawCards[id].name}.`);
+         
         });
     }
 
@@ -348,6 +349,7 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
         player.targetPathForPula = null;
         player.tournamentScoreEffect = null; // Reset tournament effect
         player.temporaryRestoOverride = undefined; // Reset Witch ability override
+        player.eventAbilityUsedThisTurn = false; // Reset da passiva do Dragão Dourado
 
         // Decrease Versatrix Card cooldown per round
         const versatrixCard = player.hand.find(c => c.name === 'Carta da Versatrix');
@@ -376,10 +378,23 @@ export async function startNewRound(isFirstRound = false, autoStartTurn = true) 
     dom.appContainerEl.classList.remove('reversus-total-active');
     dom.reversusTotalIndicatorEl.classList.add('hidden');
 
-    // Draw cards to replenish hands
+// Draw cards to replenish hands
     gameState.playerIdsInGame.forEach(id => {
         const player = gameState.players[id];
         if (player.isEliminated) return;
+
+        // 1. Limpa o estado 'congelado' (Habilidade do Yeti)
+        // Fazemos isso ANTES de comprar novas cartas
+        if (player.hand) {
+            player.hand.forEach(card => {
+                if (card.isFrozen) delete card.isFrozen;
+            });
+        }
+
+        // 2. Reset da passiva do Dragão Dourado (Se você for usar)
+        player.eventAbilityUsedThisTurn = false; 
+
+        // 3. Compra de novas cartas (Seu código original)
         while (player.hand.filter(c => c.type === 'value').length < config.MAX_VALUE_CARDS_IN_HAND) {
             const newCard = dealCard('value');
             if (newCard) player.hand.push(newCard); else break;
