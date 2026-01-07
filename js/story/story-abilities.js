@@ -1,7 +1,5 @@
 // js/story/story-abilities.js
 
-
-
 import { getState, updateState } from '../core/state.js';
 import * as config from '../core/config.js';
 import * as dom from '../core/dom.js';
@@ -143,6 +141,8 @@ async function executeFieldEffect(player, effectName) {
     const isDuo = gameState.gameMode === 'duo' && !gameState.isFinalBoss;
     const playerTeamIds = isDuo ? (config.TEAM_A.includes(player.id) ? config.TEAM_A : config.TEAM_B) : [];
     const partner = isDuo ? gameState.players[playerTeamIds.find(id => id !== player.id)] : null;
+    
+    // CORREÇÃO: Variável declarada aqui para ser acessível em todos os cases
     let targetPlayer;
 
     switch (effectName) {
@@ -257,7 +257,12 @@ async function executeFieldEffect(player, effectName) {
                 if (player.isHuman) {
                     dom.fieldEffectTargetTitle.textContent = 'Efeito: Troca Justa';
                     dom.fieldEffectTargetText.textContent = 'Escolha um oponente para trocar sua carta de valor mais baixa pela mais alta dele.';
-                    dom.fieldEffectTargetButtons.innerHTML = opponents.map(id => `<button class="control-button target-player-${id.split('-')[1]}" data-player-id="${id}">${gameState.players[id].name}</button>`).join('');
+                    // CORREÇÃO: Garantia de classe segura para os botões
+                    dom.fieldEffectTargetButtons.innerHTML = opponents.map(id => {
+                        const classSuffix = id.includes('-') ? id.split('-')[1] : id;
+                        return `<button class="control-button target-player-${classSuffix}" data-player-id="${id}">${gameState.players[id].name}</button>`;
+                    }).join('');
+
                     dom.fieldEffectTargetModal.classList.remove('hidden');
                     const targetId = await new Promise(resolve => updateState('fieldEffectTargetResolver', resolve));
                     dom.fieldEffectTargetModal.classList.add('hidden');
@@ -267,6 +272,9 @@ async function executeFieldEffect(player, effectName) {
                     targetPlayer = gameState.players[opponents[Math.floor(Math.random() * opponents.length)]];
                     updateLog(`${player.name} (IA) escolheu ${targetPlayer.name} para a Troca Justa.`);
                 }
+                
+                if (!targetPlayer) return false;
+
                 const pCards = player.hand.filter(c => c.type === 'value').sort((a,b) => a.value - b.value);
                 const targetCards = targetPlayer.hand.filter(c => c.type === 'value').sort((a,b) => a.value - b.value);
                 if (pCards.length > 0 && targetCards.length > 0) {
