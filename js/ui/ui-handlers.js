@@ -1236,6 +1236,37 @@ export function initializeUiHandlers() {
         }
     });
     
+    // --- CORREÇÃO: TROCA JUSTA (FIELD EFFECT MODAL HANDLER) ---
+    // Adicionado este bloco para lidar com a seleção de oponente em casas azuis
+    if (dom.fieldEffectTargetModal) {
+        dom.fieldEffectTargetModal.addEventListener('click', (e) => {
+            const button = e.target.closest('button');
+            if (!button) return;
+
+            const { fieldEffectTargetResolver } = getState();
+
+            // Só executa se houver uma promessa esperando por uma resposta (Troca Justa)
+            if (typeof fieldEffectTargetResolver === 'function') {
+                let targetId = null;
+
+                // Se não clicou no cancelar, captura o ID do jogador no atributo data-player-id
+                if (button.id !== 'field-effect-target-cancel-button') {
+                    targetId = button.getAttribute('data-player-id');
+                }
+
+                // Resolve a promessa no story-abilities.js e destrava o jogo
+                fieldEffectTargetResolver(targetId);
+
+                // Limpa o estado e fecha o modal
+                updateState('fieldEffectTargetResolver', null);
+                dom.fieldEffectTargetModal.classList.add('hidden');
+                
+                // Feedback sonoro opcional
+                if (sound && sound.playSoundEffect) sound.playSoundEffect('escolhido');
+            }
+        });
+    }
+
     dom.targetPlayerButtonsEl.addEventListener('click', async (e) => {
         if (e.target.tagName !== 'BUTTON') return;
         
