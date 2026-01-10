@@ -1,3 +1,4 @@
+
 import * as dom from '../core/dom.js';
 import { t } from '../core/i18n.js';
 
@@ -25,10 +26,20 @@ export const showAchievementNotification = (achievementData, overrideDescription
  * @param {string} message - The message to display in the toast.
  */
 export const showCoinRewardNotification = (message) => {
-    dom.rewardToastText.textContent = message;
-    dom.dailyRewardToast.classList.remove('hidden');
+    const toast = dom.dailyRewardToast;
+    if (!toast) return;
 
+    // Garante que o texto seja atualizado
+    dom.rewardToastText.textContent = message;
+    
+    // TRUQUE: Reset da animação CSS removendo e forçando reflow
+    toast.classList.add('hidden');
+    void toast.offsetWidth; // Força reflow do navegador
+    
+    toast.classList.remove('hidden');
+
+    // Limpeza após o tempo da animação (4.5s no CSS)
     setTimeout(() => {
-        dom.dailyRewardToast.classList.add('hidden');
+        toast.classList.add('hidden');
     }, 4500);
 };
