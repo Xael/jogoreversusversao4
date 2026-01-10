@@ -1,3 +1,4 @@
+
 // js/core/dom.js
 export const appContainerEl = document.getElementById('app-container');
 export const boardEl = document.getElementById('game-board');
@@ -38,6 +39,7 @@ export const gameOverModal = document.getElementById('game-over-modal');
 export const gameOverTitle = document.getElementById('game-over-title');
 export const gameOverMessage = document.getElementById('game-over-message');
 export const restartButton = document.getElementById('restart-button');
+export const gameOverBackToMenuButton = document.getElementById('game-over-back-to-menu-button');
 export const targetModal = document.getElementById('target-modal');
 export const targetModalCardName = document.getElementById('target-modal-card-name');
 export const targetPlayerButtonsEl = document.getElementById('target-player-buttons');
