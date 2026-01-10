@@ -68,10 +68,39 @@
     pointer-events: none !important;
 }
 
-/* Toast de notificações no topo absoluto */
+/* Toasts de notificação no topo absoluto (Sempre acima de tudo) */
 #achievement-unlocked-toast,
 #daily-reward-toast {
+    position: absolute;
+    top: 20px;
+    left: 50%;
     z-index: 10000 !important;
+    background-color: var(--bg-panel);
+    color: var(--text-primary);
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    transform: translate(-50%, -150%);
+    opacity: 0;
+    pointer-events: none;
+    transition: none;
+}
+
+/* Ativação da animação quando visível */
+#achievement-unlocked-toast:not(.hidden),
+#daily-reward-toast:not(.hidden) {
+    animation: toast-in-down-out 4.5s ease-in-out forwards;
+}
+#achievement-unlocked-toast {
+    border: 1px solid var(--accent-yellow);
+}
+#daily-reward-toast {
+    border: 1px solid gold;
 }
 
 /* Estilização dos controles de som */
