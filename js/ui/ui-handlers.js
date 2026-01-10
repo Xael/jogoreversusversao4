@@ -1,3 +1,4 @@
+
 // js/ui/ui-handlers.js
 import * as dom from '../core/dom.js';
 import { getState, updateState } from '../core/state.js';
@@ -12,7 +13,7 @@ import { updateLog, shuffle } from '../core/utils.js';
 import * as config from '../core/config.js';
 import { AVATAR_CATALOG } from '../core/config.js';
 import * as network from '../core/network.js';
-import { shatterImage, playInversusFinalCinematic } from './animations.js';
+import { shatterImage, playInversusFinalCinematic, resetGameEffects } from './animations.js'; // Importação consolidada
 import { announceEffect } from '../core/sound.js';
 import { playCard } from '../game-logic/player-actions.js';
 import { advanceToNextPlayer, startNextInfiniteChallengeDuel, initiateGameStartSequence } from '../game-logic/turn-manager.js';
@@ -23,16 +24,11 @@ import { openChatWindow, initializeChatHandlers } from './chat-handler.js';
 import { renderShopAvatars } from './shop-renderer.js';
 import { renderCard } from './card-renderer.js';
 import { renderTournamentView } from './torneio-renderer.js';
-// Integração da Banda
 import { renderBandPlaylist, closeBandModal } from './band-renderer.js';
-
 
 let currentEventData = null;
 let infiniteChallengeIntroHandler = null;
 let introImageInterval = null;
-
-// --- CARROSSEL VARIAVEIS (Restaurado) ---
-let handScrollIndex = 0;
 
 // --- FLOATING HAND HELPER FUNCTIONS ---
 
@@ -60,51 +56,12 @@ function hideFloatingHand() {
     setTimeout(() => {
         dom.floatingHandOverlay.classList.add('hidden');
         dom.floatingHandContainer.innerHTML = '';
-        
-        // Remove os botões de navegação para limpar (Lógica do Carrossel)
-        const navBtns = dom.floatingHandOverlay.querySelectorAll('.hand-nav-button');
-        navBtns.forEach(btn => btn.remove());
-
         dom.floatingHandOverlay.classList.remove('hiding'); // Clean up class
-        handScrollIndex = 0;
     }, 400); 
 }
 
 /**
- * Atualiza a posição do carrossel de cartas (Lógica do Carrossel)
- */
-function updateHandScroll() {
-    const slider = dom.floatingHandContainer.querySelector('.floating-hand-slider');
-    const leftBtn = dom.floatingHandOverlay.querySelector('.hand-nav-button.left');
-    const rightBtn = dom.floatingHandOverlay.querySelector('.hand-nav-button.right');
-    
-    if (!slider) return;
-
-    // Tamanho da carta (200px) + Gap (15px) = 215px
-    const cardWidth = 215;
-    const offset = handScrollIndex * cardWidth;
-    
-    slider.style.transform = `translateX(-${offset}px)`;
-
-    // Lógica para mostrar/esconder botões
-    const totalCards = slider.children.length;
-    // Quantas cartas cabem na tela? (Aprox 6 no container de 1350px)
-    const cardsPerView = 6; 
-    const maxIndex = Math.max(0, totalCards - cardsPerView);
-
-    if (leftBtn) {
-        if (handScrollIndex <= 0) leftBtn.classList.add('hidden');
-        else leftBtn.classList.remove('hidden');
-    }
-
-    if (rightBtn) {
-        if (handScrollIndex >= maxIndex) rightBtn.classList.add('hidden');
-        else rightBtn.classList.remove('hidden');
-    }
-}
-
-/**
- * Renders the local player's hand and shows the floating overlay with Carousel.
+ * Renders the local player's hand and shows the floating overlay.
  */
 function showFloatingHand() {
     const { gameState } = getState();
@@ -114,11 +71,7 @@ function showFloatingHand() {
     const player = gameState.players[myPlayerId];
     if (!player) return;
 
-    // 1. Reseta o scroll
-    handScrollIndex = 0;
-
-    // 2. Cria as cartas dentro do Slider
-    const cardsHTML = player.hand.map(card => {
+    dom.floatingHandContainer.innerHTML = player.hand.map(card => {
         const cardHTML = renderCard(card, 'floating-hand', player.id);
         
         // Simplified wrapper, clicking the card itself is the action
@@ -129,51 +82,8 @@ function showFloatingHand() {
         `;
     }).join('');
 
-    // Encapsula no slider
-    dom.floatingHandContainer.innerHTML = `<div class="floating-hand-slider">${cardsHTML}</div>`;
-
-    // 3. Injeta os botões de navegação (Setas) dinamicamente
-    // Removemos anteriores para não duplicar
-    const oldBtns = dom.floatingHandOverlay.querySelectorAll('.hand-nav-button');
-    oldBtns.forEach(b => b.remove());
-
-    const leftBtn = document.createElement('button');
-    leftBtn.className = 'hand-nav-button left hidden'; // Começa escondido
-    leftBtn.innerHTML = '&#10094;'; // Seta Esquerda
-    
-    const rightBtn = document.createElement('button');
-    rightBtn.className = 'hand-nav-button right hidden'; // Começa escondido
-    rightBtn.innerHTML = '&#10095;'; // Seta Direita
-
-    // Adiciona lógica de clique nas setas
-    leftBtn.onclick = (e) => {
-        e.stopPropagation();
-        if (handScrollIndex > 0) {
-            handScrollIndex--;
-            sound.playSoundEffect('jogarcarta'); 
-            updateHandScroll();
-        }
-    };
-
-    rightBtn.onclick = (e) => {
-        e.stopPropagation();
-        const totalCards = player.hand.length;
-        // 6 é o número de cartas visíveis
-        if (handScrollIndex < totalCards - 6) {
-            handScrollIndex++;
-            sound.playSoundEffect('jogarcarta');
-            updateHandScroll();
-        }
-    };
-
-    dom.floatingHandOverlay.appendChild(leftBtn);
-    dom.floatingHandOverlay.appendChild(rightBtn);
-
     dom.floatingHandOverlay.classList.remove('hiding', 'hidden');
     dom.floatingHandOverlay.classList.add('visible');
-
-    // 5. Atualiza estado inicial
-    setTimeout(updateHandScroll, 50);
 }
 
 function cancelPlayerAction() {
@@ -552,7 +462,6 @@ export function initializeUiHandlers() {
     
     initializeChatHandlers();
 
-    // --- INTEGRAÇÃO DA BANDA ---
     if (dom.bandButton) {
         dom.bandButton.addEventListener('click', () => {
             dom.splashScreenEl.classList.add('hidden');
@@ -567,11 +476,6 @@ export function initializeUiHandlers() {
             dom.splashScreenEl.classList.remove('hidden');
         });
     }
-
-    if (dom.muteButton) dom.muteButton.addEventListener('click', sound.toggleMute);
-    if (dom.nextTrackButton) dom.nextTrackButton.addEventListener('click', sound.changeTrack);
-    if (dom.volumeSlider) dom.volumeSlider.addEventListener('input', (e) => sound.setVolume(parseFloat(e.target.value)));
-    // ---------------------------
     
 
     document.addEventListener('initiateInfiniteChallengeGame', () => {
@@ -673,11 +577,6 @@ export function initializeUiHandlers() {
         if (!player) return;
 
         if (e.target.classList.contains('card-maximize-button')) {
-            return;
-        }
-        
-        // Use o botão de navegação para evitar fechar a mão ao clicar na seta
-        if (e.target.closest('.hand-nav-button')) {
             return;
         }
     
@@ -1130,14 +1029,9 @@ export function initializeUiHandlers() {
         initializeGame('solo', { numPlayers: 2, overrides });
     });
 
-    // --- CORREÇÃO DO BOTÃO VOLTAR AO MENU ---
     dom.restartButton.addEventListener('click', (e) => {
-        // Usa closest para pegar o botão corretamente mesmo se clicar no texto/ícone
-        const target = e.target.closest('[data-action]');
-        if (!target) return; // Se clicou fora de um botão com ação, ignora
-
-        const action = target.dataset.action;
-        const winnerId = target.dataset.winnerId;
+        const action = e.target.dataset.action;
+        const winnerId = e.target.dataset.winnerId;
 
         dom.gameOverModal.classList.add('hidden');
         
@@ -1159,7 +1053,6 @@ export function initializeUiHandlers() {
                 return;
             }
             
-            // Update match result
             const currentRoundData = tournamentState.schedule.find(r => r.round === tournamentState.currentRound);
             const matchInState = currentRoundData.matches.find(m => m.matchId === gameState.tournamentMatch.matchId);
             
@@ -1169,7 +1062,6 @@ export function initializeUiHandlers() {
                 matchInState.score = gameState.tournamentMatch.score;
             }
             
-            // Update leaderboard
             const p1Leaderboard = tournamentState.leaderboard.find(p => p.id == gameState.tournamentMatch.p1.id);
             const p2Leaderboard = tournamentState.leaderboard.find(p => p.id == gameState.tournamentMatch.p2.id);
             
@@ -1215,58 +1107,18 @@ export function initializeUiHandlers() {
                     }, 1000);
                 }
             }
-} else {
-            // CORREÇÃO: Removemos o reload() para não deslogar o usuário.
-            // Em vez disso, escondemos o modal e voltamos para a tela inicial.
-            
-            // 1. Esconde o modal de Game Over (se estiver aberto)
-            const gameOverModal = document.getElementById('game-over-modal');
-            if (gameOverModal) {
-                gameOverModal.classList.add('hidden');
-            }
-
-            // 2. Para a música da fase e volta a do menu (se necessário)
-            if (window.sound && typeof window.sound.stopStoryMusic === 'function') {
-                 window.sound.stopStoryMusic();
-            }
-
-            // 3. Volta para o Menu Principal mantendo a sessão
-            // Certifique-se de importar showSplashScreen no topo do arquivo se ainda não estiver
-            showSplashScreen(); 
         }
     });
-    
-    // --- CORREÇÃO: TROCA JUSTA (FIELD EFFECT MODAL HANDLER) ---
-    // Adicionado este bloco para lidar com a seleção de oponente em casas azuis
-    if (dom.fieldEffectTargetModal) {
-        dom.fieldEffectTargetModal.addEventListener('click', (e) => {
-            const button = e.target.closest('button');
-            if (!button) return;
 
-            const { fieldEffectTargetResolver } = getState();
-
-            // Só executa se houver uma promessa esperando por uma resposta (Troca Justa)
-            if (typeof fieldEffectTargetResolver === 'function') {
-                let targetId = null;
-
-                // Se não clicou no cancelar, captura o ID do jogador no atributo data-player-id
-                if (button.id !== 'field-effect-target-cancel-button') {
-                    targetId = button.getAttribute('data-player-id');
-                }
-
-                // Resolve a promessa no story-abilities.js e destrava o jogo
-                fieldEffectTargetResolver(targetId);
-
-                // Limpa o estado e fecha o modal
-                updateState('fieldEffectTargetResolver', null);
-                dom.fieldEffectTargetModal.classList.add('hidden');
-                
-                // Feedback sonoro opcional
-                if (sound && sound.playSoundEffect) sound.playSoundEffect('escolhido');
-            }
+    // Novo ouvinte exclusivo para o botão de Voltar ao Menu
+    if (dom.gameOverBackToMenuButton) {
+        dom.gameOverBackToMenuButton.addEventListener('click', () => {
+            dom.gameOverModal.classList.add('hidden');
+            showSplashScreen();
         });
     }
 
+    
     dom.targetPlayerButtonsEl.addEventListener('click', async (e) => {
         if (e.target.tagName !== 'BUTTON') return;
         
@@ -1465,13 +1317,13 @@ export function initializeUiHandlers() {
         const exitIcon = document.getElementById('fullscreen-icon-exit');
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen();
-            if(enterIcon) enterIcon.classList.add('hidden');
-            if(exitIcon) exitIcon.classList.remove('hidden');
+            enterIcon.classList.add('hidden');
+            exitIcon.classList.remove('hidden');
         } else {
             if (document.exitFullscreen) {
                 document.exitFullscreen();
-                if(enterIcon) enterIcon.classList.remove('hidden');
-                if(exitIcon) exitIcon.classList.add('hidden');
+                enterIcon.classList.remove('hidden');
+                exitIcon.classList.add('hidden');
             }
         }
     });
@@ -1522,18 +1374,14 @@ export function initializeUiHandlers() {
         const { battle, won, reason } = e.detail;
         const { gameState } = getState();
         
-        // --- LÓGICA DE VITÓRIA DO INVERSUS (Cinemática) ---
-        if (battle === 'inversus' && won) {
-            // FIX: Usando o módulo importado corretamente
-            achievements.grantAchievement('inversus_win');
-            
-            dom.appContainerEl.classList.add('hidden');
-            dom.gameOverModal.classList.add('hidden'); 
-
-            await playInversusFinalCinematic();
-            return; 
+        // --- NOVO BLOCO: Cinemática do Inversus ---
+        if (won && battle === 'inversus') {
+             resetGameEffects(); 
+             achievements.grantAchievement('inversus_win');
+             await playInversusFinalCinematic();
+             return; 
         }
-        // --------------------------------------------------
+        // ------------------------------------------
 
         if (gameState) {
              updateState('lastStoryGameOptions', { mode: gameState.gameMode, options: gameState.gameOptions });
@@ -1681,14 +1529,16 @@ export function initializeUiHandlers() {
                     message = "O Narrador reescreveu a história para te derrotar. Tentar de novo?";
                 }
                 break;
-            // Case inversus removido daqui pois é tratado no topo da função
+            case 'inversus':
+                message = "O reflexo sombrio do Reversus te derrotou. Tentar novamente?";
+                break;
             default:
                 message = won ? 'Você venceu o duelo!' : 'Você foi derrotado.';
         }
         showGameOver(message, title, { action: buttonAction });
     });
 
-    if (dom.splashLogo) dom.splashLogo.addEventListener('click', (e) => {
+    dom.splashLogo.addEventListener('click', (e) => {
         const { achievements } = getState();
         if (!achievements.has('inversus_win')) return;
         
@@ -1705,7 +1555,7 @@ export function initializeUiHandlers() {
         }, 800);
     });
 
-    if (dom.scalableContainer) dom.scalableContainer.addEventListener('click', (e) => {
+    dom.scalableContainer.addEventListener('click', (e) => {
         if (e.target.id === 'secret-versatrix-card') {
             const { achievements: unlockedAchievements, versatrixCardInterval } = getState();
             if (unlockedAchievements.has('versatrix_win') && !unlockedAchievements.has('versatrix_card_collected')) {
@@ -1716,25 +1566,28 @@ export function initializeUiHandlers() {
                 sound.playSoundEffect('conquista');
                 achievements.grantAchievement('versatrix_card_collected');
                 e.target.remove();
+                
+                // Dispara evento global se houver lógica adicional
+                document.dispatchEvent(new CustomEvent('versatrixCardClicked'));
             }
         }
     });
     
-    if (dom.xaelPopup) dom.xaelPopup.addEventListener('click', async () => {
+    dom.xaelPopup.addEventListener('click', async () => {
         dom.xaelPopup.classList.add('hidden');
         await shatterImage(dom.xaelPopup.querySelector('img'));
         renderStoryNode('xael_challenge_intro');
-        if (dom.splashScreenEl) dom.splashScreenEl.classList.add('hidden');
-        if (dom.storyModeModalEl) dom.storyModeModalEl.classList.remove('hidden');
+        dom.splashScreenEl.classList.add('hidden');
+        dom.storyModeModalEl.classList.remove('hidden');
     });
 
-    if (dom.xaelStarPowerButton) dom.xaelStarPowerButton.addEventListener('click', () => {
+    dom.xaelStarPowerButton.addEventListener('click', () => {
         dom.xaelPowerConfirmModal.classList.remove('hidden');
     });
 
-    if (dom.xaelPowerConfirmNo) dom.xaelPowerConfirmNo.addEventListener('click', () => dom.xaelPowerConfirmModal.classList.add('hidden'));
+    dom.xaelPowerConfirmNo.addEventListener('click', () => dom.xaelPowerConfirmModal.classList.add('hidden'));
 
-    if (dom.xaelPowerConfirmYes) dom.xaelPowerConfirmYes.addEventListener('click', () => {
+    dom.xaelPowerConfirmYes.addEventListener('click', () => {
         dom.xaelPowerConfirmModal.classList.add('hidden');
         const { gameState } = getState();
         const player1 = gameState.players['player-1'];
@@ -1745,6 +1598,245 @@ export function initializeUiHandlers() {
             gameState.revealedHands = gameState.playerIdsInGame.filter(id => id !== 'player-1' && !gameState.players[id].isEliminated);
             updateLog("Poder Estelar ativado! As mãos dos oponentes foram reveladas por esta rodada.");
             renderAll();
+        }
+    });
+
+    const sendChatMessage = () => {
+        const { isChatMuted } = getState();
+        if (isChatMuted) return;
+
+        const message = dom.chatInput.value.trim();
+        if (message) {
+            const { gameState, userProfile } = getState();
+            if (gameState && gameState.isPvp) {
+                 network.emitChatMessage(message);
+            } else {
+                updateLog({ type: 'dialogue', speaker: userProfile?.username || t('game.you'), message, googleId: userProfile?.google_id });
+            }
+            dom.chatInput.value = '';
+        }
+    };
+    
+    dom.chatInput.addEventListener('keypress', (e) => { 
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendChatMessage();
+        }
+    });
+    
+    dom.chatToggleBtn.addEventListener('click', () => {
+        const state = getState();
+        updateState('isChatMuted', !state.isChatMuted);
+        updateChatControls();
+    });
+
+    dom.chatFilterBtn.addEventListener('click', () => {
+        const state = getState();
+        const currentFilter = state.chatFilter;
+        const filterCycle = {
+            'all': 'log',
+            'log': 'chat',
+            'chat': 'all'
+        };
+        const nextFilter = filterCycle[currentFilter] || 'all';
+        updateState('chatFilter', nextFilter);
+        updateLog();
+        updateChatControls();
+    });
+
+
+    if (dom.pvpLobbyModal) {
+        dom.pvpLobbyModal.addEventListener('click', (e) => {
+            const inviteButton = e.target.closest('.invite-friend-slot-btn');
+            if (inviteButton) {
+                network.emitGetOnlineFriends();
+            }
+
+            const kickButton = e.target.closest('.kick-player-button');
+            if (kickButton) {
+                const kickId = kickButton.dataset.kickId;
+                const username = kickButton.title.match(/Expulsar (.*) da sala/)?.[1] || 'este jogador';
+                if (confirm(t('confirm.kick_player', { username }))) {
+                    network.emitKickPlayer(kickId);
+                }
+            }
+        });
+    }
+    
+    if (dom.inviteFriendsModal) {
+        dom.inviteFriendsModal.addEventListener('click', (e) => {
+            const inviteButton = e.target.closest('.invite-friend-btn');
+            if (inviteButton) {
+                const targetUserId = inviteButton.dataset.userId;
+                network.emitInviteFriendToLobby(parseInt(targetUserId, 10));
+                inviteButton.textContent = t('pvp.invite_sent_button') || 'Sent';
+                inviteButton.disabled = true;
+            }
+        });
+    }
+
+    if (dom.inviteFriendsCloseButton) {
+        dom.inviteFriendsCloseButton.addEventListener('click', () => {
+            dom.inviteFriendsModal.classList.add('hidden');
+        });
+    }
+
+    if (dom.lobbyInviteAcceptButton) {
+        dom.lobbyInviteAcceptButton.addEventListener('click', (e) => {
+            const roomId = e.target.dataset.roomId;
+            if (roomId) {
+                network.emitAcceptInvite({ roomId });
+            }
+            dom.lobbyInviteNotificationModal.classList.add('hidden');
+        });
+    }
+
+    if (dom.lobbyInviteDeclineButton) {
+        dom.lobbyInviteDeclineButton.addEventListener('click', (e) => {
+            const roomId = e.target.dataset.roomId;
+            if (roomId) {
+                 network.emitDeclineInvite({ roomId });
+            }
+            dom.lobbyInviteNotificationModal.classList.add('hidden');
+        });
+    }
+
+    dom.lobbyChatSendButton.addEventListener('click', () => {
+        const message = dom.lobbyChatInput.value.trim();
+        if(message) {
+            network.emitLobbyChat(message);
+            dom.lobbyChatInput.value = '';
+        }
+    });
+    
+    dom.lobbyChatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const message = dom.lobbyChatInput.value.trim();
+            if(message) {
+                network.emitLobbyChat(message);
+                dom.lobbyChatInput.value = '';
+            }
+        }
+    });
+
+    dom.pvpShowCreateRoomButton.addEventListener('click', () => {
+        dom.pvpCreateRoomModal.classList.remove('hidden');
+    });
+
+    dom.pvpCreateRoomCancelButton.addEventListener('click', () => {
+        dom.pvpCreateRoomModal.classList.add('hidden');
+    });
+
+    dom.pvpCreateRoomConfirmButton.addEventListener('click', () => {
+        const name = dom.roomNameInput.value.trim();
+        const password = dom.roomPasswordInput.value.trim();
+        const betAmountRadio = document.querySelector('input[name="bet-amount"]:checked');
+        const betAmount = betAmountRadio ? parseInt(betAmountRadio.value, 10) : 0;
+
+        if (!name) {
+            alert(t('pvp.room_name_required'));
+            return;
+        }
+
+        network.emitCreateRoom({ name, password, betAmount });
+        dom.pvpCreateRoomModal.classList.add('hidden');
+        dom.roomNameInput.value = '';
+        dom.roomPasswordInput.value = '';
+        const defaultBetRadio = document.querySelector('input[name="bet-amount"][value="0"]');
+        if (defaultBetRadio) {
+            defaultBetRadio.checked = true;
+        }
+    });
+    
+    let selectedRoomIdForPassword = null;
+    dom.pvpRoomGridEl.addEventListener('click', (e) => {
+        const button = e.target.closest('.join-room-button');
+        if (button) {
+            const roomId = button.dataset.roomId;
+            const hasPassword = button.dataset.hasPassword === 'true';
+
+            if (hasPassword) {
+                selectedRoomIdForPassword = roomId;
+                dom.pvpPasswordInput.value = '';
+                dom.pvpPasswordModal.classList.remove('hidden');
+            } else {
+                if (roomId) network.emitJoinRoom({ roomId });
+            }
+        }
+    });
+
+    dom.pvpPasswordSubmit.addEventListener('click', () => {
+        if (selectedRoomIdForPassword) {
+            const password = dom.pvpPasswordInput.value;
+            network.emitJoinRoom({ roomId: selectedRoomIdForPassword, password });
+            dom.pvpPasswordModal.classList.add('hidden');
+            selectedRoomIdForPassword = null;
+        }
+    });
+
+    dom.pvpPasswordCancel.addEventListener('click', () => {
+        dom.pvpPasswordModal.classList.add('hidden');
+        selectedRoomIdForPassword = null;
+    });
+
+    dom.pvpRoomListCloseButton.addEventListener('click', () => {
+        dom.pvpRoomListModal.classList.add('hidden');
+        showSplashScreen();
+    });
+    
+    dom.pvpLobbyCloseButton.addEventListener('click', () => network.emitLeaveRoom());
+    dom.lobbyGameModeEl.addEventListener('change', (e) => network.emitChangeMode(e.target.value));
+    dom.lobbyStartGameButton.addEventListener('click', () => network.emitStartGame());
+    
+    dom.fieldEffectTargetModal.addEventListener('click', (e) => {
+        const button = e.target.closest('button');
+        if (!button) return;
+        const { fieldEffectTargetResolver } = getState();
+        if (fieldEffectTargetResolver) {
+            let targetId = null;
+            if (button.id !== 'field-effect-target-cancel-button') {
+                targetId = button.dataset.playerId;
+            }
+            fieldEffectTargetResolver(targetId);
+            updateState('fieldEffectTargetResolver', null);
+            dom.fieldEffectTargetModal.classList.add('hidden');
+        }
+    });
+    
+    dom.tournamentButton.addEventListener('click', () => {
+        if (!getState().isLoggedIn) {
+            alert(t('common.login_required', { feature: t('splash.tournament') }));
+            return;
+        }
+        dom.splashScreenEl.classList.add('hidden');
+        sound.playStoryMusic('tela.ogg'); // Use main menu music
+        renderTournamentView({ status: 'hub' });
+    });
+
+    dom.tournamentPlayOnlineButton.addEventListener('click', () => {
+        network.emitJoinTournamentQueue({ type: 'online' });
+    });
+
+    dom.tournamentPlayOfflineButton.addEventListener('click', () => {
+        network.emitJoinTournamentQueue({ type: 'offline' });
+    });
+
+    dom.tournamentCancelQueueButton.addEventListener('click', () => {
+        network.emitCancelTournamentQueue();
+    });
+
+    dom.tournamentCloseButton.addEventListener('click', () => {
+        const { gameState } = getState();
+        if (gameState && gameState.isTournamentMatch) {
+            if (confirm("Tem certeza que deseja desistir do torneio?")) {
+                 showSplashScreen();
+                 sound.stopStoryMusic();
+            }
+        } else {
+            dom.tournamentModal.classList.add('hidden');
+            showSplashScreen();
+            sound.stopStoryMusic();
         }
     });
 }
