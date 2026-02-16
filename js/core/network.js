@@ -43,7 +43,7 @@ function setupPlayerPerspective() {
 
 
 export function connectToServer() {
-    const SERVER_URL = "https://reversus-node.rtk4h7.easypanel.host/";
+    const SERVER_URL = "https://backend.projectxael.com.br/";
     const socket = io(SERVER_URL, {
         reconnectionAttempts: 3,
         timeout: 10000,
