@@ -31,7 +31,7 @@ export function initializeGoogleSignIn() {
         if (typeof google !== 'undefined' && google.accounts) {
             // The library is loaded, now we can initialize it.
             google.accounts.id.initialize({
-                client_id: "2701468714-udbjtea2v5d1vnr8sdsshi3lem60dvkn.apps.googleusercontent.com",
+                client_id: "199798189413-ttgbqcjdh9ukht4uq8td8bvhtfg40ohg.apps.googleusercontent.com",
                 callback: handleCredentialResponse
             });
             
