@@ -61,29 +61,35 @@ export function connectToServer() {
         showSplashScreen();
     });
 
-    socket.on('loginSuccess', (userProfile) => {
-        console.log('Login successful on client:', userProfile);
-        updateState('isLoggedIn', true);
-        updateState('userProfile', userProfile);
-        
-        dom.loginButton.classList.add('hidden');
+socket.on('loginSuccess', (userProfile) => {
+    console.log('Login successful on client:', userProfile);
+    updateState('isLoggedIn', true);
+    updateState('userProfile', userProfile);
+    
+    // Verifica se os elementos existem antes de tentar mexer na classList
+    if (dom.loginButton) dom.loginButton.classList.add('hidden');
+    if (dom.userProfileDisplay) {
         dom.userProfileDisplay.classList.remove('hidden');
         renderProfile(userProfile);
-        dom.rankingButton.classList.remove('hidden'); 
-        dom.eventButton.classList.remove('hidden');
-        dom.pvpModeButton.classList.remove('hidden');
-        dom.infiniteChallengeButton.classList.remove('hidden');
-        dom.tournamentButton.classList.remove('hidden');
+    }
+    
+    // Lista de botões que precisam aparecer
+    const buttons = [
+        dom.rankingButton, 
+        dom.eventButton, 
+        dom.pvpModeButton, 
+        dom.infiniteChallengeButton, 
+        dom.tournamentButton
+    ];
 
-
-        emitGetFriendsList(); // Carrega a lista de amigos após o login
-        emitGetPendingRequests(); // Carrega pedidos pendentes
-        emitClaimDailyLoginReward(); // Solicita a recompensa diária
+    buttons.forEach(button => {
+        if (button) button.classList.remove('hidden');
     });
 
-    socket.on('dailyRewardSuccess', ({ amount }) => {
-        showCoinRewardNotification(t('rewards.daily_login_toast', { amount }));
-    });
+    emitGetFriendsList();
+    emitGetPendingRequests();
+    emitClaimDailyLoginReward();
+});
     
     socket.on('challengeRewardSuccess', ({ amount, titleCode }) => {
         let message;
