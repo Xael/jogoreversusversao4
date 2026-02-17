@@ -613,6 +613,64 @@ async function calculateScoresAndEndRound() {
         p.liveScore = score;
     });
 
+// --- NOVO: HABILIDADE CAMPO VERSÁTIL (PLOT TWIST) DA VERSATRIX ---
+// --- NOVO: HABILIDADE CAMPO VERSÁTIL (PLOT TWIST) DA VERSATRIX ---
+if (!gameState.isPvp && 
+    gameState.currentStoryBattle === 'versatrix' && 
+    gameState.playerIdsInGame.length === 2) {
+    
+    const p1 = gameState.players['player-1'];
+    const p2 = gameState.players['player-2']; 
+    
+    if (p1.position >= 3 && 
+        p1.position > p2.position && 
+        finalScores['player-1'] > finalScores['player-2'] &&
+        (gameState.versatrixAbilityCount || 0) < 3 &&
+        Math.random() < 0.5) {
+
+        gameState.versatrixAbilityCount = (gameState.versatrixAbilityCount || 0) + 1;
+
+        updateLog({ type: 'dialogue', speaker: 'versatrix', message: 'Versatrix: "Você achou que tinha vencido? No meu campo, as realidades são relativas!"' });
+        updateLog(`⚠️ CAMPO VERSÁTIL ATIVADO (${gameState.versatrixAbilityCount}/3)!`, "warning");
+        
+        // --- ADICIONADO: Efeito Visual de Espelhamento ---
+        document.body.classList.add('versatrix-mirror-glitch');
+        
+        announceEffect('CAMPO VERSÁTIL!', 'reversus', 2500);
+        if (typeof playSoundEffect === 'function') playSoundEffect('campoinverso');
+
+        // Troca os placares
+        const tempScore = finalScores['player-1'];
+        finalScores['player-1'] = finalScores['player-2'];
+        finalScores['player-2'] = tempScore;
+
+        p1.liveScore = finalScores['player-1'];
+        p2.liveScore = finalScores['player-2'];
+
+        // Troca as Mãos
+        const tempHand = [...p1.hand];
+        p1.hand = [...p2.hand];
+        p2.hand = tempHand;
+
+        // Troca as Posições
+        const tempPos = p1.position;
+        p1.position = p2.position;
+        p2.position = tempPos;
+        
+        renderAll();
+        
+        // Remove o efeito visual após 3 segundos (tempo do timeout)
+        setTimeout(() => {
+            document.body.classList.remove('versatrix-mirror-glitch');
+        }, 3000);
+
+        await new Promise(res => setTimeout(res, 3000));
+    }
+}
+    // -----------------------------------------------------------------
+
+
+    
     // 2. Determine winner(s)
     let winners = [];
     if (gameState.playerIdsInGame.filter(pId => !gameState.players[pId].isEliminated).length > 0) {
