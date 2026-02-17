@@ -71,24 +71,17 @@
 /* Toasts de notificação no topo absoluto (Sempre acima de tudo) */
 #achievement-unlocked-toast,
 #daily-reward-toast {
-    position: absolute;
+    position: fixed; /* Mude de absolute para fixed para garantir que fique sobre o canvas */
     top: 20px;
     left: 50%;
-    z-index: 10000 !important;
-    background-color: var(--bg-panel);
-    color: var(--text-primary);
-    padding: 1rem 1.5rem;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    font-size: 1.1rem;
-    font-weight: 600;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-    transform: translate(-50%, -150%);
+    transform: translate(-50%, -150%); /* Começa fora da tela (topo) */
+    z-index: 99999 !important; /* Valor máximo */
     opacity: 0;
     pointer-events: none;
-    transition: none;
+    display: flex; /* Garante o layout interno */
+    align-items: center;
+    gap: 1rem;
+    /* Remova o transition: none; deixe a animação trabalhar */
 }
 
 /* Ativação da animação quando visível */
