@@ -1,4 +1,5 @@
 // This object holds the single source of truth for the application's state.
+gameState.versatrixAbilityCount = 0;
 const appState = {
     // Core game state object, holds all data about the current match.
     // In PvP, this state is received from the server.
