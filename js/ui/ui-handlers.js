@@ -1130,111 +1130,108 @@ export function initializeUiHandlers() {
         initializeGame('solo', { numPlayers: 2, overrides });
     });
 
-    // --- CORREÇÃO DO BOTÃO VOLTAR AO MENU ---
-    dom.restartButton.addEventListener('click', (e) => {
-        // Usa closest para pegar o botão corretamente mesmo se clicar no texto/ícone
-        const target = e.target.closest('[data-action]');
-        if (!target) return; // Se clicou fora de um botão com ação, ignora
+// --- CORREÇÃO DO BOTÃO VOLTAR AO MENU ---
+dom.restartButton.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
 
-        const action = target.dataset.action;
-        const winnerId = target.dataset.winnerId;
+    const action = target.dataset.action;
+    const winnerId = target.dataset.winnerId;
 
-        dom.gameOverModal.classList.add('hidden');
-        
-        if (action === 'restart') {
-            const { gameState } = getState();
-            if (gameState && gameState.isStoryMode) {
-                restartLastDuel();
-            } else if (gameState) {
-                initializeGame(gameState.gameMode, gameState.gameOptions);
-            } else {
-                showSplashScreen();
-            }
-        } else if (action === 'tournament_continue') {
-            const { tournamentState, gameState, userProfile } = getState();
-            
-            if (!tournamentState || !gameState || !gameState.tournamentMatch) {
-                console.error("State missing for tournament continuation.");
-                showSplashScreen();
-                return;
-            }
-            
-            // Update match result
-            const currentRoundData = tournamentState.schedule.find(r => r.round === tournamentState.currentRound);
-            const matchInState = currentRoundData.matches.find(m => m.matchId === gameState.tournamentMatch.matchId);
-            
-            if (matchInState) {
-                matchInState.result = winnerId;
-                matchInState.winnerId = winnerId;
-                matchInState.score = gameState.tournamentMatch.score;
-            }
-            
-            // Update leaderboard
-            const p1Leaderboard = tournamentState.leaderboard.find(p => p.id == gameState.tournamentMatch.p1.id);
-            const p2Leaderboard = tournamentState.leaderboard.find(p => p.id == gameState.tournamentMatch.p2.id);
-            
-            if (winnerId === 'draw') {
-                if (p1Leaderboard) { p1Leaderboard.points += 1; p1Leaderboard.draws += 1; }
-                if (p2Leaderboard) { p2Leaderboard.points += 1; p2Leaderboard.draws += 1; }
-            } else if (winnerId == p1Leaderboard.id) {
-                p1Leaderboard.points += 3; p1Leaderboard.wins += 1;
-                p2Leaderboard.losses += 1;
-            } else if (winnerId == p2Leaderboard.id) {
-                p2Leaderboard.points += 3; p2Leaderboard.wins += 1;
-                p1Leaderboard.losses += 1;
-            }
-            
-            const allRoundMatchesFinished = currentRoundData.matches.every(m => m.result !== null);
-            
-            if (allRoundMatchesFinished) {
-                if (tournamentState.currentRound < 7) {
-                    tournamentState.currentRound++;
-                } else {
-                    tournamentState.status = 'finished';
-                    tournamentState.leaderboard.sort((a, b) => b.points - a.points || b.wins - a.wins);
-                }
-            }
-            
-            updateState('tournamentState', tournamentState);
-            updateState('gameState', null);
-            
-            dom.appContainerEl.classList.add('hidden');
-            dom.gameOverModal.classList.add('hidden');
-            
-            renderTournamentView(tournamentState);
-            
-            const nextRoundData = tournamentState.schedule.find(r => r.round === tournamentState.currentRound);
-            if (nextRoundData && tournamentState.status === 'active') {
-                const myNextMatch = nextRoundData.matches.find(m => (m.p1.id === userProfile.id || m.p2.id === userProfile.id) && m.p1.isAI !== m.p2.isAI && m.result === null);
-                if (myNextMatch) {
-                    setTimeout(() => {
-                        const continueBtn = document.querySelector('#tournament-continue-btn');
-                        if (continueBtn && !continueBtn.classList.contains('hidden')) {
-                            continueBtn.click();
-                        }
-                    }, 1000);
-                }
-            }
-} else {
-            // CORREÇÃO: Removemos o reload() para não deslogar o usuário.
-            // Em vez disso, escondemos o modal e voltamos para a tela inicial.
-            
-            // 1. Esconde o modal de Game Over (se estiver aberto)
-            const gameOverModal = document.getElementById('game-over-modal');
-            if (gameOverModal) {
-                gameOverModal.classList.add('hidden');
-            }
+    dom.gameOverModal.classList.add('hidden');
 
-            // 2. Para a música da fase e volta a do menu (se necessário)
-            if (window.sound && typeof window.sound.stopStoryMusic === 'function') {
-                 window.sound.stopStoryMusic();
-            }
-
-            // 3. Volta para o Menu Principal mantendo a sessão
-            // Certifique-se de importar showSplashScreen no topo do arquivo se ainda não estiver
-            showSplashScreen(); 
+    if (action === 'restart') {
+        const { gameState } = getState();
+        if (gameState && gameState.isStoryMode) {
+            restartLastDuel();
+        } else if (gameState) {
+            initializeGame(gameState.gameMode, gameState.gameOptions);
+        } else {
+            showSplashScreen();
         }
-    });
+    } 
+    else if (action === 'menu') {
+        // --- LOGICA PARA "VOLTAR AO MENU" ---
+        sound.stopStoryMusic();
+        
+        if (dom.logEl) dom.logEl.innerHTML = '';
+
+        dom.appContainerEl.classList.add('hidden');
+        showSplashScreen();
+        
+        console.log("Usuário retornou ao menu com sucesso.");
+    } 
+    else if (action === 'tournament_continue') {
+        const { tournamentState, gameState, userProfile } = getState();
+
+        if (!tournamentState || !gameState || !gameState.tournamentMatch) {
+            console.error("State missing for tournament continuation.");
+            showSplashScreen();
+            return;
+        }
+
+        // --- ATUALIZAÇÃO DOS RESULTADOS DO TORNEIO ---
+        const currentRoundData = tournamentState.schedule.find(r => r.round === tournamentState.currentRound);
+        const matchInState = currentRoundData.matches.find(m => m.matchId === gameState.tournamentMatch.matchId);
+
+        if (matchInState) {
+            matchInState.result = winnerId;
+            matchInState.winnerId = winnerId;
+            matchInState.score = gameState.tournamentMatch.score;
+        }
+
+        const p1Leaderboard = tournamentState.leaderboard.find(p => p.id == gameState.tournamentMatch.p1.id);
+        const p2Leaderboard = tournamentState.leaderboard.find(p => p.id == gameState.tournamentMatch.p2.id);
+
+        if (winnerId === 'draw') {
+            if (p1Leaderboard) { p1Leaderboard.points += 1; p1Leaderboard.draws += 1; }
+            if (p2Leaderboard) { p2Leaderboard.points += 1; p2Leaderboard.draws += 1; }
+        } else if (winnerId == p1Leaderboard.id) {
+            p1Leaderboard.points += 3; p1Leaderboard.wins += 1;
+            p2Leaderboard.losses += 1;
+        } else if (winnerId == p2Leaderboard.id) {
+            p2Leaderboard.points += 3; p2Leaderboard.wins += 1;
+            p1Leaderboard.losses += 1;
+        }
+
+        const allRoundMatchesFinished = currentRoundData.matches.every(m => m.result !== null);
+
+        if (allRoundMatchesFinished) {
+            if (tournamentState.currentRound < 7) {
+                tournamentState.currentRound++;
+            } else {
+                tournamentState.status = 'finished';
+                tournamentState.leaderboard.sort((a, b) => b.points - a.points || b.wins - a.wins);
+            }
+        }
+
+        updateState('tournamentState', tournamentState);
+        updateState('gameState', null);
+
+        dom.appContainerEl.classList.add('hidden');
+        renderTournamentView(tournamentState);
+
+        const nextRoundData = tournamentState.schedule.find(r => r.round === tournamentState.currentRound);
+        if (nextRoundData && tournamentState.status === 'active') {
+            const myNextMatch = nextRoundData.matches.find(m => (m.p1.id === userProfile.id || m.p2.id === userProfile.id) && m.p1.isAI !== m.p2.isAI && m.result === null);
+            if (myNextMatch) {
+                setTimeout(() => {
+                    const continueBtn = document.querySelector('#tournament-continue-btn');
+                    if (continueBtn && !continueBtn.classList.contains('hidden')) {
+                        continueBtn.click();
+                    }
+                }, 1000);
+            }
+        }
+    } 
+    else {
+        // CASO GENÉRICO DE SAÍDA (Ação desconhecida)
+        if (window.sound && typeof window.sound.stopStoryMusic === 'function') {
+            window.sound.stopStoryMusic();
+        }
+        showSplashScreen();
+    }
+});
     
     // --- CORREÇÃO: TROCA JUSTA (FIELD EFFECT MODAL HANDLER) ---
     // Adicionado este bloco para lidar com a seleção de oponente em casas azuis
