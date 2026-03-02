@@ -614,7 +614,6 @@ async function calculateScoresAndEndRound() {
     });
 
 // --- NOVO: HABILIDADE CAMPO VERSÁTIL (PLOT TWIST) DA VERSATRIX ---
-// --- NOVO: HABILIDADE CAMPO VERSÁTIL (PLOT TWIST) DA VERSATRIX ---
 if (!gameState.isPvp && 
     gameState.currentStoryBattle === 'versatrix' && 
     gameState.playerIdsInGame.length === 2) {
@@ -622,18 +621,16 @@ if (!gameState.isPvp &&
     const p1 = gameState.players['player-1'];
     const p2 = gameState.players['player-2']; 
     
+    // Condição: Player 1 está ganhando, passou da posição 3 e caiu nos 30% de chance
     if (p1.position >= 3 && 
         p1.position > p2.position && 
         finalScores['player-1'] > finalScores['player-2'] &&
-        (gameState.versatrixAbilityCount || 0) < 3 &&
-        Math.random() < 0.5) {
-
-        gameState.versatrixAbilityCount = (gameState.versatrixAbilityCount || 0) + 1;
+        Math.random() <= 0.30) { // 30% de chance pura, sem limites!
 
         updateLog({ type: 'dialogue', speaker: 'versatrix', message: 'Versatrix: "Você achou que tinha vencido? No meu campo, as realidades são relativas!"' });
-        updateLog(`⚠️ CAMPO VERSÁTIL ATIVADO (${gameState.versatrixAbilityCount}/3)!`, "warning");
+        updateLog(`⚠️ CAMPO VERSÁTIL ATIVADO! A realidade foi alterada!`, "warning");
         
-        // --- ADICIONADO: Efeito Visual de Espelhamento ---
+        // --- Efeito Visual de Espelhamento ---
         document.body.classList.add('versatrix-mirror-glitch');
         
         announceEffect('CAMPO VERSÁTIL!', 'reversus', 2500);
@@ -659,7 +656,7 @@ if (!gameState.isPvp &&
         
         renderAll();
         
-        // Remove o efeito visual após 3 segundos (tempo do timeout)
+        // Remove o efeito visual após 3 segundos
         setTimeout(() => {
             document.body.classList.remove('versatrix-mirror-glitch');
         }, 3000);
