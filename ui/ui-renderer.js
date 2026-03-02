@@ -38,7 +38,8 @@ export function updateChatControls() {
  */
 export const updateXaelStarPowerUI = () => {
     const { gameState } = getState();
-    if (!gameState || !gameState.isStoryMode) {
+    // Safety check: Ensure gameState and players object exist
+    if (!gameState || !gameState.isStoryMode || !gameState.players) {
         dom.xaelStarPowerButton.classList.add('hidden');
         return;
     }
@@ -65,7 +66,7 @@ function renderPvpPot() {
     const potEl = dom.pvpPotContainer;
     if (!potEl) return;
 
-    if (gameState.isPvp && gameState.pot !== undefined && gameState.betAmount > 0) {
+    if (gameState && gameState.isPvp && gameState.pot !== undefined && gameState.betAmount > 0) {
         potEl.classList.remove('hidden');
         potEl.innerHTML = `🏆 <span>${t('game.pot')}: ${gameState.pot}</span>`;
     } else {
@@ -95,7 +96,9 @@ function renderTurnTimer() {
  */
 export const renderAll = () => {
     const { gameState } = getState();
-    if (!gameState) return;
+    
+    // CRITICAL FIX: Only attempt to render if the core arrays (playerIdsInGame and players) are fully loaded
+    if (!gameState || !gameState.playerIdsInGame || !gameState.players) return;
     
     // Render each player's area
     gameState.playerIdsInGame.forEach(id => {
@@ -136,7 +139,9 @@ export const renderAll = () => {
  */
 export const updateActionButtons = () => {
     const { gameState, playerId } = getState();
-    if (!gameState) return;
+    
+    // Safety check: ensure players object is loaded
+    if (!gameState || !gameState.players) return;
     
     const currentPlayer = gameState.players[gameState.currentPlayer];
     const myPlayer = gameState.isPvp ? gameState.players[playerId] : gameState.players['player-1'];
