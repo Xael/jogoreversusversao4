@@ -97,12 +97,15 @@ function renderTurnTimer() {
 export const renderAll = () => {
     const { gameState } = getState();
     
-    // CRITICAL FIX: Only attempt to render if the core arrays (playerIdsInGame and players) are fully loaded
-    if (!gameState || !gameState.playerIdsInGame || !gameState.players) return;
+    // SAFETY CHECK: If there is no game running, just update static UI and exit.
+    if (!gameState || !Array.isArray(gameState.playerIdsInGame) || gameState.playerIdsInGame.length === 0) {
+        updateChatControls();
+        return; 
+    }
     
-    // Render each player's area
-    gameState.playerIdsInGame.forEach(id => {
-        if(gameState.players[id]) {
+    // Render each player's area (using ?. to be absolutely safe)
+    gameState.playerIdsInGame?.forEach(id => {
+        if(gameState.players && gameState.players[id]) {
             renderPlayerArea(gameState.players[id]);
         }
     });
