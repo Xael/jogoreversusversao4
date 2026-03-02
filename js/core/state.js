@@ -1,10 +1,9 @@
-// This object holds the single source of truth for the application's state.
-const appState = {
+    // This object holds the single source of truth for the application's state.
+    const appState = {
     // Core game state object, holds all data about the current match.
     // In PvP, this state is received from the server.
-    gameState: { 
-        versatrixAbilityCount: 0 
-    },
+    gameState: null, 
+    
     // Holds the user's sound preferences.
     soundState: { muted: false, volume: 0.5 },
     // Flag to ensure music is only initialized once.
