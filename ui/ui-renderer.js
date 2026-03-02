@@ -98,17 +98,22 @@ export const renderAll = () => {
     const { gameState } = getState();
     
     // SAFETY CHECK: If there is no game running, just update static UI and exit.
-    if (!gameState || !Array.isArray(gameState.playerIdsInGame) || gameState.playerIdsInGame.length === 0) {
+    if (!gameState) {
         updateChatControls();
         return; 
     }
     
-    // Render each player's area (using ?. to be absolutely safe)
-    gameState.playerIdsInGame?.forEach(id => {
-        if(gameState.players && gameState.players[id]) {
-            renderPlayerArea(gameState.players[id]);
+    // Render each player's area safely without using .forEach
+    if (gameState.playerIdsInGame && gameState.players) {
+        const ids = gameState.playerIdsInGame;
+        for (let i = 0; i < ids.length; i++) {
+            const id = ids[i];
+            // Ensure the specific player exists before rendering
+            if (id && gameState.players[id]) {
+                renderPlayerArea(gameState.players[id]);
+            }
         }
-    });
+    }
 
     // Render the game board and pawns
     renderBoard();
