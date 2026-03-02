@@ -619,49 +619,56 @@ if (!gameState.isPvp &&
     gameState.playerIdsInGame.length === 2) {
     
     const p1 = gameState.players['player-1'];
-    const p2 = gameState.players['player-2']; 
+    // Acha o ID real do oponente de forma dinâmica
+    const opponentId = gameState.playerIdsInGame.find(id => id !== 'player-1');
+    const p2 = gameState.players[opponentId]; 
     
-    // Condição: Player 1 está ganhando, passou da posição 3 e caiu nos 30% de chance
-    if (p1.position >= 3 && 
-        p1.position > p2.position && 
-        finalScores['player-1'] > finalScores['player-2'] &&
-        Math.random() <= 0.30) { // 30% de chance pura, sem limites!
-
-        updateLog({ type: 'dialogue', speaker: 'versatrix', message: 'Versatrix: "Você achou que tinha vencido? No meu campo, as realidades são relativas!"' });
-        updateLog(`⚠️ CAMPO VERSÁTIL ATIVADO! A realidade foi alterada!`, "warning");
+    // TRAVA: Só executa se P1 e P2 existem e se as pontuações foram calculadas
+    if (p1 && p2 && finalScores['player-1'] !== undefined && finalScores[opponentId] !== undefined) {
         
-        // --- Efeito Visual de Espelhamento ---
-        document.body.classList.add('versatrix-mirror-glitch');
-        
-        announceEffect('CAMPO VERSÁTIL!', 'reversus', 2500);
-        if (typeof playSoundEffect === 'function') playSoundEffect('campoinverso');
+        // Condição: Player 1 está ganhando no tabuleiro, passou da posição 3, 
+        // está vencendo a rodada nos pontos e caiu nos 30% de chance.
+        if (p1.position >= 3 && 
+            p1.position > p2.position && 
+            finalScores['player-1'] > finalScores[opponentId] &&
+            Math.random() <= 0.30) { 
 
-        // Troca os placares
-        const tempScore = finalScores['player-1'];
-        finalScores['player-1'] = finalScores['player-2'];
-        finalScores['player-2'] = tempScore;
+            updateLog({ type: 'dialogue', speaker: 'versatrix', message: 'Versatrix: "Você achou que tinha vencido? No meu campo, as realidades são relativas!"' });
+            updateLog(`⚠️ CAMPO VERSÁTIL ATIVADO! A realidade foi alterada!`, "warning");
+            
+            // --- Efeito Visual de Espelhamento ---
+            document.body.classList.add('versatrix-mirror-glitch');
+            
+            announceEffect('CAMPO VERSÁTIL!', 'reversus', 2500);
+            if (typeof playSoundEffect === 'function') playSoundEffect('campoinverso');
 
-        p1.liveScore = finalScores['player-1'];
-        p2.liveScore = finalScores['player-2'];
+            // Troca os placares usando o ID correto
+            const tempScore = finalScores['player-1'];
+            finalScores['player-1'] = finalScores[opponentId];
+            finalScores[opponentId] = tempScore;
 
-        // Troca as Mãos
-        const tempHand = [...p1.hand];
-        p1.hand = [...p2.hand];
-        p2.hand = tempHand;
+            p1.liveScore = finalScores['player-1'];
+            p2.liveScore = finalScores[opponentId];
 
-        // Troca as Posições
-        const tempPos = p1.position;
-        p1.position = p2.position;
-        p2.position = tempPos;
-        
-        renderAll();
-        
-        // Remove o efeito visual após 3 segundos
-        setTimeout(() => {
-            document.body.classList.remove('versatrix-mirror-glitch');
-        }, 3000);
+            // Troca as Mãos
+            const tempHand = [...p1.hand];
+            p1.hand = [...p2.hand];
+            p2.hand = tempHand;
 
-        await new Promise(res => setTimeout(res, 3000));
+            // Troca as Posições
+            const tempPos = p1.position;
+            p1.position = p2.position;
+            p2.position = tempPos;
+            
+            renderAll();
+            
+            // Remove o efeito visual após 3 segundos
+            setTimeout(() => {
+                document.body.classList.remove('versatrix-mirror-glitch');
+            }, 3000);
+
+            await new Promise(res => setTimeout(res, 3000));
+        }
     }
 }
     // -----------------------------------------------------------------
