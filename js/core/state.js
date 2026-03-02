@@ -1,9 +1,10 @@
 // This object holds the single source of truth for the application's state.
-appState.gameState = { versatrixAbilityCount: 0 };
 const appState = {
     // Core game state object, holds all data about the current match.
     // In PvP, this state is received from the server.
-    gameState: null,
+    gameState: { 
+        versatrixAbilityCount: 0 
+    },
     // Holds the user's sound preferences.
     soundState: { muted: false, volume: 0.5 },
     // Flag to ensure music is only initialized once.
@@ -52,7 +53,6 @@ const appState = {
     infiniteChallengeOpponentQueue: [],
     // Holds the active buff for the current infinite challenge round
     activeBuff: null,
-
 
     // --- PVP/Network State ---
     isConnectionAttempted: false, // Flag to ensure we only try to connect once.
