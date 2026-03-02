@@ -115,26 +115,10 @@ export async function executeAiTurn(player) {
             }
         }
 
-        // HABILIDADE VERSATRIX (Mantido do original - mais robusto que o novo snippet)
-        if (player.aiType === 'versatrix' && gameState.currentStoryBattle === 'versatrix' && !gameState.versatrixSwapActive) {
-            const player1 = gameState.players['player-1'];
-            const player1IsLeading = player1.position > player.position + 1; // Condition: player is winning by a lot
-            if (player1IsLeading) {
-                const availablePaths = gameState.boardPaths.filter(p => !Object.values(gameState.players).some(pl => pl.pathId === p.id && !pl.isEliminated));
-                if (availablePaths.length > 0) {
-                    const originalPath = player1.pathId + 1;
-                    const newPath = availablePaths[0].id + 1;
-                    player1.pathId = availablePaths[0].id;
-                    gameState.versatrixSwapActive = true;
-                    specialAbilityUsed = true;
-                    updateLog({ type: 'dialogue', speaker: 'versatrix', message: 'Versatrix: "O campo é meu para moldar! Tente me alcançar agora."' });
-                    updateLog(`Versatrix usou 'Campo Versátil'! Você foi movido do caminho ${originalPath} para o caminho ${newPath}.`);
-                    playSoundEffect('campoinverso');
-                    renderAll();
-                    await new Promise(res => setTimeout(res, 1500));
-                }
-            }
-        }
+        // HABILIDADE VERSATRIX (removida para turn manager, para ser resolvida no final do turno)
+
+
+        
 
         // HABILIDADE NECRO X - NECROVERSO FINAL
         if (player.aiType === 'necroverso_final' && !gameState.necroXUsedThisRound) {
