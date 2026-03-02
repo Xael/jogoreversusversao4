@@ -95,12 +95,13 @@ function renderTurnTimer() {
  */
 export const renderAll = () => {
     const { gameState } = getState();
-    // A barreira agora exige que a lista exista
+    
+    // A BARREIRA DE SEGURANÇA CORRIGIDA: Só passa se a lista existir.
     if (!gameState || !gameState.playerIdsInGame) return;
     
     // Render each player's area
     gameState.playerIdsInGame.forEach(id => {
-        if(gameState.players[id]) {
+        if(gameState.players && gameState.players[id]) {
             renderPlayerArea(gameState.players[id]);
         }
     });
