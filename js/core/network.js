@@ -46,6 +46,7 @@ export function connectToServer() {
     const SERVER_URL = "https://backend.projectxael.com.br/";
     const socket = io(SERVER_URL, {
         reconnectionAttempts: 3,
+        withCredentials: true,
         timeout: 10000,
     });
     updateState('socket', socket);
