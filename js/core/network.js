@@ -43,7 +43,7 @@ function setupPlayerPerspective() {
 
 
 export function connectToServer() {
-    const SERVER_URL = "https://backend.projectxael.com.br/";
+    const SERVER_URL = "https://api-reversus.projectxael.com.br";
     const socket = io(SERVER_URL, {
         reconnectionAttempts: 3,
         withCredentials: true,
